@@ -1,43 +1,59 @@
 package eu.tango.scamscreener;
 
-import com.mojang.brigadier.arguments.StringArgumentType;
-import com.mojang.brigadier.arguments.IntegerArgumentType;
-import com.mojang.brigadier.suggestion.Suggestions;
-import com.mojang.brigadier.suggestion.SuggestionsBuilder;
-import com.google.gson.Gson;
+import eu.tango.scamscreener.ai.TrainingDataService;
+import eu.tango.scamscreener.ai.LocalAiTrainer;
+import eu.tango.scamscreener.blacklist.BlacklistManager;
+import eu.tango.scamscreener.commands.ScamScreenerCommands;
+import eu.tango.scamscreener.config.LocalAiModelConfig;
+import eu.tango.scamscreener.detection.ChatBehaviorDetector;
+import eu.tango.scamscreener.detection.PartyScanController;
+import eu.tango.scamscreener.detection.PartyTabParser;
+import eu.tango.scamscreener.detection.TriggerContext;
+import eu.tango.scamscreener.lookup.MojangProfileService;
+import eu.tango.scamscreener.lookup.PlayerLookup;
+import eu.tango.scamscreener.lookup.ResolvedTarget;
+import eu.tango.scamscreener.lookup.TabFooterAccessor;
+import eu.tango.scamscreener.rules.ScamRules;
+import eu.tango.scamscreener.ui.Messages;
 import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.scores.Team;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.HashSet;
-import java.util.Locale;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.net.URI;
-import java.net.URLEncoder;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
-import java.time.Duration;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class ScamScreenerClient implements ClientModInitializer {
 	private static final BlacklistManager BLACKLIST = new BlacklistManager();
-	private static final Gson GSON = new Gson();
-	private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build();
-	private static final Pattern TRADE_INCOMING_PATTERN = Pattern.compile("^([A-Za-z0-9_]{3,16}) has sent you a trade request\\.?$");
-	private static final Pattern TRADE_OUTGOING_PATTERN = Pattern.compile("^You have sent a trade request to ([A-Za-z0-9_]{3,16})\\.?$");
-	private static final Pattern TRADE_SESSION_PATTERN = Pattern.compile("^You are trading with ([A-Za-z0-9_]{3,16})\\.?$");
+	private static final Logger LOGGER = LoggerFactory.getLogger(ScamScreenerClient.class);
+	private static final int PARTY_SCAN_INTERVAL_TICKS = 40;
+	private static final ScheduledExecutorService WARNING_SOUND_EXECUTOR = Executors.newSingleThreadScheduledExecutor(r -> {
+		Thread thread = new Thread(r, "scamscreener-warning-sound");
+		thread.setDaemon(true);
+		return thread;
+	});
 
+	private final PlayerLookup playerLookup = new PlayerLookup();
+	private final MojangProfileService mojangProfileService = new MojangProfileService();
+	private final TabFooterAccessor tabFooterAccessor = new TabFooterAccessor();
+	private final TrainingDataService trainingDataService = new TrainingDataService();
+	private final LocalAiTrainer localAiTrainer = new LocalAiTrainer();
+	private final ChatBehaviorDetector chatBehaviorDetector = new ChatBehaviorDetector();
+	private final PartyTabParser partyTabParser = new PartyTabParser();
+	private final PartyScanController partyScanController = new PartyScanController(PARTY_SCAN_INTERVAL_TICKS);
 	private final Set<UUID> currentlyDetected = new HashSet<>();
 	private final Set<String> warnedContexts = new HashSet<>();
 
@@ -50,106 +66,52 @@ public class ScamScreenerClient implements ClientModInitializer {
 		ClientTickEvents.END_CLIENT_TICK.register(this::onClientTick);
 	}
 
+	private void registerCommands() {
+		ScamScreenerCommands commands = new ScamScreenerCommands(
+			BLACKLIST,
+			this::resolveTargetOrReply,
+			this::captureChatAsTrainingData,
+			this::trainLocalAiModel,
+			this::resetLocalAiModel,
+			trainingDataService::lastCapturedLine,
+			currentlyDetected::remove,
+			ScamScreenerClient::reply
+		);
+		commands.register();
+	}
+
 	private void registerHypixelMessageChecks() {
 		ClientReceiveMessageEvents.GAME.register((message, overlay) -> handleHypixelMessage(message));
 		ClientReceiveMessageEvents.CHAT.register((message, signedMessage, sender, params, timestamp) -> handleHypixelMessage(message));
 	}
 
-	private void registerCommands() {
-		ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
-			dispatcher.register(
-				ClientCommandManager.literal("scamscreener")
-					.then(ClientCommandManager.literal("add")
-						.then(ClientCommandManager.argument("player", StringArgumentType.word())
-							.executes(context -> {
-								ResolvedTarget target = resolveTargetOrReply(StringArgumentType.getString(context, "player"));
-								if (target == null) {
-									return 0;
-								}
-
-								boolean added = BLACKLIST.add(target.uuid(), target.name(), 50, "manual-entry");
-								reply(added
-									? Messages.addedToBlacklist(target.name(), target.uuid())
-									: Messages.alreadyBlacklisted(target.name(), target.uuid()));
-								return 1;
-							})
-							.then(ClientCommandManager.argument("score", IntegerArgumentType.integer(0, 100))
-								.executes(context -> {
-									ResolvedTarget target = resolveTargetOrReply(StringArgumentType.getString(context, "player"));
-									if (target == null) {
-										return 0;
-									}
-
-									int score = IntegerArgumentType.getInteger(context, "score");
-									boolean added = BLACKLIST.add(target.uuid(), target.name(), score, "manual-entry");
-									reply(added
-										? Messages.addedToBlacklistWithScore(target.name(), target.uuid(), score)
-										: Messages.alreadyBlacklisted(target.name(), target.uuid()));
-									return 1;
-								})
-								.then(ClientCommandManager.argument("reason", StringArgumentType.greedyString())
-									.executes(context -> {
-										ResolvedTarget target = resolveTargetOrReply(StringArgumentType.getString(context, "player"));
-										if (target == null) {
-											return 0;
-										}
-
-										int score = IntegerArgumentType.getInteger(context, "score");
-										String reason = StringArgumentType.getString(context, "reason");
-										boolean added = BLACKLIST.add(target.uuid(), target.name(), score, reason);
-										reply(added
-											? Messages.addedToBlacklistWithMetadata(target.name(), target.uuid())
-											: Messages.alreadyBlacklisted(target.name(), target.uuid()));
-										return 1;
-									})))))
-					.then(ClientCommandManager.literal("remove")
-						.then(ClientCommandManager.argument("player", StringArgumentType.word())
-							.suggests((context, builder) -> suggestBlacklistedPlayers(builder))
-							.executes(context -> {
-								ResolvedTarget target = resolveTargetOrReply(StringArgumentType.getString(context, "player"));
-								if (target == null) {
-									return 0;
-								}
-
-								boolean removed = BLACKLIST.remove(target.uuid());
-								reply(removed
-									? Messages.removedFromBlacklist(target.name(), target.uuid())
-									: Messages.notOnBlacklist(target.name(), target.uuid()));
-								currentlyDetected.remove(target.uuid());
-								return 1;
-							})))
-					.then(ClientCommandManager.literal("list")
-						.executes(context -> {
-							if (BLACKLIST.isEmpty()) {
-								reply(Messages.blacklistEmpty());
-								return 1;
-							}
-
-							reply(Messages.blacklistHeader());
-							for (BlacklistManager.ScamEntry entry : BLACKLIST.allEntries()) {
-								reply(Messages.blacklistEntry(entry));
-							}
-							return 1;
-						}))
-			);
-		});
-	}
-
 	private void onClientTick(Minecraft client) {
+		partyScanController.onTick();
 		if (client.player == null || client.getConnection() == null) {
 			currentlyDetected.clear();
 			warnedContexts.clear();
+			chatBehaviorDetector.reset();
+			partyScanController.reset();
 			return;
 		}
 
+		if (BLACKLIST.isEmpty()) {
+			currentlyDetected.clear();
+			return;
+		}
+
+		if (partyScanController.shouldScanPartyTab()) {
+			checkPartyTabAndWarn(client);
+		}
+
 		Team ownTeam = client.player.getTeam();
-		if (ownTeam == null || BLACKLIST.isEmpty()) {
+		if (ownTeam == null) {
 			currentlyDetected.clear();
 			return;
 		}
 
 		Set<UUID> detectedNow = new HashSet<>();
-		for (PlayerInfo entry : client.getConnection().getOnlinePlayers()) {
+		for (PlayerInfo entry : playerLookup.onlinePlayers()) {
 			String playerName = entry.getProfile().name();
 			UUID playerUuid = entry.getProfile().id();
 			if (!BLACKLIST.contains(playerUuid)) {
@@ -167,7 +129,7 @@ public class ScamScreenerClient implements ClientModInitializer {
 
 			detectedNow.add(playerUuid);
 			if (!currentlyDetected.contains(playerUuid)) {
-				sendWarning(client, playerName, playerUuid);
+				sendWarning(playerName, playerUuid);
 			}
 		}
 
@@ -175,77 +137,120 @@ public class ScamScreenerClient implements ClientModInitializer {
 		currentlyDetected.addAll(detectedNow);
 	}
 
+	private void checkPartyTabAndWarn(Minecraft client) {
+		Component footer = tabFooterAccessor.readFooter(client);
+		if (footer == null) {
+			return;
+		}
+
+		for (String memberName : partyTabParser.extractPartyMembers(footer.getString())) {
+			UUID uuid = playerLookup.findUuidByName(memberName);
+			if (uuid == null || !BLACKLIST.contains(uuid)) {
+				continue;
+			}
+
+			String dedupeKey = "party-tab:" + uuid;
+			if (!warnedContexts.add(dedupeKey)) {
+				continue;
+			}
+
+			sendBlacklistWarning(memberName, uuid, "listed in your party tab");
+		}
+	}
+
 	private void handleHypixelMessage(Component message) {
-		Minecraft client = Minecraft.getInstance();
-		if (client.player == null || client.getConnection() == null || BLACKLIST.isEmpty()) {
-			return;
-		}
-
 		String plain = message.getString().trim();
-		checkPatternAndWarn(plain, TRADE_INCOMING_PATTERN, "trade-incoming");
-		checkPatternAndWarn(plain, TRADE_OUTGOING_PATTERN, "trade-outgoing");
-		checkPatternAndWarn(plain, TRADE_SESSION_PATTERN, "trade-session");
-	}
-
-	private void checkPatternAndWarn(String message, Pattern pattern, String contextPrefix) {
-		Matcher matcher = pattern.matcher(message);
-		if (!matcher.matches()) {
-			return;
+		trainingDataService.recordChatLine(plain);
+		String ownName = Minecraft.getInstance().player == null ? null : Minecraft.getInstance().player.getGameProfile().name();
+		if (partyScanController.updateStateFromMessage(plain, ownName)) {
+			clearPartyTabDedupe();
 		}
 
-		String playerName = matcher.group(1);
-		UUID uuid = findUuidByName(playerName);
-		if (uuid == null || !BLACKLIST.contains(uuid)) {
-			return;
-		}
-
-		String dedupeKey = contextPrefix + ":" + uuid;
-		if (!warnedContexts.add(dedupeKey)) {
-			return;
-		}
-
-		sendBlacklistWarning(playerName, uuid, humanReadableTrigger(contextPrefix));
-	}
-
-	private static String humanReadableTrigger(String contextPrefix) {
-		return switch (contextPrefix) {
-			case "trade-incoming" -> "incoming trade request";
-			case "trade-outgoing" -> "outgoing trade request";
-			case "trade-session" -> "active trade session";
-			default -> "detected Hypixel interaction";
-		};
-	}
-
-	private UUID findUuidByName(String playerName) {
 		Minecraft client = Minecraft.getInstance();
-		if (client.getConnection() == null) {
-			return null;
+		if (client.player == null || client.getConnection() == null) {
+			return;
 		}
 
-		String target = playerName.toLowerCase(Locale.ROOT);
-		for (PlayerInfo entry : client.getConnection().getOnlinePlayers()) {
-			if (entry.getProfile().name().equalsIgnoreCase(target)) {
-				return entry.getProfile().id();
-			}
+		ChatBehaviorDetector.DetectionResult detection = chatBehaviorDetector.handleMessage(plain, ScamScreenerClient::reply);
+		if (detection != null) {
+			playWarningTone();
+			autoAddFlaggedMessageToTrainingData(detection);
 		}
-		return null;
+		if (BLACKLIST.isEmpty()) {
+			return;
+		}
+
+		for (TriggerContext context : TriggerContext.values()) {
+			checkTriggerAndWarn(plain, context);
+		}
 	}
 
-	private String findNameByUuid(UUID uuid) {
-		Minecraft client = Minecraft.getInstance();
-		if (uuid == null || client.getConnection() == null) {
-			return "unknown";
+	private void clearPartyTabDedupe() {
+		warnedContexts.removeIf(key -> key.startsWith("party-tab:"));
+	}
+
+	private int captureChatAsTrainingData(String playerName, int label, int count) {
+		List<String> lines = trainingDataService.recentLinesForPlayer(playerName, count);
+		if (lines.isEmpty()) {
+			reply(Messages.noChatToCapture());
+			return 0;
 		}
 
-		for (PlayerInfo entry : client.getConnection().getOnlinePlayers()) {
-			if (uuid.equals(entry.getProfile().id())) {
-				return entry.getProfile().name();
+		try {
+			trainingDataService.appendRows(lines, label);
+			if (lines.size() == 1) {
+				reply(Messages.trainingSampleSaved(trainingDataService.trainingDataPath().toString(), label));
+			} else {
+				reply(Messages.trainingSamplesSaved(trainingDataService.trainingDataPath().toString(), label, lines.size()));
 			}
+			return 1;
+		} catch (IOException e) {
+			LOGGER.warn("Failed to save training samples", e);
+			reply(Messages.trainingSamplesSaveFailed(e.getMessage()));
+			return 0;
 		}
-		return "unknown";
+	}
+
+	private int trainLocalAiModel() {
+		try {
+			LocalAiTrainer.TrainingResult result = localAiTrainer.trainAndSave(trainingDataService.trainingDataPath());
+			ScamRules.reloadConfig();
+			reply(Messages.trainingCompleted(
+				result.sampleCount(),
+				result.positiveCount(),
+				result.archivedDataPath().getFileName().toString()
+			));
+			return 1;
+		} catch (IOException e) {
+			LOGGER.warn("Failed to train local AI model", e);
+			reply(Messages.trainingFailed(e.getMessage()));
+			return 0;
+		}
+	}
+
+	private void autoAddFlaggedMessageToTrainingData(ChatBehaviorDetector.DetectionResult detection) {
+		if (detection == null || !ScamRules.shouldAutoCaptureAlert(detection.assessment())) {
+			return;
+		}
+
+		try {
+			trainingDataService.appendRows(List.of(detection.parsedLine().message()), 1);
+		} catch (IOException e) {
+			LOGGER.debug("Failed to auto-save flagged message as training sample", e);
+		}
+	}
+
+	private int resetLocalAiModel() {
+		LocalAiModelConfig.save(new LocalAiModelConfig());
+		ScamRules.reloadConfig();
+		reply(Messages.localAiModelReset());
+		return 1;
 	}
 
 	private static UUID parseUuid(String input) {
+		if (input == null || input.isBlank()) {
+			return null;
+		}
 		try {
 			return UUID.fromString(input.trim());
 		} catch (IllegalArgumentException ignored) {
@@ -256,12 +261,12 @@ public class ScamScreenerClient implements ClientModInitializer {
 	private ResolvedTarget resolveTargetOrReply(String input) {
 		UUID parsedUuid = parseUuid(input);
 		if (parsedUuid != null) {
-			return new ResolvedTarget(parsedUuid, findNameByUuid(parsedUuid));
+			return new ResolvedTarget(parsedUuid, playerLookup.findNameByUuid(parsedUuid));
 		}
 
-		UUID byName = findUuidByName(input);
+		UUID byName = playerLookup.findUuidByName(input);
 		if (byName != null) {
-			return new ResolvedTarget(byName, findNameByUuid(byName));
+			return new ResolvedTarget(byName, playerLookup.findNameByUuid(byName));
 		}
 
 		BlacklistManager.ScamEntry knownEntry = BLACKLIST.findByName(input);
@@ -269,16 +274,42 @@ public class ScamScreenerClient implements ClientModInitializer {
 			return new ResolvedTarget(knownEntry.uuid(), knownEntry.name());
 		}
 
-		ResolvedTarget mojangResolved = lookupMojangProfile(input);
+		ResolvedTarget mojangResolved = mojangProfileService.lookupCached(input);
 		if (mojangResolved != null) {
 			return mojangResolved;
 		}
 
-		reply(Messages.unresolvedTarget(input));
+		mojangProfileService.lookupAsync(input).thenAccept(resolved -> {
+			if (resolved == null) {
+				reply(Messages.unresolvedTarget(input));
+				return;
+			}
+			reply(Messages.mojangLookupCompleted(input, resolved.name()));
+		});
+		reply(Messages.mojangLookupStarted(input));
 		return null;
 	}
 
-	private void sendWarning(Minecraft client, String playerName, UUID uuid) {
+	private void checkTriggerAndWarn(String message, TriggerContext context) {
+		String playerName = context.matchPlayerName(message);
+		if (playerName == null) {
+			return;
+		}
+
+		UUID uuid = playerLookup.findUuidByName(playerName);
+		if (uuid == null || !BLACKLIST.contains(uuid)) {
+			return;
+		}
+
+		String dedupeKey = context.dedupeKey(uuid);
+		if (!warnedContexts.add(dedupeKey)) {
+			return;
+		}
+
+		sendBlacklistWarning(playerName, uuid, context.triggerReason());
+	}
+
+	private void sendWarning(String playerName, UUID uuid) {
 		sendBlacklistWarning(playerName, uuid, "is in your team/party");
 	}
 
@@ -289,78 +320,29 @@ public class ScamScreenerClient implements ClientModInitializer {
 		}
 
 		BlacklistManager.ScamEntry entry = BLACKLIST.get(uuid);
-		client.player.displayClientMessage(
-			Messages.blacklistWarning(playerName, reason, entry),
-			false
-		);
+		client.player.displayClientMessage(Messages.blacklistWarning(playerName, reason, entry), false);
+		playWarningTone();
 	}
 
 	private static void reply(Component text) {
 		Minecraft client = Minecraft.getInstance();
-		if (client.player != null) {
-			client.player.displayClientMessage(text, false);
-		}
-	}
-
-	private CompletableFuture<Suggestions> suggestBlacklistedPlayers(SuggestionsBuilder builder) {
-		String remaining = builder.getRemaining().toLowerCase(Locale.ROOT);
-		for (BlacklistManager.ScamEntry entry : BLACKLIST.allEntries()) {
-			String name = entry.name();
-			if (name != null && !name.isBlank() && name.toLowerCase(Locale.ROOT).startsWith(remaining)) {
-				builder.suggest(name);
+		client.execute(() -> {
+			if (client.player != null) {
+				client.player.displayClientMessage(text, false);
 			}
-		}
-		return builder.buildFuture();
+		});
 	}
 
-	private ResolvedTarget lookupMojangProfile(String input) {
-		String trimmed = input == null ? "" : input.trim();
-		if (trimmed.isEmpty()) {
-			return null;
-		}
-
-		try {
-			String encodedName = URLEncoder.encode(trimmed, StandardCharsets.UTF_8);
-			HttpRequest request = HttpRequest.newBuilder()
-				.uri(URI.create("https://api.mojang.com/users/profiles/minecraft/" + encodedName))
-				.timeout(Duration.ofSeconds(4))
-				.GET()
-				.build();
-
-			HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
-			if (response.statusCode() != 200) {
-				return null;
-			}
-
-			MojangProfile profile = GSON.fromJson(response.body(), MojangProfile.class);
-			if (profile == null || profile.id == null || profile.id.length() != 32 || profile.name == null || profile.name.isBlank()) {
-				return null;
-			}
-
-			UUID uuid = uuidFromUndashed(profile.id);
-			return uuid == null ? null : new ResolvedTarget(uuid, profile.name);
-		} catch (Exception ignored) {
-			return null;
+	private static void playWarningTone() {
+		Minecraft client = Minecraft.getInstance();
+		for (int i = 0; i < 3; i++) {
+			long delayMs = i * 120L;
+			WARNING_SOUND_EXECUTOR.schedule(() -> client.execute(() -> {
+				if (client.player != null) {
+					client.player.playNotifySound(SoundEvents.NOTE_BLOCK_PLING.value(), SoundSource.MASTER, 0.8F, 1.2F);
+				}
+			}), delayMs, TimeUnit.MILLISECONDS);
 		}
 	}
 
-	private static UUID uuidFromUndashed(String undashed) {
-		String dashed = undashed.replaceFirst(
-			"([0-9a-fA-F]{8})([0-9a-fA-F]{4})([0-9a-fA-F]{4})([0-9a-fA-F]{4})([0-9a-fA-F]{12})",
-			"$1-$2-$3-$4-$5"
-		);
-		try {
-			return UUID.fromString(dashed);
-		} catch (IllegalArgumentException ignored) {
-			return null;
-		}
-	}
-
-	private record ResolvedTarget(UUID uuid, String name) {
-	}
-
-	private static final class MojangProfile {
-		String id;
-		String name;
-	}
 }

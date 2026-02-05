@@ -1,8 +1,8 @@
-package eu.tango.scamscreener;
+package eu.tango.scamscreener.blacklist;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import net.fabricmc.loader.api.FabricLoader;
+import eu.tango.scamscreener.config.ScamScreenerPaths;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -26,24 +26,31 @@ public final class BlacklistManager {
 	private static final int DEFAULT_SCORE = 50;
 
 	private final Path filePath;
-	private final Path legacyFilePath;
+	private final Path legacyJsonFilePath;
+	private final Path legacyTxtFilePath;
 	private final Map<UUID, ScamEntry> entries = new HashMap<>();
 
 	public BlacklistManager() {
-		Path configDir = FabricLoader.getInstance().getConfigDir();
-		this.filePath = configDir.resolve("scam-screener-blacklist.json");
-		this.legacyFilePath = configDir.resolve("scam-screener-blacklist.txt");
+		this.filePath = ScamScreenerPaths.inModConfigDir("scam-screener-blacklist.json");
+		this.legacyJsonFilePath = ScamScreenerPaths.inRootConfigDir("scam-screener-blacklist.json");
+		this.legacyTxtFilePath = ScamScreenerPaths.inRootConfigDir("scam-screener-blacklist.txt");
 	}
 
 	public void load() {
 		entries.clear();
 		if (Files.exists(filePath)) {
-			loadJson();
+			loadJson(filePath);
 			return;
 		}
 
-		if (Files.exists(legacyFilePath)) {
-			loadLegacyTxt();
+		if (Files.exists(legacyJsonFilePath)) {
+			loadJson(legacyJsonFilePath);
+			save();
+			return;
+		}
+
+		if (Files.exists(legacyTxtFilePath)) {
+			loadLegacyTxt(legacyTxtFilePath);
 			save();
 		}
 	}
@@ -104,8 +111,8 @@ public final class BlacklistManager {
 		return sorted;
 	}
 
-	private void loadJson() {
-		try (Reader reader = Files.newBufferedReader(filePath, StandardCharsets.UTF_8)) {
+	private void loadJson(Path path) {
+		try (Reader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
 			BlacklistFile data = GSON.fromJson(reader, BlacklistFile.class);
 			if (data == null || data.entries == null) {
 				return;
@@ -120,9 +127,9 @@ public final class BlacklistManager {
 		}
 	}
 
-	private void loadLegacyTxt() {
+	private void loadLegacyTxt(Path path) {
 		try {
-			List<String> lines = Files.readAllLines(legacyFilePath, StandardCharsets.UTF_8);
+			List<String> lines = Files.readAllLines(path, StandardCharsets.UTF_8);
 			for (String line : lines) {
 				UUID parsed = parseUuid(line);
 				if (parsed != null) {

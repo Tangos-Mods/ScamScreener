@@ -3,9 +3,9 @@
 	"id": "scam-screener",
 	"version": "${version}",
 	"name": "Scam Screener",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"description": "Client-side Scam detection for Hypixel SkyBlock trades, with blacklist alerts and local AI-assisted risk scoring.",
 	"authors": [
-		"Me!"
+		"Pankraz01"
 	],
 	"contact": {
 		"homepage": "https://fabricmc.net/",
