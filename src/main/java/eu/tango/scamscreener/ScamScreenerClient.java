@@ -1,15 +1,19 @@
 package eu.tango.scamscreener;
 
+import eu.tango.scamscreener.ai.LocalAiScorer;
 import eu.tango.scamscreener.ai.TrainingDataService;
 import eu.tango.scamscreener.ai.LocalAiTrainer;
 import eu.tango.scamscreener.blacklist.BlacklistManager;
 import eu.tango.scamscreener.commands.ScamScreenerCommands;
 import eu.tango.scamscreener.config.LocalAiModelConfig;
-import eu.tango.scamscreener.detection.ChatBehaviorDetector;
 import eu.tango.scamscreener.detection.MutePatternManager;
 import eu.tango.scamscreener.detection.PartyScanController;
 import eu.tango.scamscreener.detection.PartyTabParser;
 import eu.tango.scamscreener.detection.TriggerContext;
+import eu.tango.scamscreener.detect.DetectionOutcome;
+import eu.tango.scamscreener.detect.DetectionPipeline;
+import eu.tango.scamscreener.detect.MessageEvent;
+import eu.tango.scamscreener.detect.MessageEventParser;
 import eu.tango.scamscreener.lookup.MojangProfileService;
 import eu.tango.scamscreener.lookup.PlayerLookup;
 import eu.tango.scamscreener.lookup.ResolvedTarget;
@@ -52,8 +56,8 @@ public class ScamScreenerClient implements ClientModInitializer {
 	private final TabFooterAccessor tabFooterAccessor = new TabFooterAccessor();
 	private final TrainingDataService trainingDataService = new TrainingDataService();
 	private final LocalAiTrainer localAiTrainer = new LocalAiTrainer();
-	private final ChatBehaviorDetector chatBehaviorDetector = new ChatBehaviorDetector();
 	private final MutePatternManager mutePatternManager = new MutePatternManager();
+	private final DetectionPipeline detectionPipeline = new DetectionPipeline(mutePatternManager, new LocalAiScorer());
 	private final PartyTabParser partyTabParser = new PartyTabParser();
 	private final PartyScanController partyScanController = new PartyScanController(PARTY_SCAN_INTERVAL_TICKS);
 	private final Set<UUID> currentlyDetected = new HashSet<>();
@@ -96,7 +100,7 @@ public class ScamScreenerClient implements ClientModInitializer {
 		if (client.player == null || client.getConnection() == null) {
 			currentlyDetected.clear();
 			warnedContexts.clear();
-			chatBehaviorDetector.reset();
+			detectionPipeline.reset();
 			partyScanController.reset();
 			return;
 		}
@@ -179,10 +183,10 @@ public class ScamScreenerClient implements ClientModInitializer {
 			return;
 		}
 
-		ChatBehaviorDetector.DetectionResult detection = chatBehaviorDetector.handleMessage(plain, ScamScreenerClient::reply);
-		if (detection != null) {
-			playWarningTone();
-			autoAddFlaggedMessageToTrainingData(detection);
+		MessageEvent event = MessageEventParser.parse(plain, System.currentTimeMillis());
+		if (event != null) {
+			detectionPipeline.process(event, ScamScreenerClient::reply, this::playWarningTone)
+				.ifPresent(this::autoAddFlaggedMessageToTrainingData);
 		}
 		if (BLACKLIST.isEmpty()) {
 			return;
@@ -249,13 +253,17 @@ public class ScamScreenerClient implements ClientModInitializer {
 		}
 	}
 
-	private void autoAddFlaggedMessageToTrainingData(ChatBehaviorDetector.DetectionResult detection) {
-		if (detection == null || !ScamRules.shouldAutoCaptureAlert(detection.assessment())) {
+	private void autoAddFlaggedMessageToTrainingData(DetectionOutcome outcome) {
+		if (outcome == null || outcome.result() == null || !outcome.result().shouldCapture()) {
+			return;
+		}
+		MessageEvent event = outcome.event();
+		if (event == null || event.rawMessage() == null || event.rawMessage().isBlank()) {
 			return;
 		}
 
 		try {
-			trainingDataService.appendRows(List.of(detection.parsedLine().message()), 1);
+			trainingDataService.appendRows(List.of(event.rawMessage()), 1);
 		} catch (IOException e) {
 			LOGGER.debug("Failed to auto-save flagged message as training sample", e);
 		}

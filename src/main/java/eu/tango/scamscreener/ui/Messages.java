@@ -1,6 +1,8 @@
 package eu.tango.scamscreener.ui;
 
 import eu.tango.scamscreener.blacklist.BlacklistManager;
+import eu.tango.scamscreener.detect.DetectionResult;
+import eu.tango.scamscreener.detect.DetectionScoring;
 import eu.tango.scamscreener.rules.ScamRules;
 
 import net.minecraft.client.Minecraft;
@@ -15,7 +17,10 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
+import java.util.EnumSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -402,6 +407,19 @@ public final class Messages {
 			.append(Component.literal("Alert threshold updated to "))
 			.append(Component.literal(level == null ? "HIGH" : level.name()).withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD))
 			.append(Component.literal("."));
+	}
+
+	public static MutableComponent behaviorRiskWarning(String playerName, DetectionResult result) {
+		if (result == null) {
+			return behaviorRiskWarning(playerName, new ScamRules.ScamAssessment(0, ScamRules.ScamRiskLevel.LOW, Set.of(), Map.of(), null, List.of()));
+		}
+		int score = (int) Math.round(result.totalScore());
+		ScamRules.ScamRiskLevel level = DetectionScoring.toScamRiskLevel(result.level());
+		Set<ScamRules.ScamRule> rules = result.triggeredRules().isEmpty() ? Set.of() : EnumSet.copyOf(result.triggeredRules().keySet());
+		Map<ScamRules.ScamRule, String> details = result.triggeredRules().isEmpty() ? Map.of() : new LinkedHashMap<>(result.triggeredRules());
+		List<String> evaluatedMessages = result.evaluatedMessages();
+		ScamRules.ScamAssessment assessment = new ScamRules.ScamAssessment(score, level, rules, details, evaluatedMessages.isEmpty() ? null : evaluatedMessages.get(0), evaluatedMessages);
+		return behaviorRiskWarning(playerName, assessment);
 	}
 
 	public static MutableComponent behaviorRiskWarning(String playerName, ScamRules.ScamAssessment assessment) {

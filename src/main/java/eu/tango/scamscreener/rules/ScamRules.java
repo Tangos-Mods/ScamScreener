@@ -31,6 +31,26 @@ public final class ScamRules {
 		return config.minimumAlertRiskLevel();
 	}
 
+	public static PatternSet patternSet() {
+		return config.patterns();
+	}
+
+	public static BehaviorPatternSet behaviorPatternSet() {
+		return config.behaviorPatterns();
+	}
+
+	public static boolean localAiEnabled() {
+		return config.localAiEnabled();
+	}
+
+	public static int localAiMaxScore() {
+		return config.localAiMaxScore();
+	}
+
+	public static double localAiTriggerProbability() {
+		return config.localAiTriggerProbability();
+	}
+
 	public static String autoCaptureAlertLevelSetting() {
 		return config.autoCaptureAlertLevelSetting();
 	}
@@ -304,7 +324,7 @@ public final class ScamRules {
 		}
 	}
 
-	private record PatternSet(
+	public static record PatternSet(
 		Pattern link,
 		Pattern urgency,
 		Pattern paymentFirst,
@@ -324,8 +344,25 @@ public final class ScamRules {
 		}
 	}
 
+	public static record BehaviorPatternSet(
+		Pattern externalPlatform,
+		Pattern upfrontPayment,
+		Pattern accountData,
+		Pattern middlemanClaim
+	) {
+		private static BehaviorPatternSet from(ScamRulesConfig config) {
+			return new BehaviorPatternSet(
+				compileOrDefault(config.externalPlatformPattern, ScamRulesConfig.DEFAULT_EXTERNAL_PLATFORM_PATTERN),
+				compileOrDefault(config.upfrontPaymentBehaviorPattern, ScamRulesConfig.DEFAULT_PAYMENT_FIRST_PATTERN),
+				compileOrDefault(config.accountDataBehaviorPattern, ScamRulesConfig.DEFAULT_ACCOUNT_DATA_PATTERN),
+				compileOrDefault(config.middlemanPattern, ScamRulesConfig.DEFAULT_MIDDLEMAN_PATTERN)
+			);
+		}
+	}
+
 	private record RuntimeConfig(
 		PatternSet patterns,
+		BehaviorPatternSet behaviorPatterns,
 		boolean localAiEnabled,
 		int localAiMaxScore,
 		double localAiTriggerProbability,
@@ -344,6 +381,7 @@ public final class ScamRules {
 		private static RuntimeConfig from(ScamRulesConfig config) {
 			return new RuntimeConfig(
 				PatternSet.from(config),
+				BehaviorPatternSet.from(config),
 				config.localAiEnabled,
 				config.localAiMaxScore,
 				config.localAiTriggerProbability,

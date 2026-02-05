@@ -20,6 +20,8 @@ public final class ScamRulesConfig {
 	public static final String DEFAULT_ACCOUNT_DATA_PATTERN = "\\b(password|passwort|2fa|code|email login)\\b";
 	public static final String DEFAULT_TOO_GOOD_PATTERN = "\\b(free coins|free rank|dupe|100% safe|garantiert)\\b";
 	public static final String DEFAULT_TRUST_BAIT_PATTERN = "\\b(trust me|vertrau mir|legit)\\b";
+	public static final String DEFAULT_EXTERNAL_PLATFORM_PATTERN = "\\b(discord|telegram|t\\.me|dm me|add me)\\b";
+	public static final String DEFAULT_MIDDLEMAN_PATTERN = "\\b(trusted middleman|legit middleman|middleman)\\b";
 	public static final boolean DEFAULT_LOCAL_AI_ENABLED = true;
 	public static final int DEFAULT_LOCAL_AI_MAX_SCORE = 22;
 	public static final double DEFAULT_LOCAL_AI_TRIGGER_PROBABILITY = 0.56;
@@ -36,6 +38,10 @@ public final class ScamRulesConfig {
 	public String accountDataPattern = DEFAULT_ACCOUNT_DATA_PATTERN;
 	public String tooGoodPattern = DEFAULT_TOO_GOOD_PATTERN;
 	public String trustBaitPattern = DEFAULT_TRUST_BAIT_PATTERN;
+	public String externalPlatformPattern = DEFAULT_EXTERNAL_PLATFORM_PATTERN;
+	public String upfrontPaymentBehaviorPattern = DEFAULT_PAYMENT_FIRST_PATTERN;
+	public String accountDataBehaviorPattern = DEFAULT_ACCOUNT_DATA_PATTERN;
+	public String middlemanPattern = DEFAULT_MIDDLEMAN_PATTERN;
 	public boolean localAiEnabled = DEFAULT_LOCAL_AI_ENABLED;
 	public int localAiMaxScore = DEFAULT_LOCAL_AI_MAX_SCORE;
 	public double localAiTriggerProbability = DEFAULT_LOCAL_AI_TRIGGER_PROBABILITY;
@@ -100,6 +106,18 @@ public final class ScamRulesConfig {
 		}
 		if (isBlank(trustBaitPattern)) {
 			trustBaitPattern = DEFAULT_TRUST_BAIT_PATTERN;
+		}
+		if (isBlank(externalPlatformPattern)) {
+			externalPlatformPattern = DEFAULT_EXTERNAL_PLATFORM_PATTERN;
+		}
+		if (isBlank(upfrontPaymentBehaviorPattern)) {
+			upfrontPaymentBehaviorPattern = DEFAULT_PAYMENT_FIRST_PATTERN;
+		}
+		if (isBlank(accountDataBehaviorPattern)) {
+			accountDataBehaviorPattern = DEFAULT_ACCOUNT_DATA_PATTERN;
+		}
+		if (isBlank(middlemanPattern)) {
+			middlemanPattern = DEFAULT_MIDDLEMAN_PATTERN;
 		}
 		localAiMaxScore = clampInt(localAiMaxScore, 0, 100, DEFAULT_LOCAL_AI_MAX_SCORE);
 		localAiTriggerProbability = clampDouble(localAiTriggerProbability, 0.0, 1.0, DEFAULT_LOCAL_AI_TRIGGER_PROBABILITY);
