@@ -196,6 +196,17 @@ public final class Messages {
 			.append(link == null ? Component.literal("Model update available.").withStyle(ChatFormatting.GRAY) : link);
 	}
 
+	public static MutableComponent modelUpdateDownloadLink(String command, String localVersion, String remoteVersion) {
+		String localText = localVersion == null || localVersion.isBlank() ? "unknown" : localVersion.trim();
+		String remoteText = remoteVersion == null || remoteVersion.isBlank() ? "unknown" : remoteVersion.trim();
+		Style style = Style.EMPTY
+			.withColor(ChatFormatting.YELLOW)
+			.withClickEvent(new ClickEvent.RunCommand(command == null ? "" : command))
+			.withHoverEvent(new HoverEvent.ShowText(Component.literal("Download model update")));
+		return Component.literal("A new AI Model is available. Click to update your local model. (" + localText + " -> " + remoteText + ")")
+			.setStyle(style);
+	}
+
 	public static MutableComponent modelUpdateReady(MutableComponent actions) {
 		MutableComponent line = Component.literal(PREFIX).withStyle(style -> style.withColor(PREFIX_LIGHT_RED))
 			.append(Component.literal("Model update downloaded. ").withStyle(ChatFormatting.GRAY));
@@ -253,10 +264,13 @@ public final class Messages {
 	}
 
 	public static MutableComponent trainingFailed(String errorMessage) {
+		String safe = errorMessage == null ? "unknown error" : errorMessage;
 		return Component.literal(PREFIX)
 			.withStyle(style -> style.withColor(PREFIX_LIGHT_RED))
-			.append(Component.literal("Training failed: ").withStyle(ChatFormatting.GRAY))
-			.append(Component.literal(errorMessage == null ? "unknown error" : errorMessage).withStyle(ChatFormatting.YELLOW));
+			.append(Component.literal("Training failed. ").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal("[details]").withStyle(style -> style
+				.withColor(ChatFormatting.YELLOW)
+				.withHoverEvent(new HoverEvent.ShowText(Component.literal(safe).withStyle(ChatFormatting.GRAY)))));
 	}
 
 	public static MutableComponent mojangLookupStarted(String input) {
@@ -831,7 +845,7 @@ public final class Messages {
 	}
 
 	private static MutableComponent actionTag(String label, ChatFormatting color, String hover, String command) {
-		Style style = Style.EMPTY.withColor(color).withBold(true);
+		Style style = Style.EMPTY.withColor(color);
 		if (hover != null && !hover.isBlank()) {
 			style = style.withHoverEvent(new HoverEvent.ShowText(Component.literal(hover).withStyle(ChatFormatting.YELLOW)));
 		}
@@ -840,7 +854,7 @@ public final class Messages {
 		} else {
 			style = style.withStrikethrough(true);
 		}
-		return Component.literal(label).setStyle(style);
+		return Component.literal("[" + label + "]").setStyle(style);
 	}
 
 	private static String registerActionMessageId(List<String> evaluatedMessages) {

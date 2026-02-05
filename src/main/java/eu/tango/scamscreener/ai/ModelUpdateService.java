@@ -20,6 +20,8 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.time.Duration;
 import java.util.LinkedHashMap;
@@ -48,6 +50,10 @@ public final class ModelUpdateService {
 		debugEnabled = enabled;
 	}
 
+	public boolean isDebugEnabled() {
+		return debugEnabled;
+	}
+
 	public int download(String id, Consumer<Component> reply) {
 		PendingModel pendingModel = pending.get(id);
 		if (pendingModel == null || pendingModel.info() == null) {
@@ -68,6 +74,7 @@ public final class ModelUpdateService {
 			return 0;
 		}
 		try {
+			backupLocalModel();
 			writeModel(pendingModel.content());
 			ScamRules.reloadConfig();
 			reply.accept(Messages.modelUpdateApplied("accepted"));
@@ -88,6 +95,7 @@ public final class ModelUpdateService {
 			return 0;
 		}
 		try {
+			backupLocalModel();
 			LocalAiModelConfig local = LocalAiModelConfig.loadOrCreate();
 			LocalAiModelConfig incoming = GSON.fromJson(pendingModel.content(), LocalAiModelConfig.class);
 			if (incoming == null) {
@@ -144,7 +152,12 @@ public final class ModelUpdateService {
 
 		String id = UUID.randomUUID().toString().replace("-", "");
 		pending.put(id, new PendingModel(info, null));
-		reply.accept(Messages.modelUpdateAvailable(buildDownloadComponent(id)));
+		String localVersion = String.valueOf(LocalAiModelConfig.loadOrCreate().version);
+		reply.accept(Messages.modelUpdateAvailable(Messages.modelUpdateDownloadLink(
+			"/scamscreener ai model download " + id,
+			localVersion,
+			info.version
+		)));
 		debug(reply, "update available id=" + id);
 	}
 
@@ -172,6 +185,27 @@ public final class ModelUpdateService {
 	private static void writeModel(String payload) throws IOException {
 		Files.createDirectories(LocalAiModelConfig.filePath().getParent());
 		Files.writeString(LocalAiModelConfig.filePath(), payload, StandardCharsets.UTF_8);
+	}
+
+	private static void backupLocalModel() throws IOException {
+		Path modelPath = LocalAiModelConfig.filePath();
+		if (!Files.exists(modelPath)) {
+			return;
+		}
+		Path archiveDir = modelPath.resolveSibling("old").resolve("models");
+		Files.createDirectories(archiveDir);
+		Path target = nextArchiveTarget(modelPath, archiveDir);
+		Files.copy(modelPath, target, StandardCopyOption.COPY_ATTRIBUTES);
+	}
+
+	private static Path nextArchiveTarget(Path baseFile, Path archiveDir) throws IOException {
+		int index = 1;
+		Path target = archiveDir.resolve(baseFile.getFileName() + ".old." + index);
+		while (Files.exists(target)) {
+			index++;
+			target = archiveDir.resolve(baseFile.getFileName() + ".old." + index);
+		}
+		return target;
 	}
 
 	private static String hashLocalModel() {
@@ -238,15 +272,6 @@ public final class ModelUpdateService {
 			return;
 		}
 		reply.accept(DebugMessages.updater(message));
-	}
-
-	private static MutableComponent buildDownloadComponent(String id) {
-		Style style = Style.EMPTY
-			.withColor(ChatFormatting.YELLOW)
-			.withUnderlined(true)
-			.withClickEvent(new ClickEvent.RunCommand("/scamscreener ai model download " + id))
-			.withHoverEvent(new HoverEvent.ShowText(Component.literal("Download model update")));
-		return Component.literal("Click here to download new Model Configuration.").setStyle(style);
 	}
 
 	private static MutableComponent buildActionComponent(String id) {

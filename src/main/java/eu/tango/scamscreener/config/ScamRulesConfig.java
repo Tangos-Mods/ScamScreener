@@ -26,7 +26,7 @@ public final class ScamRulesConfig {
 	public static final int DEFAULT_LOCAL_AI_MAX_SCORE = 22;
 	public static final double DEFAULT_LOCAL_AI_TRIGGER_PROBABILITY = 0.56;
 	public static final String DEFAULT_MIN_ALERT_RISK_LEVEL = "HIGH";
-	public static final String DEFAULT_AUTO_CAPTURE_ALERT_LEVEL = "HIGH";
+	public static final String DEFAULT_AUTO_CAPTURE_ALERT_LEVEL = "OFF";
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 	private static final Path FILE_PATH = ScamScreenerPaths.inModConfigDir("scam-screener-rules.json");
@@ -138,6 +138,9 @@ public final class ScamRulesConfig {
 				normalized.add(rule.trim().toUpperCase(Locale.ROOT));
 			}
 			disabledRules = normalized;
+		}
+		if (disabledRules.isEmpty()) {
+			disabledRules.add("SPAMMY_CONTACT_PATTERN");
 		}
 		return this;
 	}

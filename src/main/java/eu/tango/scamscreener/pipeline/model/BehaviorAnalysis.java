@@ -7,6 +7,7 @@ public record BehaviorAnalysis(
 	boolean demandsUpfrontPayment,
 	boolean requestsSensitiveData,
 	boolean claimsTrustedMiddlemanWithoutProof,
-	int repeatedContactAttempts
+	int repeatedContactAttempts,
+	java.util.List<String> repeatedContactMessages
 ) {
 }

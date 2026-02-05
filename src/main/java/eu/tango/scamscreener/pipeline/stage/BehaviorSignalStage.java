@@ -79,7 +79,7 @@ public final class BehaviorSignalStage {
 				10,
 				"Repeated contact attempts=" + analysis.repeatedContactAttempts() + " (threshold: 3, +10)",
 				ScamRules.ScamRule.SPAMMY_CONTACT_PATTERN,
-				List.of()
+				analysis.repeatedContactMessages() == null ? List.of() : analysis.repeatedContactMessages()
 			));
 		}
 

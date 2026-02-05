@@ -2,15 +2,15 @@ package eu.tango.scamscreener.pipeline.core;
 
 import eu.tango.scamscreener.rules.ScamRules;
 
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
 import eu.tango.scamscreener.pipeline.model.BehaviorAnalysis;
 import eu.tango.scamscreener.pipeline.model.MessageEvent;
 
 public final class BehaviorAnalyzer {
 	private final RuleConfig ruleConfig;
-	private final Map<String, Integer> repeatedContactByPlayer = new HashMap<>();
+	private String lastPlayerKey;
+	private int consecutiveCount;
+	private final java.util.List<String> consecutiveMessages = new java.util.ArrayList<>();
 
 	/**
 	 * Extracts behavior flags from each chat line (e.g. external platform push).
@@ -26,14 +26,34 @@ public final class BehaviorAnalyzer {
 	 */
 	public BehaviorAnalysis analyze(MessageEvent event) {
 		if (event == null) {
-			return new BehaviorAnalysis("", "", false, false, false, false, 0);
+			return new BehaviorAnalysis("", "", false, false, false, false, 0, java.util.List.of());
 		}
 
 		String normalized = event.normalizedMessage();
 		String playerKey = event.playerName() == null ? "" : event.playerName().trim().toLowerCase(Locale.ROOT);
-		int repeated = playerKey.isBlank()
-			? 0
-			: repeatedContactByPlayer.merge(playerKey, 1, Integer::sum);
+		if (playerKey.isBlank()) {
+			resetStreak();
+			return new BehaviorAnalysis(
+				event.rawMessage(),
+				normalized,
+				false,
+				false,
+				false,
+				false,
+				0,
+				java.util.List.of()
+			);
+		}
+
+		if (!playerKey.equals(lastPlayerKey)) {
+			resetStreak();
+		}
+
+		consecutiveCount++;
+		if (event.rawMessage() != null && !event.rawMessage().isBlank()) {
+			consecutiveMessages.add(event.rawMessage());
+		}
+		lastPlayerKey = playerKey;
 
 		ScamRules.BehaviorPatternSet patterns = ruleConfig.behaviorPatterns();
 		return new BehaviorAnalysis(
@@ -43,7 +63,8 @@ public final class BehaviorAnalyzer {
 			matches(patterns.upfrontPayment(), normalized),
 			matches(patterns.accountData(), normalized),
 			matches(patterns.middlemanClaim(), normalized),
-			repeated
+			consecutiveCount,
+			java.util.List.copyOf(consecutiveMessages)
 		);
 	}
 
@@ -51,7 +72,13 @@ public final class BehaviorAnalyzer {
 	 * Clears per-player repeat contact counters.
 	 */
 	public void reset() {
-		repeatedContactByPlayer.clear();
+		resetStreak();
+	}
+
+	private void resetStreak() {
+		lastPlayerKey = null;
+		consecutiveCount = 0;
+		consecutiveMessages.clear();
 	}
 
 	private static boolean matches(java.util.regex.Pattern pattern, String text) {

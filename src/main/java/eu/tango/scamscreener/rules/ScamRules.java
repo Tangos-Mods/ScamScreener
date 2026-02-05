@@ -263,7 +263,7 @@ public final class ScamRules {
 				config.localAiMaxScore,
 				config.localAiTriggerProbability,
 				parseRiskLevelOrDefault(config.minAlertRiskLevel, ScamRiskLevel.HIGH),
-				AutoCaptureAlertLevel.parseOrDefault(config.autoCaptureAlertLevel, AutoCaptureAlertLevel.HIGH),
+				AutoCaptureAlertLevel.parseOrDefault(config.autoCaptureAlertLevel, AutoCaptureAlertLevel.OFF),
 				parseDisabledRules(config.disabledRules)
 			);
 		}

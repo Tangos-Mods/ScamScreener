@@ -6,6 +6,7 @@ import eu.tango.scamscreener.ai.TrainingDataService;
 import eu.tango.scamscreener.ai.LocalAiTrainer;
 import eu.tango.scamscreener.blacklist.BlacklistManager;
 import eu.tango.scamscreener.commands.ScamScreenerCommands;
+import eu.tango.scamscreener.config.DebugConfig;
 import eu.tango.scamscreener.config.LocalAiModelConfig;
 import eu.tango.scamscreener.chat.mute.MutePatternManager;
 import eu.tango.scamscreener.chat.party.PartyScanController;
@@ -24,6 +25,7 @@ import eu.tango.scamscreener.rules.ScamRules;
 import eu.tango.scamscreener.ui.Messages;
 import eu.tango.scamscreener.ui.MessageFlagging;
 import eu.tango.scamscreener.ui.Keybinds;
+import eu.tango.scamscreener.ui.DebugMessages;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
@@ -78,6 +80,7 @@ public class ScamScreenerClient implements ClientModInitializer {
 	private final PartyScanController partyScanController = new PartyScanController(PARTY_SCAN_INTERVAL_TICKS);
 	private final Set<UUID> currentlyDetected = new HashSet<>();
 	private final Set<String> warnedContexts = new HashSet<>();
+	private DebugConfig debugConfig;
 	private boolean checkedModelUpdate;
 
 	@Override
@@ -85,6 +88,7 @@ public class ScamScreenerClient implements ClientModInitializer {
 		BLACKLIST.load();
 		ScamRules.reloadConfig();
 		mutePatternManager.load();
+		loadDebugConfig();
 		registerCommands();
 		Keybinds.register();
 		ClientLifecycleEvents.CLIENT_STARTED.register(client -> Keybinds.register());
@@ -102,7 +106,9 @@ public class ScamScreenerClient implements ClientModInitializer {
 			this::captureBulkLegit,
 			this::migrateTrainingData,
 			this::handleModelUpdateCommand,
-			this::setUpdaterDebug,
+			this::setAllDebug,
+			this::setDebugKey,
+			this::debugStateSnapshot,
 			this::trainLocalAiModel,
 			this::resetLocalAiModel,
 			trainingDataService::lastCapturedLine,
@@ -183,20 +189,24 @@ public class ScamScreenerClient implements ClientModInitializer {
 	private void checkPartyTabAndWarn(Minecraft client) {
 		Component footer = tabFooterAccessor.readFooter(client);
 		if (footer == null) {
+			debugParty("party tab footer empty");
 			return;
 		}
 
 		for (String memberName : partyTabParser.extractPartyMembers(footer.getString())) {
 			UUID uuid = playerLookup.findUuidByName(memberName);
 			if (uuid == null || !BLACKLIST.contains(uuid)) {
+				debugParty("party member " + memberName + " not blacklisted");
 				continue;
 			}
 
 			String dedupeKey = "party-tab:" + uuid;
 			if (!warnedContexts.add(dedupeKey)) {
+				debugParty("party member " + memberName + " already warned");
 				continue;
 			}
 
+			debugParty("party member blacklisted: " + memberName);
 			sendBlacklistWarning(memberName, uuid, "listed in your party tab");
 		}
 	}
@@ -206,6 +216,7 @@ public class ScamScreenerClient implements ClientModInitializer {
 		trainingDataService.recordChatLine(plain);
 		String ownName = Minecraft.getInstance().player == null ? null : Minecraft.getInstance().player.getGameProfile().name();
 		if (partyScanController.updateStateFromMessage(plain, ownName)) {
+			debugParty("party scan state changed by message: " + plain);
 			clearPartyTabDedupe();
 		}
 
@@ -231,6 +242,7 @@ public class ScamScreenerClient implements ClientModInitializer {
 	private boolean handleChatAllow(Component message) {
 		String plain = message == null ? "" : message.getString();
 		if (mutePatternManager.shouldBlock(plain)) {
+			debugMute("blocked chat: " + plain);
 			return false;
 		}
 		ChatLineParser.ParsedPlayerLine parsed = ChatLineParser.parsePlayerLine(plain);
@@ -444,8 +456,68 @@ public class ScamScreenerClient implements ClientModInitializer {
 		};
 	}
 
-	private void setUpdaterDebug(int enabled) {
-		modelUpdateService.setDebugEnabled(enabled > 0);
+	private boolean debugParty;
+	private boolean debugTrade;
+	private boolean debugMute;
+
+	private void setAllDebug(boolean enabled) {
+		modelUpdateService.setDebugEnabled(enabled);
+		debugParty = enabled;
+		debugTrade = enabled;
+		debugMute = enabled;
+		updateDebugConfig(enabled, enabled, enabled, enabled);
+	}
+
+	private void setDebugKey(String key, boolean enabled) {
+		if (key == null) {
+			return;
+		}
+		String normalized = key.trim().toLowerCase(java.util.Locale.ROOT);
+		switch (normalized) {
+			case "updater" -> modelUpdateService.setDebugEnabled(enabled);
+			case "party" -> debugParty = enabled;
+			case "trade" -> debugTrade = enabled;
+			case "mute" -> debugMute = enabled;
+			default -> {
+			}
+		}
+		updateDebugConfig(
+			modelUpdateService.isDebugEnabled(),
+			debugParty,
+			debugTrade,
+			debugMute
+		);
+	}
+
+	private java.util.Map<String, Boolean> debugStateSnapshot() {
+		java.util.Map<String, Boolean> states = new java.util.LinkedHashMap<>();
+		states.put("updater", modelUpdateService.isDebugEnabled());
+		states.put("party", debugParty);
+		states.put("trade", debugTrade);
+		states.put("mute", debugMute);
+		return states;
+	}
+
+	private void loadDebugConfig() {
+		debugConfig = DebugConfig.loadOrCreate();
+		if (debugConfig == null) {
+			debugConfig = new DebugConfig();
+		}
+		modelUpdateService.setDebugEnabled(debugConfig.updater);
+		debugParty = debugConfig.party;
+		debugTrade = debugConfig.trade;
+		debugMute = debugConfig.mute;
+	}
+
+	private void updateDebugConfig(boolean updater, boolean party, boolean trade, boolean mute) {
+		if (debugConfig == null) {
+			debugConfig = new DebugConfig();
+		}
+		debugConfig.updater = updater;
+		debugConfig.party = party;
+		debugConfig.trade = trade;
+		debugConfig.mute = mute;
+		DebugConfig.save(debugConfig);
 	}
 
 	private int migrateTrainingData() {
@@ -554,16 +626,39 @@ public class ScamScreenerClient implements ClientModInitializer {
 		}
 
 		UUID uuid = playerLookup.findUuidByName(playerName);
+		debugTrade("trade trigger " + context.name().toLowerCase(java.util.Locale.ROOT) + " player=" + playerName + " blacklisted=" + (uuid != null && BLACKLIST.contains(uuid)));
 		if (uuid == null || !BLACKLIST.contains(uuid)) {
 			return;
 		}
 
 		String dedupeKey = context.dedupeKey(uuid);
 		if (!warnedContexts.add(dedupeKey)) {
+			debugTrade("trade trigger already warned: " + playerName);
 			return;
 		}
 
 		sendBlacklistWarning(playerName, uuid, context.triggerReason());
+	}
+
+	private void debugParty(String message) {
+		if (!debugParty) {
+			return;
+		}
+		reply(DebugMessages.party(message));
+	}
+
+	private void debugTrade(String message) {
+		if (!debugTrade) {
+			return;
+		}
+		reply(DebugMessages.trade(message));
+	}
+
+	private void debugMute(String message) {
+		if (!debugMute) {
+			return;
+		}
+		reply(DebugMessages.mute(message));
 	}
 
 	private void sendWarning(String playerName, UUID uuid) {

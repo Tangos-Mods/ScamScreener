@@ -13,7 +13,6 @@ import net.minecraft.network.chat.Component;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.IntConsumer;
 import java.util.function.IntSupplier;
 import java.util.function.Supplier;
 
@@ -26,7 +25,9 @@ public final class ScamScreenerCommands {
 	private final CaptureBulkHandler captureBulkHandler;
 	private final MigrateTrainingHandler migrateTrainingHandler;
 	private final ModelUpdateHandler modelUpdateHandler;
-	private final IntConsumer updaterDebugHandler;
+	private final java.util.function.Consumer<Boolean> setAllDebugHandler;
+	private final java.util.function.BiConsumer<String, Boolean> setDebugKeyHandler;
+	private final java.util.function.Supplier<java.util.Map<String, Boolean>> debugStateSupplier;
 	private final IntSupplier trainHandler;
 	private final IntSupplier resetAiHandler;
 	private final Supplier<String> lastCapturedChatSupplier;
@@ -42,7 +43,9 @@ public final class ScamScreenerCommands {
 		CaptureBulkHandler captureBulkHandler,
 		MigrateTrainingHandler migrateTrainingHandler,
 		ModelUpdateHandler modelUpdateHandler,
-		IntConsumer updaterDebugHandler,
+		java.util.function.Consumer<Boolean> setAllDebugHandler,
+		java.util.function.BiConsumer<String, Boolean> setDebugKeyHandler,
+		java.util.function.Supplier<java.util.Map<String, Boolean>> debugStateSupplier,
 		IntSupplier trainHandler,
 		IntSupplier resetAiHandler,
 		Supplier<String> lastCapturedChatSupplier,
@@ -57,7 +60,9 @@ public final class ScamScreenerCommands {
 		this.captureBulkHandler = captureBulkHandler;
 		this.migrateTrainingHandler = migrateTrainingHandler;
 		this.modelUpdateHandler = modelUpdateHandler;
-		this.updaterDebugHandler = updaterDebugHandler;
+		this.setAllDebugHandler = setAllDebugHandler;
+		this.setDebugKeyHandler = setDebugKeyHandler;
+		this.debugStateSupplier = debugStateSupplier;
 		this.trainHandler = trainHandler;
 		this.resetAiHandler = resetAiHandler;
 		this.lastCapturedChatSupplier = lastCapturedChatSupplier;
@@ -96,7 +101,7 @@ public final class ScamScreenerCommands {
 			))
 			.then(RuleCommand.build(reply))
 			.then(AlertLevelCommand.build(reply))
-			.then(DebugCommand.build(updaterDebugHandler, reply))
+			.then(DebugCommand.build(setAllDebugHandler, setDebugKeyHandler, debugStateSupplier, reply))
 			.then(VersionCommand.build(reply))
 			.then(PreviewCommand.build(reply, lastCapturedChatSupplier));
 	}
