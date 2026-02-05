@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder;
 import eu.tango.scamscreener.config.LocalAiModelConfig;
 import eu.tango.scamscreener.rules.ScamRules;
 import eu.tango.scamscreener.ui.Messages;
+import eu.tango.scamscreener.ui.DebugMessages;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
@@ -34,11 +35,17 @@ public final class ModelUpdateService {
 	private static final String VERSION_URL = "https://raw.githubusercontent.com/Tangos-Mods/ScamScreener/main/scripts/model-version.json";
 
 	private final Map<String, PendingModel> pending = new LinkedHashMap<>();
+	private boolean debugEnabled;
 
 	public void checkForUpdateAsync(Consumer<Component> reply) {
+		debug(reply, "check started");
 		Thread thread = new Thread(() -> checkForUpdate(reply), "scamscreener-model-check");
 		thread.setDaemon(true);
 		thread.start();
+	}
+
+	public void setDebugEnabled(boolean enabled) {
+		debugEnabled = enabled;
 	}
 
 	public int download(String id, Consumer<Component> reply) {
@@ -47,6 +54,7 @@ public final class ModelUpdateService {
 			reply.accept(Messages.modelUpdateNotFound());
 			return 0;
 		}
+		debug(reply, "download requested id=" + id);
 		Thread thread = new Thread(() -> downloadModel(id, pendingModel, reply), "scamscreener-model-download");
 		thread.setDaemon(true);
 		thread.start();
@@ -63,9 +71,11 @@ public final class ModelUpdateService {
 			writeModel(pendingModel.content());
 			ScamRules.reloadConfig();
 			reply.accept(Messages.modelUpdateApplied("accepted"));
+			debug(reply, "accepted id=" + id);
 			pending.remove(id);
 			return 1;
 		} catch (IOException e) {
+			debug(reply, "accept failed: " + e.getMessage());
 			reply.accept(Messages.modelUpdateFailed(e.getMessage()));
 			return 0;
 		}
@@ -95,9 +105,11 @@ public final class ModelUpdateService {
 			LocalAiModelConfig.save(incoming);
 			ScamRules.reloadConfig();
 			reply.accept(Messages.modelUpdateApplied("merged"));
+			debug(reply, "merged id=" + id);
 			pending.remove(id);
 			return 1;
 		} catch (Exception e) {
+			debug(reply, "merge failed: " + e.getMessage());
 			reply.accept(Messages.modelUpdateFailed(e.getMessage()));
 			return 0;
 		}
@@ -106,6 +118,7 @@ public final class ModelUpdateService {
 	public int ignore(String id, Consumer<Component> reply) {
 		if (pending.remove(id) != null) {
 			reply.accept(Messages.modelUpdateIgnored());
+			debug(reply, "ignored id=" + id);
 			return 1;
 		}
 		reply.accept(Messages.modelUpdateNotFound());
@@ -114,29 +127,38 @@ public final class ModelUpdateService {
 
 	private void checkForUpdate(Consumer<Component> reply) {
 		ModelVersionInfo info = fetchVersionInfo();
+		if (info == null) {
+			debug(reply, "version info not found");
+		}
 		if (info == null || info.url == null || info.url.isBlank()) {
 			return;
 		}
 		String localHash = hashLocalModel();
+		debug(reply, "local hash=" + (localHash == null ? "none" : localHash));
+		debug(reply, "remote sha256=" + (info.sha256 == null ? "none" : info.sha256));
 		if (localHash != null && info.sha256 != null && !info.sha256.isBlank()
 			&& localHash.equalsIgnoreCase(info.sha256.trim())) {
+			debug(reply, "no update (hash match)");
 			return;
 		}
 
 		String id = UUID.randomUUID().toString().replace("-", "");
 		pending.put(id, new PendingModel(info, null));
 		reply.accept(Messages.modelUpdateAvailable(buildDownloadComponent(id)));
+		debug(reply, "update available id=" + id);
 	}
 
 	private void downloadModel(String id, PendingModel pendingModel, Consumer<Component> reply) {
 		String payload = fetchText(pendingModel.info().url);
 		if (payload == null || payload.isBlank()) {
+			debug(reply, "download failed (empty)");
 			reply.accept(Messages.modelUpdateFailed("download failed"));
 			return;
 		}
 		if (pendingModel.info().sha256 != null && !pendingModel.info().sha256.isBlank()) {
 			String hash = sha256(payload.getBytes(StandardCharsets.UTF_8));
 			if (hash != null && !hash.equalsIgnoreCase(pendingModel.info().sha256.trim())) {
+				debug(reply, "sha256 mismatch");
 				reply.accept(Messages.modelUpdateFailed("sha256 mismatch"));
 				return;
 			}
@@ -144,6 +166,7 @@ public final class ModelUpdateService {
 
 		pending.put(id, new PendingModel(pendingModel.info(), payload));
 		reply.accept(Messages.modelUpdateReady(buildActionComponent(id)));
+		debug(reply, "downloaded id=" + id);
 	}
 
 	private static void writeModel(String payload) throws IOException {
@@ -208,6 +231,13 @@ public final class ModelUpdateService {
 		} catch (Exception ignored) {
 			return null;
 		}
+	}
+
+	private void debug(Consumer<Component> reply, String message) {
+		if (!debugEnabled || reply == null) {
+			return;
+		}
+		reply.accept(DebugMessages.updater(message));
 	}
 
 	private static MutableComponent buildDownloadComponent(String id) {

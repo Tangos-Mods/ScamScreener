@@ -102,6 +102,7 @@ public class ScamScreenerClient implements ClientModInitializer {
 			this::captureBulkLegit,
 			this::migrateTrainingData,
 			this::handleModelUpdateCommand,
+			this::setUpdaterDebug,
 			this::trainLocalAiModel,
 			this::resetLocalAiModel,
 			trainingDataService::lastCapturedLine,
@@ -441,6 +442,10 @@ public class ScamScreenerClient implements ClientModInitializer {
 			case "ignore" -> ignoreModelUpdate(id);
 			default -> 0;
 		};
+	}
+
+	private void setUpdaterDebug(int enabled) {
+		modelUpdateService.setDebugEnabled(enabled > 0);
 	}
 
 	private int migrateTrainingData() {

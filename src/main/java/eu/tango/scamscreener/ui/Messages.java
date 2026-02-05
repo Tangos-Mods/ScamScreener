@@ -239,6 +239,7 @@ public final class Messages {
 			.append(Component.literal("Model update ignored.").withStyle(ChatFormatting.GRAY));
 	}
 
+
 	public static MutableComponent trainingCompleted(int sampleCount, int positiveCount, String archivedFilename) {
 		return Component.literal(PREFIX)
 			.withStyle(style -> style.withColor(PREFIX_LIGHT_RED))
