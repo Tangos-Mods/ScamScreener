@@ -31,7 +31,7 @@ public final class ModelUpdateService {
 	private static final HttpClient HTTP = HttpClient.newBuilder()
 		.connectTimeout(Duration.ofSeconds(6))
 		.build();
-	private static final String VERSION_URL = "TODO: https://raw.githubusercontent.com/<owner>/<repo>/<branch>/model-version.json";
+	private static final String VERSION_URL = "https://raw.githubusercontent.com/Tangos-Mods/ScamScreener/main/scripts/model-version.json";
 
 	private final Map<String, PendingModel> pending = new LinkedHashMap<>();
 
