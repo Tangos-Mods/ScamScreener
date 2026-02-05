@@ -2,7 +2,6 @@ package eu.tango.scamscreener.commands;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import eu.tango.scamscreener.blacklist.BlacklistManager;
-import eu.tango.scamscreener.detection.ChatLineParser;
 import eu.tango.scamscreener.rules.ScamRules;
 import eu.tango.scamscreener.ui.Messages;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
@@ -71,34 +70,6 @@ final class PreviewCommand {
 		Supplier<String> lastCapturedChatSupplier,
 		ScamRules.ScamAssessment fallbackAssessment
 	) {
-		if (lastCapturedChatSupplier == null) {
-			return Messages.behaviorRiskWarning("DemoPlayer", fallbackAssessment);
-		}
-
-		String line = lastCapturedChatSupplier.get();
-		ChatLineParser.ParsedPlayerLine parsed = ChatLineParser.parsePlayerLine(line);
-		if (parsed == null) {
-			return Messages.behaviorRiskWarning("DemoPlayer", fallbackAssessment);
-		}
-
-		String normalized = parsed.message().toLowerCase(java.util.Locale.ROOT);
-		ScamRules.BehaviorContext context = new ScamRules.BehaviorContext(
-			parsed.message(),
-			containsAny(normalized, "discord", "telegram", "t.me", "dm me", "add me"),
-			containsAny(normalized, "pay first", "send first", "vorkasse", "first payment"),
-			containsAny(normalized, "password", "passwort", "2fa", "auth code", "email login"),
-			containsAny(normalized, "trusted middleman", "legit middleman", "middleman"),
-			1
-		);
-		return Messages.behaviorRiskWarning(parsed.playerName(), ScamRules.assess(context));
-	}
-
-	private static boolean containsAny(String text, String... tokens) {
-		for (String token : tokens) {
-			if (text.contains(token)) {
-				return true;
-			}
-		}
-		return false;
+		return Messages.behaviorRiskWarning("DemoPlayer", fallbackAssessment);
 	}
 }

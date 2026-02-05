@@ -31,6 +31,7 @@ public final class LocalAiModelConfig {
 	public double ctxDemandsUpfrontPayment = 0.70;
 	public double ctxRequestsSensitiveData = 1.10;
 	public double ctxClaimsMiddlemanWithoutProof = 0.45;
+	public double ctxTooGoodToBeTrue = 0.30;
 	public double ctxRepeatedContact3Plus = 0.35;
 	public double ctxIsSpam = 0.30;
 	public double ctxAsksForStuff = 0.25;

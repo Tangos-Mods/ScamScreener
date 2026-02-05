@@ -39,6 +39,7 @@ public final class LocalAiScorer {
 			+ f.ctxDemandsUpfrontPayment * w.ctxDemandsUpfrontPayment
 			+ f.ctxRequestsSensitiveData * w.ctxRequestsSensitiveData
 			+ f.ctxClaimsMiddlemanWithoutProof * w.ctxClaimsMiddlemanWithoutProof
+			+ f.ctxTooGoodToBeTrue * w.ctxTooGoodToBeTrue
 			+ f.ctxRepeatedContact3Plus * w.ctxRepeatedContact3Plus
 			+ f.ctxIsSpam * w.ctxIsSpam
 			+ f.ctxAsksForStuff * w.ctxAsksForStuff
@@ -69,6 +70,7 @@ public final class LocalAiScorer {
 			bool(context.demandsUpfrontPayment()),
 			bool(context.requestsSensitiveData()),
 			bool(context.claimsTrustedMiddlemanWithoutProof()),
+			bool(hasAny(message, TOO_GOOD_WORDS)),
 			bool(context.repeatedContactAttempts() >= 3),
 			bool(hasAny(message, "spam", "last chance", "buy now", "cheap", "limited")),
 			bool(hasAny(message, "can i borrow", "borrow", "lend me", "give me", "can i have")),
@@ -163,6 +165,7 @@ public final class LocalAiScorer {
 		addFeatureContribution(contributions, "ctxDemandsUpfrontPayment", f.ctxDemandsUpfrontPayment, w.ctxDemandsUpfrontPayment);
 		addFeatureContribution(contributions, "ctxRequestsSensitiveData", f.ctxRequestsSensitiveData, w.ctxRequestsSensitiveData);
 		addFeatureContribution(contributions, "ctxClaimsMiddlemanWithoutProof", f.ctxClaimsMiddlemanWithoutProof, w.ctxClaimsMiddlemanWithoutProof);
+		addFeatureContribution(contributions, "ctxTooGoodToBeTrue", f.ctxTooGoodToBeTrue, w.ctxTooGoodToBeTrue);
 		addFeatureContribution(contributions, "ctxRepeatedContact3Plus", f.ctxRepeatedContact3Plus, w.ctxRepeatedContact3Plus);
 		addFeatureContribution(contributions, "ctxIsSpam", f.ctxIsSpam, w.ctxIsSpam);
 		addFeatureContribution(contributions, "ctxAsksForStuff", f.ctxAsksForStuff, w.ctxAsksForStuff);
@@ -228,6 +231,7 @@ public final class LocalAiScorer {
 		double ctxDemandsUpfrontPayment,
 		double ctxRequestsSensitiveData,
 		double ctxClaimsMiddlemanWithoutProof,
+		double ctxTooGoodToBeTrue,
 		double ctxRepeatedContact3Plus,
 		double ctxIsSpam,
 		double ctxAsksForStuff,
@@ -249,6 +253,7 @@ public final class LocalAiScorer {
 		double ctxDemandsUpfrontPayment,
 		double ctxRequestsSensitiveData,
 		double ctxClaimsMiddlemanWithoutProof,
+		double ctxTooGoodToBeTrue,
 		double ctxRepeatedContact3Plus,
 		double ctxIsSpam,
 		double ctxAsksForStuff,
@@ -270,6 +275,7 @@ public final class LocalAiScorer {
 				cfg.ctxDemandsUpfrontPayment,
 				cfg.ctxRequestsSensitiveData,
 				cfg.ctxClaimsMiddlemanWithoutProof,
+				cfg.ctxTooGoodToBeTrue,
 				cfg.ctxRepeatedContact3Plus,
 				cfg.ctxIsSpam,
 				cfg.ctxAsksForStuff,

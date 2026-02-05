@@ -1,4 +1,4 @@
-package eu.tango.scamscreener.detection;
+package eu.tango.scamscreener.chat.trigger;
 
 import java.util.UUID;
 import java.util.regex.Matcher;

@@ -25,6 +25,10 @@ final class AiCommand {
 
 	static LiteralArgumentBuilder<FabricClientCommandSource> build(
 		ScamScreenerCommands.CaptureByPlayerHandler captureByPlayerHandler,
+		ScamScreenerCommands.CaptureByMessageHandler captureByMessageHandler,
+		ScamScreenerCommands.CaptureBulkHandler captureBulkHandler,
+		ScamScreenerCommands.MigrateTrainingHandler migrateTrainingHandler,
+		ScamScreenerCommands.ModelUpdateHandler modelUpdateHandler,
 		IntSupplier trainHandler,
 		IntSupplier resetAiHandler,
 		Consumer<Component> reply
@@ -48,12 +52,44 @@ final class AiCommand {
 					false
 				)));
 
+		LiteralArgumentBuilder<FabricClientCommandSource> flag = ClientCommandManager.literal("flag")
+			.then(ClientCommandManager.argument("messageId", StringArgumentType.word())
+				.then(ClientCommandManager.literal("legit").executes(context ->
+					captureByMessageHandler.capture(StringArgumentType.getString(context, "messageId"), LEGIT_LABEL)))
+				.then(ClientCommandManager.literal("scam").executes(context ->
+					captureByMessageHandler.capture(StringArgumentType.getString(context, "messageId"), SCAM_LABEL))));
+
+		LiteralArgumentBuilder<FabricClientCommandSource> captureBulk = ClientCommandManager.literal("capturebulk")
+			.then(ClientCommandManager.argument("count", IntegerArgumentType.integer(1, TrainingDataService.MAX_CAPTURED_CHAT_LINES))
+				.executes(context -> captureBulkHandler.capture(IntegerArgumentType.getInteger(context, "count"))));
+
+		LiteralArgumentBuilder<FabricClientCommandSource> migrate = ClientCommandManager.literal("migrate")
+			.executes(context -> migrateTrainingHandler.migrate());
+
+		LiteralArgumentBuilder<FabricClientCommandSource> model = ClientCommandManager.literal("model")
+			.then(ClientCommandManager.literal("download")
+				.then(ClientCommandManager.argument("id", StringArgumentType.word())
+					.executes(context -> modelUpdateHandler.handle("download", StringArgumentType.getString(context, "id")))))
+			.then(ClientCommandManager.literal("accept")
+				.then(ClientCommandManager.argument("id", StringArgumentType.word())
+					.executes(context -> modelUpdateHandler.handle("accept", StringArgumentType.getString(context, "id")))))
+			.then(ClientCommandManager.literal("merge")
+				.then(ClientCommandManager.argument("id", StringArgumentType.word())
+					.executes(context -> modelUpdateHandler.handle("merge", StringArgumentType.getString(context, "id")))))
+			.then(ClientCommandManager.literal("ignore")
+				.then(ClientCommandManager.argument("id", StringArgumentType.word())
+					.executes(context -> modelUpdateHandler.handle("ignore", StringArgumentType.getString(context, "id")))));
+
 		return ClientCommandManager.literal("ai")
 			.executes(context -> {
 				reply.accept(Messages.aiCommandHelp());
 				return 1;
 			})
 			.then(capture)
+			.then(captureBulk)
+			.then(flag)
+			.then(migrate)
+			.then(model)
 			.then(ClientCommandManager.literal("train").executes(context -> trainHandler.getAsInt()))
 			.then(ClientCommandManager.literal("reset").executes(context -> resetAiHandler.getAsInt()))
 			.then(ClientCommandManager.literal("autocapture")

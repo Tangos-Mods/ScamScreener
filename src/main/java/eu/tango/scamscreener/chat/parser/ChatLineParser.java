@@ -1,4 +1,4 @@
-package eu.tango.scamscreener.detection;
+package eu.tango.scamscreener.chat.parser;
 
 import java.util.Locale;
 import java.util.Set;

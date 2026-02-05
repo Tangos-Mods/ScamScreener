@@ -83,6 +83,21 @@ Wenn Schwellwerte erreicht werden:
 
 ---
 
+## Internal architecture (pipeline)
+
+- Jede Chatzeile wird zu einem `MessageEvent` (Raw + Normalized) geparst.
+- `MuteStage` filtert gemutete Nachrichten frueh aus.
+- `RuleSignalStage` erzeugt Signals aus Regex-Regeln (Pattern werden einmal kompiliert).
+- `BehaviorSignalStage` erzeugt Signals aus Verhalten (z. B. upfront payment, external platform) und nutzt Patterns aus `scam-screener-rules.json`.
+- `AiSignalStage` kapselt das Local-AI-Scoring und liefert ein neutral-gewichtetes Signal.
+- `TrendSignalStage` nutzt einen `TrendStore` pro Spieler (TTL-Deque) fuer Multi-Message-Patterns.
+- `ScoringStage` kombiniert alle Signals in Score + Level und generiert Explainability-Daten.
+- `DecisionStage` prueft Alert-Level + Dedupe, bevor gewarnt wird.
+- `OutputStage` kapselt UI/Audio (Chat-Warnung, Hover-Details, Sound).
+- Behavior-Patterns stammen aus `scam-screener-rules.json` (`externalPlatformPattern`, `upfrontPaymentBehaviorPattern`, `accountDataBehaviorPattern`, `middlemanPattern`).
+
+---
+
 ## Installation (User)
 
 Voraussetzungen:
@@ -192,4 +207,3 @@ Tipps:
 ## Lizenz
 
 Siehe `LICENSE`.
-

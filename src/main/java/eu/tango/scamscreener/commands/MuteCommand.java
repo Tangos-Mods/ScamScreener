@@ -2,7 +2,7 @@ package eu.tango.scamscreener.commands;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import eu.tango.scamscreener.detection.MutePatternManager;
+import eu.tango.scamscreener.chat.mute.MutePatternManager;
 import eu.tango.scamscreener.ui.Messages;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;

@@ -28,6 +28,10 @@ final class TrainingTypeAiClassifier {
 		middlemanScore += tokenScore(text, 0.8, "middleman", "mm");
 		middlemanScore += tokenScore(text, 0.4, "trust me", "trusted", "safe trade");
 
+		double tooGoodScore = 0.0;
+		tooGoodScore += tokenScore(text, 1.2, "free coins", "free rank", "100% safe", "guaranteed", "garantiert");
+		tooGoodScore += tokenScore(text, 0.8, "free", "dupe", "rank");
+
 		double repeatedContactScore = 0.0;
 		repeatedContactScore += tokenScore(text, 1.0, "again", "still waiting", "reply", "respond");
 		repeatedContactScore += tokenScore(text, 0.6, "??", "!!!", "last chance");
@@ -49,6 +53,7 @@ final class TrainingTypeAiClassifier {
 			.set(TrainingFlags.Flag.DEMANDS_UPFRONT_PAYMENT, bool(sigmoid(upfrontPaymentScore) >= THRESHOLD))
 			.set(TrainingFlags.Flag.REQUESTS_SENSITIVE_DATA, bool(sigmoid(sensitiveDataScore) >= THRESHOLD))
 			.set(TrainingFlags.Flag.CLAIMS_MIDDLEMAN_WITHOUT_PROOF, bool(sigmoid(middlemanScore) >= THRESHOLD))
+			.set(TrainingFlags.Flag.TOO_GOOD_TO_BE_TRUE, bool(sigmoid(tooGoodScore) >= THRESHOLD))
 			.set(TrainingFlags.Flag.REPEATED_CONTACT_ATTEMPTS, bool(sigmoid(repeatedContactScore) >= THRESHOLD))
 			.set(TrainingFlags.Flag.IS_SPAM, bool(sigmoid(spamScore) >= THRESHOLD))
 			.set(TrainingFlags.Flag.ASKS_FOR_STUFF, bool(sigmoid(askingForStuffScore) >= THRESHOLD))

@@ -1,4 +1,4 @@
-package eu.tango.scamscreener.detection;
+package eu.tango.scamscreener.chat.mute;
 
 import eu.tango.scamscreener.config.MutePatternsConfig;
 

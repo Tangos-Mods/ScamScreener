@@ -1,4 +1,4 @@
-package eu.tango.scamscreener.detection;
+package eu.tango.scamscreener.chat.party;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;

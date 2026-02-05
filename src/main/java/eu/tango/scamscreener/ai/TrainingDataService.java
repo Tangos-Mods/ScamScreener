@@ -1,7 +1,7 @@
 package eu.tango.scamscreener.ai;
 
 import eu.tango.scamscreener.config.ScamScreenerPaths;
-import eu.tango.scamscreener.detection.ChatLineParser;
+import eu.tango.scamscreener.chat.parser.ChatLineParser;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -130,27 +130,56 @@ public final class TrainingDataService {
 		);
 	}
 
-	private static void ensureLatestHeader() throws IOException {
+	private static int ensureLatestHeader() throws IOException {
 		if (!Files.exists(TRAINING_DATA_PATH)) {
-			return;
+			return 0;
 		}
 
 		List<String> lines = Files.readAllLines(TRAINING_DATA_PATH, StandardCharsets.UTF_8);
 		if (lines.isEmpty()) {
 			Files.writeString(TRAINING_DATA_PATH, TRAINING_HEADER + System.lineSeparator(), StandardCharsets.UTF_8);
-			return;
+			return 0;
 		}
 
 		String first = lines.get(0).trim();
 		if (TRAINING_HEADER.equals(first)) {
-			return;
+			return 0;
 		}
-		if (!LEGACY_TRAINING_HEADER.equals(first)) {
-			return;
+		if (LEGACY_TRAINING_HEADER.equals(first)) {
+			lines.set(0, TRAINING_HEADER);
+			Files.write(TRAINING_DATA_PATH, lines, StandardCharsets.UTF_8);
+			return Math.max(0, lines.size() - 1);
 		}
 
-		lines.set(0, TRAINING_HEADER);
-		Files.write(TRAINING_DATA_PATH, lines, StandardCharsets.UTF_8);
+		if (first.startsWith("message,label,")) {
+			int existingColumns = first.split(",", -1).length;
+			int expectedColumns = TRAINING_HEADER.split(",", -1).length;
+			int missing = expectedColumns - existingColumns;
+			if (missing > 0) {
+				int updated = 0;
+				for (int i = 1; i < lines.size(); i++) {
+					String line = lines.get(i).trim();
+					if (line.isEmpty()) {
+						continue;
+					}
+					StringBuilder updatedLine = new StringBuilder(line);
+					for (int j = 0; j < missing; j++) {
+						updatedLine.append(",0");
+					}
+					lines.set(i, updatedLine.toString());
+					updated++;
+				}
+				lines.set(0, TRAINING_HEADER);
+				Files.write(TRAINING_DATA_PATH, lines, StandardCharsets.UTF_8);
+				return updated;
+			}
+		}
+		return 0;
+	}
+
+	public int migrateTrainingData() throws IOException {
+		ensureFileInitialized();
+		return ensureLatestHeader();
 	}
 
 	private String buildTrainingCsvRow(String message, int label) {

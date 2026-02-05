@@ -9,6 +9,7 @@ public final class TrainingFlags {
 		DEMANDS_UPFRONT_PAYMENT("demands_upfront_payment"),
 		REQUESTS_SENSITIVE_DATA("requests_sensitive_data"),
 		CLAIMS_MIDDLEMAN_WITHOUT_PROOF("claims_middleman_without_proof"),
+		TOO_GOOD_TO_BE_TRUE("too_good_to_be_true"),
 		REPEATED_CONTACT_ATTEMPTS("repeated_contact_attempts"),
 		IS_SPAM("is_spam"),
 		ASKS_FOR_STUFF("asks_for_stuff"),
