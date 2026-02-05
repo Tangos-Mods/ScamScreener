@@ -6,6 +6,7 @@ import eu.tango.scamscreener.blacklist.BlacklistManager;
 import eu.tango.scamscreener.commands.ScamScreenerCommands;
 import eu.tango.scamscreener.config.LocalAiModelConfig;
 import eu.tango.scamscreener.detection.ChatBehaviorDetector;
+import eu.tango.scamscreener.detection.MutePatternManager;
 import eu.tango.scamscreener.detection.PartyScanController;
 import eu.tango.scamscreener.detection.PartyTabParser;
 import eu.tango.scamscreener.detection.TriggerContext;
@@ -52,6 +53,7 @@ public class ScamScreenerClient implements ClientModInitializer {
 	private final TrainingDataService trainingDataService = new TrainingDataService();
 	private final LocalAiTrainer localAiTrainer = new LocalAiTrainer();
 	private final ChatBehaviorDetector chatBehaviorDetector = new ChatBehaviorDetector();
+	private final MutePatternManager mutePatternManager = new MutePatternManager();
 	private final PartyTabParser partyTabParser = new PartyTabParser();
 	private final PartyScanController partyScanController = new PartyScanController(PARTY_SCAN_INTERVAL_TICKS);
 	private final Set<UUID> currentlyDetected = new HashSet<>();
@@ -61,6 +63,7 @@ public class ScamScreenerClient implements ClientModInitializer {
 	public void onInitializeClient() {
 		BLACKLIST.load();
 		ScamRules.reloadConfig();
+		mutePatternManager.load();
 		registerCommands();
 		registerHypixelMessageChecks();
 		ClientTickEvents.END_CLIENT_TICK.register(this::onClientTick);
@@ -70,6 +73,7 @@ public class ScamScreenerClient implements ClientModInitializer {
 		ScamScreenerCommands commands = new ScamScreenerCommands(
 			BLACKLIST,
 			this::resolveTargetOrReply,
+			mutePatternManager,
 			this::captureChatAsTrainingData,
 			this::trainLocalAiModel,
 			this::resetLocalAiModel,
@@ -81,6 +85,8 @@ public class ScamScreenerClient implements ClientModInitializer {
 	}
 
 	private void registerHypixelMessageChecks() {
+		ClientReceiveMessageEvents.ALLOW_GAME.register((message, overlay) -> !mutePatternManager.shouldBlock(message.getString()));
+		ClientReceiveMessageEvents.ALLOW_CHAT.register((message, signedMessage, sender, params, timestamp) -> !mutePatternManager.shouldBlock(message.getString()));
 		ClientReceiveMessageEvents.GAME.register((message, overlay) -> handleHypixelMessage(message));
 		ClientReceiveMessageEvents.CHAT.register((message, signedMessage, sender, params, timestamp) -> handleHypixelMessage(message));
 	}
@@ -94,6 +100,8 @@ public class ScamScreenerClient implements ClientModInitializer {
 			partyScanController.reset();
 			return;
 		}
+
+		maybeNotifyBlockedMessages(client);
 
 		if (BLACKLIST.isEmpty()) {
 			currentlyDetected.clear();
@@ -187,6 +195,19 @@ public class ScamScreenerClient implements ClientModInitializer {
 
 	private void clearPartyTabDedupe() {
 		warnedContexts.removeIf(key -> key.startsWith("party-tab:"));
+	}
+
+	private void maybeNotifyBlockedMessages(Minecraft client) {
+		long now = System.currentTimeMillis();
+		if (!mutePatternManager.shouldNotifyNow(now)) {
+			return;
+		}
+
+		int blocked = mutePatternManager.consumeBlockedCount(now);
+		if (blocked <= 0 || client.player == null) {
+			return;
+		}
+		client.player.displayClientMessage(Messages.blockedMessagesSummary(blocked), false);
 	}
 
 	private int captureChatAsTrainingData(String playerName, int label, int count) {

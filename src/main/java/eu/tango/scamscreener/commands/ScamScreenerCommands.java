@@ -2,6 +2,7 @@ package eu.tango.scamscreener.commands;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import eu.tango.scamscreener.blacklist.BlacklistManager;
+import eu.tango.scamscreener.detection.MutePatternManager;
 import eu.tango.scamscreener.lookup.ResolvedTarget;
 import eu.tango.scamscreener.ui.Messages;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
@@ -18,6 +19,7 @@ import java.util.function.Supplier;
 public final class ScamScreenerCommands {
 	private final BlacklistManager blacklist;
 	private final Function<String, ResolvedTarget> targetResolver;
+	private final MutePatternManager mutePatternManager;
 	private final CaptureByPlayerHandler captureByPlayerHandler;
 	private final IntSupplier trainHandler;
 	private final IntSupplier resetAiHandler;
@@ -28,6 +30,7 @@ public final class ScamScreenerCommands {
 	public ScamScreenerCommands(
 		BlacklistManager blacklist,
 		Function<String, ResolvedTarget> targetResolver,
+		MutePatternManager mutePatternManager,
 		CaptureByPlayerHandler captureByPlayerHandler,
 		IntSupplier trainHandler,
 		IntSupplier resetAiHandler,
@@ -37,6 +40,7 @@ public final class ScamScreenerCommands {
 	) {
 		this.blacklist = blacklist;
 		this.targetResolver = targetResolver;
+		this.mutePatternManager = mutePatternManager;
 		this.captureByPlayerHandler = captureByPlayerHandler;
 		this.trainHandler = trainHandler;
 		this.resetAiHandler = resetAiHandler;
@@ -60,9 +64,12 @@ public final class ScamScreenerCommands {
 			.then(AddCommand.build(blacklist, targetResolver, reply))
 			.then(RemoveCommand.build(blacklist, targetResolver, onBlacklistRemoved, reply))
 			.then(ListCommand.build(blacklist, reply))
+			.then(MuteCommand.build(mutePatternManager, reply))
+			.then(UnmuteCommand.build(mutePatternManager, reply))
 			.then(AiCommand.build(captureByPlayerHandler, trainHandler, resetAiHandler, reply))
 			.then(RuleCommand.build(reply))
 			.then(AlertLevelCommand.build(reply))
+			.then(VersionCommand.build(reply))
 			.then(PreviewCommand.build(reply, lastCapturedChatSupplier));
 	}
 

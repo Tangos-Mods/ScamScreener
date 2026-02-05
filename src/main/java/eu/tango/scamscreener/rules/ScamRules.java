@@ -6,6 +6,7 @@ import eu.tango.scamscreener.config.ScamRulesConfig;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -218,7 +219,14 @@ public final class ScamRules {
 			}
 		}
 
-		return new ScamAssessment(score, mapLevel(score), triggered, details, context.message());
+		return new ScamAssessment(
+			score,
+			mapLevel(score),
+			triggered,
+			details,
+			context.message(),
+			List.of(context.message())
+		);
 	}
 
 	private static ScamRiskLevel mapLevel(int score) {
@@ -274,7 +282,8 @@ public final class ScamRules {
 		ScamRiskLevel riskLevel,
 		Set<ScamRule> triggeredRules,
 		Map<ScamRule, String> ruleDetails,
-		String evaluatedMessage
+		String evaluatedMessage,
+		List<String> evaluatedMessages
 	) {
 		public boolean shouldWarn() {
 			return riskLevel == ScamRiskLevel.HIGH || riskLevel == ScamRiskLevel.CRITICAL;
@@ -285,6 +294,13 @@ public final class ScamRules {
 				return null;
 			}
 			return ruleDetails.get(rule);
+		}
+
+		public List<String> allEvaluatedMessages() {
+			if (evaluatedMessages != null && !evaluatedMessages.isEmpty()) {
+				return evaluatedMessages;
+			}
+			return evaluatedMessage == null || evaluatedMessage.isBlank() ? List.of() : List.of(evaluatedMessage);
 		}
 	}
 

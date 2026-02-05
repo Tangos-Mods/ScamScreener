@@ -10,6 +10,7 @@ import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.network.chat.Component;
 
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -37,7 +38,8 @@ final class PreviewCommand {
 				ScamRules.ScamRule.FAKE_MIDDLEMAN_CLAIM, "Behavior flag claimsTrustedMiddlemanWithoutProof=true (+20)",
 				ScamRules.ScamRule.LOCAL_AI_RISK_SIGNAL, "Local AI probability=0.812, threshold=0.560 (+22)"
 			),
-			"this is legit middleman trust me and pay first"
+			"this is legit middleman trust me and pay first",
+			List.of("this is legit middleman trust me and pay first")
 		);
 
 		reply.accept(Component.literal("[ScamScreener] Preview dry run started."));

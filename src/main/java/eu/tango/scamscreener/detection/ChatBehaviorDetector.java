@@ -8,6 +8,7 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -74,17 +75,21 @@ public final class ChatBehaviorDetector {
 		while (!history.isEmpty() && now - history.peekFirst().timestampMillis() > TREND_WINDOW_MILLIS) {
 			history.removeFirst();
 		}
-		history.addLast(new RecentAssessment(now, assessment.riskScore(), !assessment.triggeredRules().isEmpty()));
+		history.addLast(new RecentAssessment(now, assessment.riskScore(), !assessment.triggeredRules().isEmpty(), assessment.evaluatedMessage()));
 		while (history.size() > 8) {
 			history.removeFirst();
 		}
 
 		int totalScore = 0;
 		int triggeredMessages = 0;
+		List<String> evaluatedMessages = new java.util.ArrayList<>();
 		for (RecentAssessment item : history) {
 			totalScore += Math.max(0, item.riskScore());
 			if (item.hadRules()) {
 				triggeredMessages++;
+			}
+			if (item.message() != null && !item.message().isBlank()) {
+				evaluatedMessages.add(item.message());
 			}
 		}
 
@@ -116,7 +121,8 @@ public final class ChatBehaviorDetector {
 			mapLevel(boostedScore),
 			updatedRules,
 			details,
-			assessment.evaluatedMessage()
+			assessment.evaluatedMessage(),
+			evaluatedMessages.isEmpty() ? assessment.allEvaluatedMessages() : evaluatedMessages
 		);
 	}
 
@@ -145,6 +151,6 @@ public final class ChatBehaviorDetector {
 	public record DetectionResult(ChatLineParser.ParsedPlayerLine parsedLine, ScamRules.ScamAssessment assessment) {
 	}
 
-	private record RecentAssessment(long timestampMillis, int riskScore, boolean hadRules) {
+	private record RecentAssessment(long timestampMillis, int riskScore, boolean hadRules, String message) {
 	}
 }

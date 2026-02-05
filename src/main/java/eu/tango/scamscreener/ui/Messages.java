@@ -15,6 +15,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -200,13 +201,78 @@ public final class Messages {
 			.append(Component.literal("\n- /scamscreener add <player> [score] [reason]").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener remove <player>").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener list").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal("\n- /scamscreener mute [pattern]").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal("\n- /scamscreener unmute <pattern>").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener ai capture <player> <scam|legit> [count]").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener ai train").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener ai reset").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener ai autocapture [off|low|medium|high|critical]").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener rules <list|disable|enable> [rule]").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener alertlevel [low|medium|high|critical]").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal("\n- /scamscreener version").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener preview").withStyle(ChatFormatting.GRAY));
+	}
+
+	public static MutableComponent mutePatternList(List<String> patterns) {
+		String joined = (patterns == null || patterns.isEmpty())
+			? "none"
+			: String.join(", ", patterns);
+		return Component.literal(PREFIX)
+			.withStyle(style -> style.withColor(PREFIX_LIGHT_RED))
+			.append(Component.literal("Muted patterns: "))
+			.append(Component.literal(joined).withStyle(ChatFormatting.YELLOW));
+	}
+
+	public static MutableComponent mutePatternAdded(String pattern) {
+		return Component.literal(PREFIX)
+			.withStyle(style -> style.withColor(PREFIX_LIGHT_RED))
+			.append(Component.literal("Muted pattern added: "))
+			.append(Component.literal(pattern == null ? "" : pattern).withStyle(ChatFormatting.GOLD));
+	}
+
+	public static MutableComponent mutePatternAlreadyExists(String pattern) {
+		return Component.literal(PREFIX)
+			.withStyle(style -> style.withColor(PREFIX_LIGHT_RED))
+			.append(Component.literal("Pattern already muted: "))
+			.append(Component.literal(pattern == null ? "" : pattern).withStyle(ChatFormatting.YELLOW));
+	}
+
+	public static MutableComponent mutePatternInvalid(String pattern) {
+		return Component.literal(PREFIX)
+			.withStyle(style -> style.withColor(PREFIX_LIGHT_RED))
+			.append(Component.literal("Invalid regex pattern: "))
+			.append(Component.literal(pattern == null ? "" : pattern).withStyle(ChatFormatting.YELLOW));
+	}
+
+	public static MutableComponent mutePatternRemoved(String pattern) {
+		return Component.literal(PREFIX)
+			.withStyle(style -> style.withColor(PREFIX_LIGHT_RED))
+			.append(Component.literal("Unmuted pattern: "))
+			.append(Component.literal(pattern == null ? "" : pattern).withStyle(ChatFormatting.GOLD));
+	}
+
+	public static MutableComponent mutePatternNotFound(String pattern) {
+		return Component.literal(PREFIX)
+			.withStyle(style -> style.withColor(PREFIX_LIGHT_RED))
+			.append(Component.literal("Pattern not found: "))
+			.append(Component.literal(pattern == null ? "" : pattern).withStyle(ChatFormatting.YELLOW));
+	}
+
+	public static MutableComponent blockedMessagesSummary(int blockedCount) {
+		return Component.literal(PREFIX)
+			.withStyle(style -> style.withColor(PREFIX_LIGHT_RED))
+			.append(Component.literal("Muted "))
+			.append(Component.literal(String.valueOf(Math.max(0, blockedCount))).withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD))
+			.append(Component.literal(" chat messages in the last interval."));
+	}
+
+	public static MutableComponent versionInfo(String modVersion, int aiVersion) {
+		return Component.literal(PREFIX)
+			.withStyle(style -> style.withColor(PREFIX_LIGHT_RED))
+			.append(Component.literal("Mod Version: ").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal(modVersion == null ? "unknown" : modVersion).withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD))
+			.append(Component.literal(" | AI Model Version: ").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal(String.valueOf(aiVersion)).withStyle(ChatFormatting.AQUA, ChatFormatting.BOLD));
 	}
 
 	public static MutableComponent aiCommandHelp() {
@@ -362,7 +428,7 @@ public final class Messages {
 				message.append(Component.literal(", ").withStyle(ChatFormatting.DARK_GRAY));
 			}
 			first = false;
-			message.append(readableRule(rule, assessment.detailFor(rule), assessment.evaluatedMessage()));
+			message.append(readableRule(rule, assessment.detailFor(rule), assessment.allEvaluatedMessages()));
 		}
 
 		return message.append(Component.literal("\n" + WARNING_BORDER).withStyle(ChatFormatting.DARK_RED));
@@ -422,7 +488,7 @@ public final class Messages {
 		};
 	}
 
-	private static MutableComponent readableRule(ScamRules.ScamRule rule, String exactDetail, String evaluatedMessage) {
+	private static MutableComponent readableRule(ScamRules.ScamRule rule, String exactDetail, List<String> evaluatedMessages) {
 		String name = switch (rule) {
 			case SUSPICIOUS_LINK -> "Suspicious Link";
 			case PRESSURE_AND_URGENCY -> "Pressure/Urgency";
@@ -446,8 +512,8 @@ public final class Messages {
 			.append(Component.literal(name).withStyle(style -> style.withColor(ChatFormatting.GOLD).withBold(false)))
 			.append(Component.literal("\nWhy triggered:").withStyle(style -> style.withColor(ChatFormatting.GRAY).withBold(false)))
 			.append(Component.literal("\n" + detail).withStyle(style -> style.withColor(ChatFormatting.YELLOW).withBold(false)))
-			.append(Component.literal("\nEvaluated message:").withStyle(style -> style.withColor(ChatFormatting.GRAY).withBold(false)))
-			.append(Component.literal("\n" + compactHoverMessage(evaluatedMessage)).withStyle(style -> style.withColor(ChatFormatting.AQUA).withBold(false)));
+			.append(Component.literal("\nEvaluated message(s):").withStyle(style -> style.withColor(ChatFormatting.GRAY).withBold(false)))
+			.append(Component.literal("\n" + compactHoverMessages(evaluatedMessages)).withStyle(style -> style.withColor(ChatFormatting.AQUA).withBold(false)));
 
 		return Component.literal(name).setStyle(
 			Style.EMPTY
@@ -486,14 +552,29 @@ public final class Messages {
 		}
 	}
 
-	private static String compactHoverMessage(String input) {
-		if (input == null || input.isBlank()) {
+	private static String compactHoverMessages(List<String> inputs) {
+		if (inputs == null || inputs.isEmpty()) {
 			return "n/a";
 		}
-		String singleLine = input.replace('\n', ' ').replace('\r', ' ').trim();
-		if (singleLine.length() <= 180) {
-			return singleLine;
+		StringBuilder out = new StringBuilder();
+		int limit = Math.min(4, inputs.size());
+		for (int i = 0; i < limit; i++) {
+			String input = inputs.get(i);
+			if (input == null || input.isBlank()) {
+				continue;
+			}
+			String singleLine = input.replace('\n', ' ').replace('\r', ' ').trim();
+			if (singleLine.length() > 140) {
+				singleLine = singleLine.substring(0, 137) + "...";
+			}
+			if (out.length() > 0) {
+				out.append("\n");
+			}
+			out.append("- ").append(singleLine);
 		}
-		return singleLine.substring(0, 177) + "...";
+		if (inputs.size() > limit) {
+			out.append("\n- ... and ").append(inputs.size() - limit).append(" more");
+		}
+		return out.length() == 0 ? "n/a" : out.toString();
 	}
 }
