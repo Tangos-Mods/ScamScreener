@@ -95,6 +95,10 @@ public final class MutePatternManager {
 		return count;
 	}
 
+	public int notifyIntervalSeconds() {
+		return notifyIntervalSeconds;
+	}
+
 	private boolean tryAddPattern(String pattern) {
 		try {
 			Pattern compiled = compilePattern(pattern);

@@ -1,6 +1,9 @@
 package eu.tango.scamscreener.commands;
 
+import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import eu.tango.scamscreener.ai.TrainingDataService;
 import eu.tango.scamscreener.blacklist.BlacklistManager;
 import eu.tango.scamscreener.detection.MutePatternManager;
 import eu.tango.scamscreener.lookup.ResolvedTarget;
@@ -52,6 +55,8 @@ public final class ScamScreenerCommands {
 	public void register() {
 		ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
 			dispatcher.register(buildRoot("scamscreener"));
+			dispatcher.register(buildCaptureAlias("1", 1));
+			dispatcher.register(buildCaptureAlias("2", 0));
 		});
 	}
 
@@ -71,6 +76,17 @@ public final class ScamScreenerCommands {
 			.then(AlertLevelCommand.build(reply))
 			.then(VersionCommand.build(reply))
 			.then(PreviewCommand.build(reply, lastCapturedChatSupplier));
+	}
+
+	private LiteralArgumentBuilder<FabricClientCommandSource> buildCaptureAlias(String alias, int label) {
+		return ClientCommandManager.literal(alias)
+			.then(ClientCommandManager.argument("player", StringArgumentType.word())
+				.then(ClientCommandManager.argument("count", IntegerArgumentType.integer(1, TrainingDataService.MAX_CAPTURED_CHAT_LINES))
+					.executes(context -> captureByPlayerHandler.capture(
+						StringArgumentType.getString(context, "player"),
+						label,
+						IntegerArgumentType.getInteger(context, "count")
+					))));
 	}
 
 	@FunctionalInterface

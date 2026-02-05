@@ -207,7 +207,7 @@ public class ScamScreenerClient implements ClientModInitializer {
 		if (blocked <= 0 || client.player == null) {
 			return;
 		}
-		client.player.displayClientMessage(Messages.blockedMessagesSummary(blocked), false);
+		client.player.displayClientMessage(Messages.blockedMessagesSummary(blocked, mutePatternManager.notifyIntervalSeconds()), false);
 	}
 
 	private int captureChatAsTrainingData(String playerName, int label, int count) {

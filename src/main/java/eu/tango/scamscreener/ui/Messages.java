@@ -258,12 +258,15 @@ public final class Messages {
 			.append(Component.literal(pattern == null ? "" : pattern).withStyle(ChatFormatting.YELLOW));
 	}
 
-	public static MutableComponent blockedMessagesSummary(int blockedCount) {
+	public static MutableComponent blockedMessagesSummary(int blockedCount, int intervalSeconds) {
+		int safeInterval = Math.max(1, intervalSeconds);
 		return Component.literal(PREFIX)
 			.withStyle(style -> style.withColor(PREFIX_LIGHT_RED))
-			.append(Component.literal("Muted "))
-			.append(Component.literal(String.valueOf(Math.max(0, blockedCount))).withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD))
-			.append(Component.literal(" chat messages in the last interval."));
+			.append(Component.literal("Muted ").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal(String.valueOf(Math.max(0, blockedCount))).withStyle(ChatFormatting.GRAY, ChatFormatting.BOLD))
+			.append(Component.literal(" chat messages in the last ").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal(String.valueOf(safeInterval)).withStyle(ChatFormatting.GRAY, ChatFormatting.BOLD))
+			.append(Component.literal("s interval.").withStyle(ChatFormatting.GRAY));
 	}
 
 	public static MutableComponent versionInfo(String modVersion, int aiVersion) {
