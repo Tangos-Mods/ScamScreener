@@ -25,7 +25,7 @@ public final class LocalAiTrainer {
 	private static final String[] TOO_GOOD_WORDS = {"free", "100%", "guaranteed", "garantiert", "dupe", "rank"};
 	private static final String[] PLATFORM_WORDS = {"discord", "telegram", "t.me", "server", "dm"};
 
-	private static final int BASE_FEATURE_COUNT = 16;
+	private static final int BASE_FEATURE_COUNT = 17;
 	private static final int MAX_VOCAB_SIZE = 200;
 	private static final int MIN_TOKEN_COUNT = 2;
 	private static final int ITERATIONS = 1200;
@@ -74,7 +74,7 @@ public final class LocalAiTrainer {
 		}
 
 		LocalAiModelConfig model = new LocalAiModelConfig();
-		model.version = 3;
+		model.version = 4;
 		model.intercept = bias;
 		model.hasPaymentWords = weights[0];
 		model.hasAccountWords = weights[1];
@@ -88,10 +88,11 @@ public final class LocalAiTrainer {
 		model.ctxDemandsUpfrontPayment = weights[9];
 		model.ctxRequestsSensitiveData = weights[10];
 		model.ctxClaimsMiddlemanWithoutProof = weights[11];
-		model.ctxRepeatedContact3Plus = weights[12];
-		model.ctxIsSpam = weights[13];
-		model.ctxAsksForStuff = weights[14];
-		model.ctxAdvertising = weights[15];
+		model.ctxTooGoodToBeTrue = weights[12];
+		model.ctxRepeatedContact3Plus = weights[13];
+		model.ctxIsSpam = weights[14];
+		model.ctxAsksForStuff = weights[15];
+		model.ctxAdvertising = weights[16];
 		model.tokenWeights = new LinkedHashMap<>();
 		for (int i = 0; i < vocab.size(); i++) {
 			model.tokenWeights.put(vocab.get(i), weights[BASE_FEATURE_COUNT + i]);
@@ -119,10 +120,11 @@ public final class LocalAiTrainer {
 		features[9] = clamp01(sample.demandsUpfrontPayment());
 		features[10] = clamp01(sample.requestsSensitiveData());
 		features[11] = clamp01(sample.claimsMiddlemanWithoutProof());
-		features[12] = sample.repeatedContactAttempts() >= 3 ? 1.0 : 0.0;
-		features[13] = clamp01(sample.isSpam());
-		features[14] = clamp01(sample.asksForStuff());
-		features[15] = clamp01(sample.advertising());
+		features[12] = clamp01(sample.tooGoodToBeTrue());
+		features[13] = sample.repeatedContactAttempts() >= 3 ? 1.0 : 0.0;
+		features[14] = clamp01(sample.isSpam());
+		features[15] = clamp01(sample.asksForStuff());
+		features[16] = clamp01(sample.advertising());
 
 		if (vocab.isEmpty()) {
 			return features;
@@ -267,6 +269,7 @@ public final class LocalAiTrainer {
 				flags.get(TrainingFlags.Flag.DEMANDS_UPFRONT_PAYMENT),
 				flags.get(TrainingFlags.Flag.REQUESTS_SENSITIVE_DATA),
 				flags.get(TrainingFlags.Flag.CLAIMS_MIDDLEMAN_WITHOUT_PROOF),
+				flags.get(TrainingFlags.Flag.TOO_GOOD_TO_BE_TRUE),
 				flags.get(TrainingFlags.Flag.REPEATED_CONTACT_ATTEMPTS),
 				flags.get(TrainingFlags.Flag.IS_SPAM),
 				flags.get(TrainingFlags.Flag.ASKS_FOR_STUFF),
@@ -385,6 +388,7 @@ public final class LocalAiTrainer {
 		int demandsUpfrontPayment,
 		int requestsSensitiveData,
 		int claimsMiddlemanWithoutProof,
+		int tooGoodToBeTrue,
 		int repeatedContactAttempts,
 		int isSpam,
 		int asksForStuff,
