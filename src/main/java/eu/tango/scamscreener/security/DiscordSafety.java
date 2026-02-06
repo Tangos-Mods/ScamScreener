@@ -2,11 +2,11 @@ package eu.tango.scamscreener.security;
 
 import java.util.regex.Pattern;
 
-public final class EmailSafety {
-	private static final Pattern EMAIL_PATTERN = Pattern.compile("\\b[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,}\\b", Pattern.CASE_INSENSITIVE);
-	private final SafetyBypassStore store = new SafetyBypassStore(SafetyBypassStore.Kind.EMAIL, EMAIL_PATTERN);
+public final class DiscordSafety {
+	private static final Pattern DISCORD_LINK_PATTERN = Pattern.compile("(https?://)?(www\\.)?(discord\\.gg|discord\\.com/invite)/[a-z0-9-]+", Pattern.CASE_INSENSITIVE);
+	private final SafetyBypassStore store = new SafetyBypassStore(SafetyBypassStore.Kind.DISCORD_LINK, DISCORD_LINK_PATTERN);
 
-	public SafetyBypassStore.BlockResult blockIfEmail(String message, boolean isCommand) {
+	public SafetyBypassStore.BlockResult blockIfDiscordLink(String message, boolean isCommand) {
 		return store.blockIfMatch(message, isCommand);
 	}
 

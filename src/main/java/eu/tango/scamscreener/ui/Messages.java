@@ -396,9 +396,22 @@ public final class Messages {
 
 	public static MutableComponent emailSafetyBlocked(String bypassId) {
 		String id = bypassId == null ? "" : bypassId;
-		MutableComponent line = Component.literal(PREFIX)
+		MutableComponent line = Component.literal(PREFIX + "Email address detected. This could be a scam. ")
 			.withStyle(style -> style.withColor(PREFIX_LIGHT_RED))
-			.append(Component.literal("Email address detected. This could be a scam. ").withStyle(ChatFormatting.GRAY));
+			.withStyle(ChatFormatting.GRAY);
+		Style bypassStyle = Style.EMPTY
+			.withColor(ChatFormatting.DARK_RED)
+			.withHoverEvent(new HoverEvent.ShowText(Component.literal("Send anyway").withStyle(ChatFormatting.YELLOW)))
+			.withClickEvent(new ClickEvent.RunCommand("/scamscreener bypass " + id));
+		line.append(Component.literal("[BYPASS]").setStyle(bypassStyle));
+		return line;
+	}
+
+	public static MutableComponent discordSafetyBlocked(String bypassId) {
+		String id = bypassId == null ? "" : bypassId;
+		MutableComponent line = Component.literal(PREFIX + "Discord link detected. This could be a scam. ")
+			.withStyle(style -> style.withColor(PREFIX_LIGHT_RED))
+			.withStyle(ChatFormatting.GRAY);
 		Style bypassStyle = Style.EMPTY
 			.withColor(ChatFormatting.DARK_RED)
 			.withHoverEvent(new HoverEvent.ShowText(Component.literal("Send anyway").withStyle(ChatFormatting.YELLOW)))

@@ -34,6 +34,7 @@ public final class ScamRulesConfig {
 	public static final int DEFAULT_LEVEL_MEDIUM = 20;
 	public static final int DEFAULT_LEVEL_HIGH = 40;
 	public static final int DEFAULT_LEVEL_CRITICAL = 70;
+	public static final int DEFAULT_ENTROPY_BONUS_WEIGHT = -3;
 	public static final double DEFAULT_SIMILARITY_RULE_THRESHOLD = 0.87;
 	public static final double DEFAULT_SIMILARITY_TRAINING_THRESHOLD = 0.88;
 	public static final double DEFAULT_SIMILARITY_TRAINING_MARGIN = 0.04;
@@ -65,6 +66,7 @@ public final class ScamRulesConfig {
 	public int levelMedium = DEFAULT_LEVEL_MEDIUM;
 	public int levelHigh = DEFAULT_LEVEL_HIGH;
 	public int levelCritical = DEFAULT_LEVEL_CRITICAL;
+	public int entropyBonusWeight = DEFAULT_ENTROPY_BONUS_WEIGHT;
 	public double similarityRuleThreshold = DEFAULT_SIMILARITY_RULE_THRESHOLD;
 	public double similarityTrainingThreshold = DEFAULT_SIMILARITY_TRAINING_THRESHOLD;
 	public double similarityTrainingMargin = DEFAULT_SIMILARITY_TRAINING_MARGIN;
@@ -150,6 +152,7 @@ public final class ScamRulesConfig {
 		levelMedium = clampInt(levelMedium, 1, 100, DEFAULT_LEVEL_MEDIUM);
 		levelHigh = clampInt(levelHigh, levelMedium + 1, 100, DEFAULT_LEVEL_HIGH);
 		levelCritical = clampInt(levelCritical, levelHigh + 1, 100, DEFAULT_LEVEL_CRITICAL);
+		entropyBonusWeight = clampInt(entropyBonusWeight, -10, 0, DEFAULT_ENTROPY_BONUS_WEIGHT);
 		similarityRuleThreshold = clampDouble(similarityRuleThreshold, 0.0, 1.0, DEFAULT_SIMILARITY_RULE_THRESHOLD);
 		similarityTrainingThreshold = clampDouble(similarityTrainingThreshold, 0.0, 1.0, DEFAULT_SIMILARITY_TRAINING_THRESHOLD);
 		similarityTrainingMargin = clampDouble(similarityTrainingMargin, 0.0, 1.0, DEFAULT_SIMILARITY_TRAINING_MARGIN);

@@ -65,6 +65,10 @@ public class ScamRules {
 		return config.levelCriticalThreshold();
 	}
 
+	public static int entropyBonusWeight() {
+		return config.entropyBonusWeight();
+	}
+
 	public static double similarityRuleThreshold() {
 		return config.similarityRuleThreshold();
 	}
@@ -293,6 +297,7 @@ public class ScamRules {
 		int levelMediumThreshold,
 		int levelHighThreshold,
 		int levelCriticalThreshold,
+		int entropyBonusWeight,
 		double similarityRuleThreshold,
 		double similarityTrainingThreshold,
 		double similarityTrainingMargin,
@@ -323,6 +328,7 @@ public class ScamRules {
 				config.levelMedium,
 				config.levelHigh,
 				config.levelCritical,
+				config.entropyBonusWeight,
 				config.similarityRuleThreshold,
 				config.similarityTrainingThreshold,
 				config.similarityTrainingMargin,

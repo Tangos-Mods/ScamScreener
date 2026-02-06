@@ -16,6 +16,9 @@ public final class RuleSignalStage {
 	private static final Pattern TRADE_CONTEXT_ALLOWLIST = Pattern.compile("\\b(sell|selling|buy|buying|trade|trading|price|coins?|payment|pay|lf|lb)\\b");
 	private static final Pattern DISCORD_HANDLE_PATTERN = Pattern.compile("@[a-z0-9._-]{2,32}");
 	private static final Pattern DISCORD_WORD_PATTERN = Pattern.compile("\\bdiscord\\b");
+	private static final int ENTROPY_MIN_TOKENS = 4;
+	private static final int ENTROPY_MIN_LENGTH = 20;
+	private static final double ENTROPY_THRESHOLD = 2.5;
 	private static final List<String> URGENCY_KEYWORDS = List.of(
 		"now",
 		"quick",
@@ -163,6 +166,21 @@ public final class RuleSignalStage {
 			}
 		}
 
+		int entropyBonusWeight = ScamRules.entropyBonusWeight();
+		if (entropyBonusWeight < 0) {
+			EntropyResult entropy = tokenEntropy(message);
+			if (entropy.tokenCount() >= ENTROPY_MIN_TOKENS && entropy.length() >= ENTROPY_MIN_LENGTH && entropy.entropy() >= ENTROPY_THRESHOLD) {
+				signals.add(new Signal(
+					"ENTROPY_BONUS",
+					SignalSource.RULE,
+					entropyBonusWeight,
+					"",
+					null,
+					List.of()
+				));
+			}
+		}
+
 		if (ruleConfig.isEnabled(ScamRules.ScamRule.DISCORD_HANDLE)) {
 			Matcher handleMatch = DISCORD_HANDLE_PATTERN.matcher(message);
 			if (DISCORD_WORD_PATTERN.matcher(message).find() && handleMatch.find()) {
@@ -289,6 +307,32 @@ public final class RuleSignalStage {
 			return "";
 		}
 		return " Match: \"" + match + "\"";
+	}
+
+	private static EntropyResult tokenEntropy(String message) {
+		if (message == null || message.isBlank()) {
+			return new EntropyResult(0.0, 0, 0);
+		}
+		List<String> tokens = tokenize(message);
+		int tokenCount = tokens.size();
+		int length = message.length();
+		if (tokenCount == 0) {
+			return new EntropyResult(0.0, 0, length);
+		}
+		java.util.Map<String, Integer> counts = new java.util.HashMap<>();
+		for (String token : tokens) {
+			counts.merge(token, 1, Integer::sum);
+		}
+		double total = tokenCount;
+		double entropy = 0.0;
+		for (int count : counts.values()) {
+			double p = count / total;
+			entropy += -p * (Math.log(p) / Math.log(2));
+		}
+		return new EntropyResult(entropy, tokenCount, length);
+	}
+
+	private record EntropyResult(double entropy, int tokenCount, int length) {
 	}
 
 	private record PhraseScore(int score, int keywordHits, int phraseHits, String match) {
