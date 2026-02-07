@@ -1,11 +1,11 @@
 package eu.tango.scamscreener.pipeline.stage;
 
 import eu.tango.scamscreener.config.ScamScreenerPaths;
-import eu.tango.scamscreener.pipeline.core.RuleConfig;
 import eu.tango.scamscreener.pipeline.model.MessageEvent;
 import eu.tango.scamscreener.pipeline.model.Signal;
 import eu.tango.scamscreener.pipeline.model.SignalSource;
 import eu.tango.scamscreener.rules.ScamRules;
+import eu.tango.scamscreener.util.CsvLineParser;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -23,12 +23,7 @@ public final class LevenshteinSignalStage {
 	private static final Path TRAINING_DATA_PATH = ScamScreenerPaths.inModConfigDir("scam-screener-training-data.csv");
 	private static final List<PhraseEntry> RULE_PHRASES = buildRulePhrases();
 
-	private final RuleConfig ruleConfig;
 	private final TrainingCache trainingCache = new TrainingCache();
-
-	public LevenshteinSignalStage(RuleConfig ruleConfig) {
-		this.ruleConfig = ruleConfig;
-	}
 
 	public List<Signal> collectSignals(MessageEvent event) {
 		if (event == null || event.normalizedMessage().isBlank()) {
@@ -51,7 +46,7 @@ public final class LevenshteinSignalStage {
 		double threshold = ScamRules.similarityRuleThreshold();
 		int weight = ScamRules.similarityRuleWeight();
 		for (PhraseEntry entry : RULE_PHRASES) {
-			if (!ruleConfig.isEnabled(entry.rule())) {
+			if (!ScamRules.isRuleEnabled(entry.rule())) {
 				continue;
 			}
 			double score = similarity(message, entry.normalized());
@@ -80,7 +75,7 @@ public final class LevenshteinSignalStage {
 
 	private void addTrainingSimilaritySignal(String message, List<Signal> signals) {
 		TrainingSnapshot snapshot = trainingCache.loadIfNeeded();
-		if (snapshot == null || snapshot.samples().isEmpty() || !ruleConfig.isEnabled(ScamRules.ScamRule.SIMILARITY_MATCH)) {
+		if (snapshot == null || snapshot.samples().isEmpty() || !ScamRules.isRuleEnabled(ScamRules.ScamRule.SIMILARITY_MATCH)) {
 			return;
 		}
 
@@ -298,7 +293,7 @@ public final class LevenshteinSignalStage {
 				if (line.isEmpty()) {
 					continue;
 				}
-				List<String> cols = parseCsvLine(line);
+				List<String> cols = CsvLineParser.parse(line);
 				if (cols.size() < 2) {
 					continue;
 				}
@@ -332,32 +327,6 @@ public final class LevenshteinSignalStage {
 				}
 			}
 			return new TrainingSnapshot(samples);
-		}
-
-		private static List<String> parseCsvLine(String line) {
-			List<String> values = new ArrayList<>();
-			StringBuilder current = new StringBuilder();
-			boolean inQuotes = false;
-			for (int i = 0; i < line.length(); i++) {
-				char c = line.charAt(i);
-				if (c == '"') {
-					if (inQuotes && i + 1 < line.length() && line.charAt(i + 1) == '"') {
-						current.append('"');
-						i++;
-					} else {
-						inQuotes = !inQuotes;
-					}
-					continue;
-				}
-				if (c == ',' && !inQuotes) {
-					values.add(current.toString());
-					current.setLength(0);
-					continue;
-				}
-				current.append(c);
-			}
-			values.add(current.toString());
-			return values;
 		}
 
 		private static String unescapeCsv(String value) {

@@ -26,32 +26,16 @@ public final class BlacklistManager {
 	private static final int DEFAULT_SCORE = 50;
 
 	private final Path filePath;
-	private final Path legacyJsonFilePath;
-	private final Path legacyTxtFilePath;
 	private final Map<UUID, ScamEntry> entries = new HashMap<>();
 
 	public BlacklistManager() {
 		this.filePath = ScamScreenerPaths.inModConfigDir("scam-screener-blacklist.json");
-		this.legacyJsonFilePath = ScamScreenerPaths.inRootConfigDir("scam-screener-blacklist.json");
-		this.legacyTxtFilePath = ScamScreenerPaths.inRootConfigDir("scam-screener-blacklist.txt");
 	}
 
 	public void load() {
 		entries.clear();
 		if (Files.exists(filePath)) {
 			loadJson(filePath);
-			return;
-		}
-
-		if (Files.exists(legacyJsonFilePath)) {
-			loadJson(legacyJsonFilePath);
-			save();
-			return;
-		}
-
-		if (Files.exists(legacyTxtFilePath)) {
-			loadLegacyTxt(legacyTxtFilePath);
-			save();
 		}
 	}
 
@@ -142,19 +126,6 @@ public final class BlacklistManager {
 		}
 	}
 
-	private void loadLegacyTxt(Path path) {
-		try {
-			List<String> lines = Files.readAllLines(path, StandardCharsets.UTF_8);
-			for (String line : lines) {
-				UUID parsed = parseUuid(line);
-				if (parsed != null) {
-					entries.put(parsed, new ScamEntry(parsed, DEFAULT_NAME, DEFAULT_SCORE, "migrated-from-legacy", Instant.now().toString()));
-				}
-			}
-		} catch (IOException ignored) {
-		}
-	}
-
 	private void save() {
 		try {
 			Files.createDirectories(filePath.getParent());
@@ -196,18 +167,6 @@ public final class BlacklistManager {
 
 	private static int clampScore(int score) {
 		return Math.max(0, Math.min(100, score));
-	}
-
-	private static UUID parseUuid(String input) {
-		if (input == null || input.trim().isEmpty()) {
-			return null;
-		}
-
-		try {
-			return UUID.fromString(input.trim());
-		} catch (IllegalArgumentException ignored) {
-			return null;
-		}
 	}
 
 	private static final class BlacklistFile {

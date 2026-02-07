@@ -5,11 +5,8 @@ import eu.tango.scamscreener.config.ScamRulesConfig;
 import lombok.experimental.UtilityClass;
 
 import java.util.EnumSet;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -17,11 +14,12 @@ import java.util.regex.PatternSyntaxException;
 
 @UtilityClass
 public class ScamRules {
+	// TODO(modularization): extract config parsing/persistence into a dedicated runtime-config service.
 	private static final LocalAiScorer LOCAL_AI_SCORER = new LocalAiScorer();
-	private static RuntimeConfig config = RuntimeConfig.from(ScamRulesConfig.loadOrCreate());
+	private static ScamRulesRuntime config = ScamRulesRuntime.fromConfig(ScamRulesConfig.loadOrCreate());
 
 	public static void reloadConfig() {
-		config = RuntimeConfig.from(ScamRulesConfig.loadOrCreate());
+		config = ScamRulesRuntime.fromConfig(ScamRulesConfig.loadOrCreate());
 		LOCAL_AI_SCORER.reloadModel();
 	}
 
@@ -111,13 +109,13 @@ public class ScamRules {
 	}
 
 	public static String setAutoCaptureAlertLevelSetting(String setting) {
-		AutoCaptureAlertLevel parsed = AutoCaptureAlertLevel.parse(setting);
-		if (parsed == null) {
+		String normalized = ScamRulesRuntime.normalizeAutoCaptureSetting(setting);
+		if (normalized == null) {
 			return null;
 		}
 
 		ScamRulesConfig cfg = ScamRulesConfig.loadOrCreate();
-		cfg.autoCaptureAlertLevel = parsed.persistedValue();
+		cfg.autoCaptureAlertLevel = normalized;
 		ScamRulesConfig.save(cfg);
 		reloadConfig();
 		return config.autoCaptureAlertLevelSetting();
@@ -165,31 +163,6 @@ public class ScamRules {
 		return changed;
 	}
 
-	public static boolean shouldWarn(ScamAssessment assessment) {
-		if (assessment == null) {
-			return false;
-		}
-		if (assessment.riskScore() <= 0 || assessment.triggeredRules() == null || assessment.triggeredRules().isEmpty()) {
-			return false;
-		}
-		return assessment.riskLevel().ordinal() >= config.minimumAlertRiskLevel().ordinal();
-	}
-
-	public static boolean shouldAutoCaptureAlert(ScamAssessment assessment) {
-		if (assessment == null) {
-			return false;
-		}
-		if (assessment.riskScore() <= 0 || assessment.triggeredRules() == null || assessment.triggeredRules().isEmpty()) {
-			return false;
-		}
-		AutoCaptureAlertLevel setting = config.autoCaptureAlertLevel();
-		if (setting == AutoCaptureAlertLevel.OFF) {
-			return false;
-		}
-		return assessment.riskLevel().ordinal() >= setting.minimumLevel().ordinal();
-	}
-
-
 	public enum ScamRule {
 		SUSPICIOUS_LINK,
 		PRESSURE_AND_URGENCY,
@@ -223,33 +196,6 @@ public class ScamRules {
 	) {
 	}
 
-	public record ScamAssessment(
-		int riskScore,
-		ScamRiskLevel riskLevel,
-		Set<ScamRule> triggeredRules,
-		Map<ScamRule, String> ruleDetails,
-		String evaluatedMessage,
-		List<String> evaluatedMessages
-	) {
-		public boolean shouldWarn() {
-			return riskLevel == ScamRiskLevel.HIGH || riskLevel == ScamRiskLevel.CRITICAL;
-		}
-
-		public String detailFor(ScamRule rule) {
-			if (ruleDetails == null) {
-				return null;
-			}
-			return ruleDetails.get(rule);
-		}
-
-		public List<String> allEvaluatedMessages() {
-			if (evaluatedMessages != null && !evaluatedMessages.isEmpty()) {
-				return evaluatedMessages;
-			}
-			return evaluatedMessage == null || evaluatedMessage.isBlank() ? List.of() : List.of(evaluatedMessage);
-		}
-	}
-
 	public static record PatternSet(
 		Pattern link,
 		Pattern urgency,
@@ -257,36 +203,16 @@ public class ScamRules {
 		Pattern accountData,
 		Pattern tooGood,
 		Pattern trustBait
-	) {
-		private static PatternSet from(ScamRulesConfig config) {
-			return new PatternSet(
-				compileOrDefault(config.linkPattern, ScamRulesConfig.DEFAULT_LINK_PATTERN),
-				compileOrDefault(config.urgencyPattern, ScamRulesConfig.DEFAULT_URGENCY_PATTERN),
-				compileOrDefault(config.paymentFirstPattern, ScamRulesConfig.DEFAULT_PAYMENT_FIRST_PATTERN),
-				compileOrDefault(config.accountDataPattern, ScamRulesConfig.DEFAULT_ACCOUNT_DATA_PATTERN),
-				compileOrDefault(config.tooGoodPattern, ScamRulesConfig.DEFAULT_TOO_GOOD_PATTERN),
-				compileOrDefault(config.trustBaitPattern, ScamRulesConfig.DEFAULT_TRUST_BAIT_PATTERN)
-			);
-		}
-	}
+	) { }
 
 	public static record BehaviorPatternSet(
 		Pattern externalPlatform,
 		Pattern upfrontPayment,
 		Pattern accountData,
 		Pattern middlemanClaim
-	) {
-		private static BehaviorPatternSet from(ScamRulesConfig config) {
-			return new BehaviorPatternSet(
-				compileOrDefault(config.externalPlatformPattern, ScamRulesConfig.DEFAULT_EXTERNAL_PLATFORM_PATTERN),
-				compileOrDefault(config.upfrontPaymentBehaviorPattern, ScamRulesConfig.DEFAULT_PAYMENT_FIRST_PATTERN),
-				compileOrDefault(config.accountDataBehaviorPattern, ScamRulesConfig.DEFAULT_ACCOUNT_DATA_PATTERN),
-				compileOrDefault(config.middlemanPattern, ScamRulesConfig.DEFAULT_MIDDLEMAN_PATTERN)
-			);
-		}
-	}
+	) { }
 
-	private record RuntimeConfig(
+	private record ScamRulesRuntime(
 		PatternSet patterns,
 		BehaviorPatternSet behaviorPatterns,
 		boolean localAiEnabled,
@@ -308,18 +234,26 @@ public class ScamRules {
 		int similarityMinMessageLength,
 		Set<ScamRule> disabledRules
 	) {
-		private boolean isEnabled(ScamRule rule) {
-			return !disabledRules.contains(rule);
+		ScamRulesRuntime {
+			disabledRules = disabledRules == null ? EnumSet.noneOf(ScamRule.class) : EnumSet.copyOf(disabledRules);
 		}
 
-		private String autoCaptureAlertLevelSetting() {
-			return autoCaptureAlertLevel.persistedValue();
-		}
-
-		private static RuntimeConfig from(ScamRulesConfig config) {
-			return new RuntimeConfig(
-				PatternSet.from(config),
-				BehaviorPatternSet.from(config),
+		private static ScamRulesRuntime fromConfig(ScamRulesConfig config) {
+			return new ScamRulesRuntime(
+				new PatternSet(
+					compileOrDefault(config.linkPattern, ScamRulesConfig.DEFAULT_LINK_PATTERN),
+					compileOrDefault(config.urgencyPattern, ScamRulesConfig.DEFAULT_URGENCY_PATTERN),
+					compileOrDefault(config.paymentFirstPattern, ScamRulesConfig.DEFAULT_PAYMENT_FIRST_PATTERN),
+					compileOrDefault(config.accountDataPattern, ScamRulesConfig.DEFAULT_ACCOUNT_DATA_PATTERN),
+					compileOrDefault(config.tooGoodPattern, ScamRulesConfig.DEFAULT_TOO_GOOD_PATTERN),
+					compileOrDefault(config.trustBaitPattern, ScamRulesConfig.DEFAULT_TRUST_BAIT_PATTERN)
+				),
+				new BehaviorPatternSet(
+					compileOrDefault(config.externalPlatformPattern, ScamRulesConfig.DEFAULT_EXTERNAL_PLATFORM_PATTERN),
+					compileOrDefault(config.upfrontPaymentBehaviorPattern, ScamRulesConfig.DEFAULT_PAYMENT_FIRST_PATTERN),
+					compileOrDefault(config.accountDataBehaviorPattern, ScamRulesConfig.DEFAULT_ACCOUNT_DATA_PATTERN),
+					compileOrDefault(config.middlemanPattern, ScamRulesConfig.DEFAULT_MIDDLEMAN_PATTERN)
+				),
 				config.localAiEnabled,
 				config.localAiMaxScore,
 				config.localAiTriggerProbability,
@@ -340,80 +274,93 @@ public class ScamRules {
 				parseDisabledRules(config.disabledRules)
 			);
 		}
-	}
 
-	private static Set<ScamRule> parseDisabledRules(Set<String> raw) {
-		EnumSet<ScamRule> disabled = EnumSet.noneOf(ScamRule.class);
-		if (raw == null || raw.isEmpty()) {
+		private static String normalizeAutoCaptureSetting(String raw) {
+			AutoCaptureAlertLevel parsed = AutoCaptureAlertLevel.parse(raw);
+			return parsed == null ? null : parsed.persistedValue();
+		}
+
+		private boolean isEnabled(ScamRule rule) {
+			return !disabledRules.contains(rule);
+		}
+
+		private String autoCaptureAlertLevelSetting() {
+			return autoCaptureAlertLevel.persistedValue();
+		}
+
+		private static Set<ScamRule> parseDisabledRules(Set<String> raw) {
+			EnumSet<ScamRule> disabled = EnumSet.noneOf(ScamRule.class);
+			if (raw == null || raw.isEmpty()) {
+				return disabled;
+			}
+			for (String item : raw) {
+				if (item == null || item.isBlank()) {
+					continue;
+				}
+				try {
+					disabled.add(ScamRule.valueOf(item.trim().toUpperCase(Locale.ROOT)));
+				} catch (IllegalArgumentException ignored) {
+				}
+			}
 			return disabled;
 		}
-		for (String item : raw) {
-			if (item == null || item.isBlank()) {
-				continue;
-			}
-			try {
-				disabled.add(ScamRule.valueOf(item.trim().toUpperCase(Locale.ROOT)));
-			} catch (IllegalArgumentException ignored) {
-			}
-		}
-		return disabled;
-	}
 
-	private enum AutoCaptureAlertLevel {
-		OFF(null),
-		LOW(ScamRiskLevel.LOW),
-		MEDIUM(ScamRiskLevel.MEDIUM),
-		HIGH(ScamRiskLevel.HIGH),
-		CRITICAL(ScamRiskLevel.CRITICAL);
-
-		private final ScamRiskLevel minimumLevel;
-
-		AutoCaptureAlertLevel(ScamRiskLevel minimumLevel) {
-			this.minimumLevel = minimumLevel;
-		}
-
-		private ScamRiskLevel minimumLevel() {
-			return minimumLevel;
-		}
-
-		private String persistedValue() {
-			return name();
-		}
-
-		private static AutoCaptureAlertLevel parse(String raw) {
+		private static ScamRiskLevel parseRiskLevelOrDefault(String raw, ScamRiskLevel fallback) {
 			if (raw == null || raw.isBlank()) {
-				return null;
+				return fallback;
 			}
 			try {
-				return AutoCaptureAlertLevel.valueOf(raw.trim().toUpperCase(Locale.ROOT));
+				return ScamRiskLevel.valueOf(raw.trim().toUpperCase(Locale.ROOT));
 			} catch (IllegalArgumentException ignored) {
-				return null;
+				return fallback;
 			}
 		}
 
-		private static AutoCaptureAlertLevel parseOrDefault(String raw, AutoCaptureAlertLevel fallback) {
-			AutoCaptureAlertLevel parsed = parse(raw);
-			return parsed == null ? fallback : parsed;
+		private static Pattern compileOrDefault(String candidate, String fallback) {
+			try {
+				return Pattern.compile(candidate);
+			} catch (PatternSyntaxException ignored) {
+				return Pattern.compile(fallback);
+			}
 		}
-	}
 
-	private static ScamRiskLevel parseRiskLevelOrDefault(String raw, ScamRiskLevel fallback) {
-		if (raw == null || raw.isBlank()) {
-			return fallback;
-		}
-		try {
-			return ScamRiskLevel.valueOf(raw.trim().toUpperCase(Locale.ROOT));
-		} catch (IllegalArgumentException ignored) {
-			return fallback;
-		}
-	}
+		private enum AutoCaptureAlertLevel {
+			OFF,
+			LOW,
+			MEDIUM,
+			HIGH,
+			CRITICAL;
 
-	private static Pattern compileOrDefault(String candidate, String fallback) {
-		try {
-			return Pattern.compile(candidate);
-		} catch (PatternSyntaxException ignored) {
-			return Pattern.compile(fallback);
+			private ScamRiskLevel minimumLevel() {
+				return switch (this) {
+					case OFF, LOW -> ScamRiskLevel.LOW;
+					case MEDIUM -> ScamRiskLevel.MEDIUM;
+					case HIGH -> ScamRiskLevel.HIGH;
+					case CRITICAL -> ScamRiskLevel.CRITICAL;
+				};
+			}
+
+			private String persistedValue() {
+				return name();
+			}
+
+			private static AutoCaptureAlertLevel parse(String raw) {
+				if (raw == null || raw.isBlank()) {
+					return null;
+				}
+				try {
+					return AutoCaptureAlertLevel.valueOf(raw.trim().toUpperCase(Locale.ROOT));
+				} catch (IllegalArgumentException ignored) {
+					return null;
+				}
+			}
+
+			private static AutoCaptureAlertLevel parseOrDefault(String raw, AutoCaptureAlertLevel fallback) {
+				AutoCaptureAlertLevel parsed = parse(raw);
+				return parsed == null ? fallback : parsed;
+			}
 		}
 	}
 
 }
+

@@ -1,9 +1,14 @@
 package eu.tango.scamscreener.ui;
 
+import eu.tango.scamscreener.ui.messages.RiskMessages;
+import eu.tango.scamscreener.ui.messages.ScreenMessages;
+
 import java.util.ArrayList;
 import java.util.List;
 
 import eu.tango.scamscreener.chat.parser.ChatLineParser;
+import eu.tango.scamscreener.pipeline.model.DetectionResult;
+import eu.tango.scamscreener.pipeline.model.ScreeningResult;
 import eu.tango.scamscreener.util.TextUtil;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.ClickEvent;
@@ -72,11 +77,15 @@ public final class ChatDecorator {
 	}
 
 	public static Component decoratePlayerLine(Component message, ChatLineParser.ParsedPlayerLine parsed, boolean blacklisted) {
+		return decoratePlayerLine(message, parsed, blacklisted, null);
+	}
+
+	public static Component decoratePlayerLine(Component message, ChatLineParser.ParsedPlayerLine parsed, boolean blacklisted, ScreeningResult screening) {
 		if (blacklisted) {
-			return rebuildChatMessage(message, parsed);
+			return appendScreenBadge(rebuildChatMessage(message, parsed), screening);
 		}
 		String raw = parsed == null ? "" : parsed.message();
-		return decorateChatMessage(message, raw, false);
+		return appendScreenBadge(decorateChatMessage(message, raw, false), screening);
 	}
 
 	private static List<StyledSegment> flattenSegments(Component component) {
@@ -136,4 +145,24 @@ public final class ChatDecorator {
 
 	private record StyledSegment(String text, Style style) {
 	}
+
+	private static Component appendScreenBadge(Component message, ScreeningResult screening) {
+		if (screening == null || screening.muted()) {
+			return message;
+		}
+		DetectionResult result = screening.result();
+		if (result == null) {
+			return message;
+		}
+		int score = (int) Math.round(result.totalScore());
+		int scoreColor = RiskMessages.scoreGradientColor(score);
+		MutableComponent badge = Component.literal(" [" + score + "]")
+			.withStyle(style -> style.withColor(scoreColor))
+			.withStyle(style -> style.withHoverEvent(new HoverEvent.ShowText(ScreenMessages.screeningHover(result, screening.shouldWarn(), false))));
+
+		MutableComponent out = message instanceof MutableComponent mutable ? mutable : message.copy();
+		out.append(badge);
+		return out;
+	}
 }
+

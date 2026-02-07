@@ -29,7 +29,7 @@ public final class ScamRulesConfig {
 	public static final boolean DEFAULT_LOCAL_AI_ENABLED = true;
 	public static final int DEFAULT_LOCAL_AI_MAX_SCORE = 22;
 	public static final double DEFAULT_LOCAL_AI_TRIGGER_PROBABILITY = 0.56;
-	public static final String DEFAULT_MIN_ALERT_RISK_LEVEL = "HIGH";
+	public static final String DEFAULT_MIN_ALERT_RISK_LEVEL = "MEDIUM";
 	public static final String DEFAULT_AUTO_CAPTURE_ALERT_LEVEL = "OFF";
 	public static final int DEFAULT_LEVEL_MEDIUM = 20;
 	public static final int DEFAULT_LEVEL_HIGH = 40;

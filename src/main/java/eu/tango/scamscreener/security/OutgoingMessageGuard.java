@@ -1,14 +1,15 @@
 package eu.tango.scamscreener.security;
 
+import eu.tango.scamscreener.ui.messages.CommandMessages;
+
 import eu.tango.scamscreener.ui.MessageDispatcher;
-import eu.tango.scamscreener.ui.Messages;
 import eu.tango.scamscreener.util.TextUtil;
 
 public final class OutgoingMessageGuard {
-	private final EmailSafety emailSafety;
-	private final DiscordSafety discordSafety;
+	private final SafetyBypassStore emailSafety;
+	private final SafetyBypassStore discordSafety;
 
-	public OutgoingMessageGuard(EmailSafety emailSafety, DiscordSafety discordSafety) {
+	public OutgoingMessageGuard(SafetyBypassStore emailSafety, SafetyBypassStore discordSafety) {
 		this.emailSafety = emailSafety;
 		this.discordSafety = discordSafety;
 	}
@@ -20,16 +21,16 @@ public final class OutgoingMessageGuard {
 		if (emailSafety.consumeAllowOnce(message, false) || discordSafety.consumeAllowOnce(message, false)) {
 			return true;
 		}
-		SafetyBypassStore.BlockResult block = emailSafety.blockIfEmail(message, false);
+		SafetyBypassStore.BlockResult block = emailSafety.blockIfMatch(message, false);
 		if (block == null) {
-			block = discordSafety.blockIfDiscordLink(message, false);
+			block = discordSafety.blockIfMatch(message, false);
 		}
 		if (block == null) {
 			return true;
 		}
 		MessageDispatcher.reply(block.kind() == SafetyBypassStore.Kind.DISCORD_LINK
-			? Messages.discordSafetyBlocked(block.id())
-			: Messages.emailSafetyBlocked(block.id()));
+			? CommandMessages.discordSafetyBlocked(block.id())
+			: CommandMessages.emailSafetyBlocked(block.id()));
 		return false;
 	}
 
@@ -41,16 +42,17 @@ public final class OutgoingMessageGuard {
 		if (emailSafety.consumeAllowOnce(normalized, true) || discordSafety.consumeAllowOnce(normalized, true)) {
 			return true;
 		}
-		SafetyBypassStore.BlockResult block = emailSafety.blockIfEmail(normalized, true);
+		SafetyBypassStore.BlockResult block = emailSafety.blockIfMatch(normalized, true);
 		if (block == null) {
-			block = discordSafety.blockIfDiscordLink(normalized, true);
+			block = discordSafety.blockIfMatch(normalized, true);
 		}
 		if (block == null) {
 			return true;
 		}
 		MessageDispatcher.reply(block.kind() == SafetyBypassStore.Kind.DISCORD_LINK
-			? Messages.discordSafetyBlocked(block.id())
-			: Messages.emailSafetyBlocked(block.id()));
+			? CommandMessages.discordSafetyBlocked(block.id())
+			: CommandMessages.emailSafetyBlocked(block.id()));
 		return false;
 	}
 }
+

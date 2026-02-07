@@ -1,9 +1,10 @@
 package eu.tango.scamscreener.blacklist;
 
+import eu.tango.scamscreener.ui.messages.RiskMessages;
+
 import eu.tango.scamscreener.chat.trigger.TriggerContext;
 import eu.tango.scamscreener.lookup.PlayerLookup;
 import eu.tango.scamscreener.ui.DebugReporter;
-import eu.tango.scamscreener.ui.Messages;
 import eu.tango.scamscreener.ui.NotificationService;
 import net.minecraft.client.Minecraft;
 
@@ -31,12 +32,10 @@ public final class BlacklistAlertService {
 		}
 
 		UUID uuid = playerLookup.findUuidByName(playerName);
-		debugReporter.debugTrade("trade trigger " + context.name().toLowerCase(Locale.ROOT) + " player=" + playerName + " blacklisted=" + (uuid != null && blacklist.contains(uuid)));
-		if (uuid == null || !blacklist.contains(uuid)) {
-			return;
-		}
+		boolean isBlacklisted = uuid != null && blacklist.contains(uuid);
+		debugReporter.debugTrade("trade trigger " + context.name().toLowerCase(Locale.ROOT) + " player=" + playerName + " blacklisted=" + isBlacklisted);
 
-		String dedupeKey = context.dedupeKey(uuid);
+		String dedupeKey = "trigger:" + context.name().toLowerCase(Locale.ROOT) + ":" + (uuid != null ? uuid : playerName.toLowerCase(Locale.ROOT));
 		if (!warnedContexts.add(dedupeKey)) {
 			debugReporter.debugTrade("trade trigger already warned: " + playerName);
 			return;
@@ -56,7 +55,8 @@ public final class BlacklistAlertService {
 		}
 
 		BlacklistManager.ScamEntry entry = blacklist.get(uuid);
-		client.player.displayClientMessage(Messages.blacklistWarning(playerName, reason, entry), false);
+		client.player.displayClientMessage(RiskMessages.blacklistWarning(playerName, reason, entry), false);
 		NotificationService.playWarningTone();
 	}
 }
+

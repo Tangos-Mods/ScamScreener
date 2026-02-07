@@ -1,6 +1,8 @@
 package eu.tango.scamscreener.ai;
 
 import eu.tango.scamscreener.config.LocalAiModelConfig;
+import eu.tango.scamscreener.util.ArchiveFileUtil;
+import eu.tango.scamscreener.util.CsvLineParser;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -142,7 +144,7 @@ public final class LocalAiTrainer {
 
 	private static Path archiveTrainingData(Path csvPath) throws IOException {
 		Path archiveDir = csvPath.resolveSibling(OLD_DIR_NAME).resolve(OLD_TRAINING_DIR_NAME);
-		Path target = nextArchiveTarget(csvPath, archiveDir);
+		Path target = ArchiveFileUtil.nextArchiveTarget(csvPath, archiveDir);
 		return Files.move(csvPath, target);
 	}
 
@@ -196,7 +198,7 @@ public final class LocalAiTrainer {
 		}
 
 		Path archiveDir = modelPath.resolveSibling(OLD_DIR_NAME).resolve(OLD_MODELS_DIR_NAME);
-		Path target = nextArchiveTarget(modelPath, archiveDir);
+		Path target = ArchiveFileUtil.nextArchiveTarget(modelPath, archiveDir);
 		Files.copy(modelPath, target, StandardCopyOption.COPY_ATTRIBUTES);
 	}
 
@@ -220,17 +222,6 @@ public final class LocalAiTrainer {
 		return matches;
 	}
 
-	private static Path nextArchiveTarget(Path baseFile, Path archiveDir) throws IOException {
-		Files.createDirectories(archiveDir);
-		int index = 1;
-		Path target = archiveDir.resolve(baseFile.getFileName() + ".old." + index);
-		while (Files.exists(target)) {
-			index++;
-			target = archiveDir.resolve(baseFile.getFileName() + ".old." + index);
-		}
-		return target;
-	}
-
 	private static List<Sample> loadSamples(Path csvPath, int[] ignoredUnigrams) throws IOException {
 		if (!Files.exists(csvPath)) {
 			throw new IOException("Training file not found: " + csvPath);
@@ -248,7 +239,7 @@ public final class LocalAiTrainer {
 				continue;
 			}
 
-			List<String> cols = parseCsvLine(line);
+			List<String> cols = CsvLineParser.parse(line);
 			if (cols.size() < 7) {
 				continue;
 			}
@@ -340,34 +331,6 @@ public final class LocalAiTrainer {
 		if (!hasZero || !hasOne) {
 			throw new IOException("Need both labels 0 and 1 in training data.");
 		}
-	}
-
-	private static List<String> parseCsvLine(String line) {
-		List<String> values = new ArrayList<>();
-		StringBuilder current = new StringBuilder();
-		boolean inQuotes = false;
-
-		for (int i = 0; i < line.length(); i++) {
-			char c = line.charAt(i);
-			if (c == '"') {
-				if (inQuotes && i + 1 < line.length() && line.charAt(i + 1) == '"') {
-					current.append('"');
-					i++;
-				} else {
-					inQuotes = !inQuotes;
-				}
-				continue;
-			}
-
-			if (c == ',' && !inQuotes) {
-				values.add(current.toString());
-				current.setLength(0);
-				continue;
-			}
-			current.append(c);
-		}
-		values.add(current.toString());
-		return values;
 	}
 
 	private static boolean hasAny(String text, String[] words) {

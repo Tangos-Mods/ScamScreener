@@ -1,5 +1,7 @@
 package eu.tango.scamscreener.ui;
 
+import eu.tango.scamscreener.ui.messages.DebugMessages;
+
 import eu.tango.scamscreener.config.DebugConfig;
 
 public final class DebugReporter {
@@ -30,3 +32,4 @@ public final class DebugReporter {
 		MessageDispatcher.reply(DebugMessages.debug("ChatColor", message));
 	}
 }
+

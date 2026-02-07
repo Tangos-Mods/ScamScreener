@@ -21,7 +21,7 @@ public final class TrendStore {
 
 	/**
 	 * Tracks recent messages per player and decides whether a trend bonus applies.
-	 * The returned {@link TrendEvaluation} is consumed by {@link eu.tango.scamscreener.pipeline.stage.TrendSignalStage}.
+	 * The returned {@link TrendEvaluation} is consumed by the detection pipeline.
 	 */
 	public TrendEvaluation evaluate(MessageEvent event, List<Signal> existingSignals) {
 		if (event == null || event.playerName() == null || event.playerName().isBlank()) {
@@ -86,3 +86,4 @@ public final class TrendStore {
 	private record TrendRecord(long timestampMillis, int riskScore, boolean hadRules, String message) {
 	}
 }
+

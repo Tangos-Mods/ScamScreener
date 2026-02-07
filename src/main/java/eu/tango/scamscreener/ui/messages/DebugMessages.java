@@ -1,4 +1,4 @@
-package eu.tango.scamscreener.ui;
+package eu.tango.scamscreener.ui.messages;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -10,9 +10,7 @@ import net.minecraft.network.chat.ClickEvent;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public final class DebugMessages {
-	private static final String PREFIX = "[ScamScreener] ";
-	private static final int PREFIX_LIGHT_RED = 0xFF5555;
+public final class DebugMessages extends StyledMessages {
 	private static final ChatFormatting LABEL_COLOR = ChatFormatting.DARK_GRAY;
 	private static final ChatFormatting MESSAGE_COLOR = ChatFormatting.GRAY;
 	private static final ChatFormatting ACTIVE_COLOR = ChatFormatting.GREEN;
@@ -49,8 +47,7 @@ public final class DebugMessages {
 			return debugStatus("no debug states");
 		}
 		Map<String, Boolean> ordered = new LinkedHashMap<>(states);
-		MutableComponent line = Component.literal(PREFIX)
-			.withStyle(style -> style.withColor(PREFIX_LIGHT_RED))
+		MutableComponent line = prefixed()
 			.append(Component.literal("Debug: ").withStyle(LABEL_COLOR));
 
 		boolean first = true;
@@ -74,8 +71,7 @@ public final class DebugMessages {
 	}
 
 	private static MutableComponent labeled(String label, String message) {
-		return Component.literal(PREFIX)
-			.withStyle(style -> style.withColor(PREFIX_LIGHT_RED))
+		return prefixed()
 			.append(Component.literal(label + ": ").withStyle(LABEL_COLOR))
 			.append(Component.literal(message == null ? "" : message).withStyle(MESSAGE_COLOR));
 	}

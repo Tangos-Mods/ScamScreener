@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import eu.tango.scamscreener.pipeline.core.RuleConfig;
 import eu.tango.scamscreener.pipeline.model.MessageEvent;
 import eu.tango.scamscreener.pipeline.model.Signal;
 import eu.tango.scamscreener.pipeline.model.SignalSource;
@@ -61,15 +60,6 @@ public final class RuleSignalStage {
 	);
 	private static final int URGENCY_SCORE_THRESHOLD = 2;
 	private static final int TRUST_SCORE_THRESHOLD = 2;
-	private final RuleConfig ruleConfig;
-
-	/**
-	 * Creates rule-based signals by regex matching the chat message.
-	 * These signals contribute to the total score in {@link ScoringStage}.
-	 */
-	public RuleSignalStage(RuleConfig ruleConfig) {
-		this.ruleConfig = ruleConfig;
-	}
 
 	/**
 	 * Returns one {@link Signal} per triggered rule. Empty when nothing matches.
@@ -79,13 +69,13 @@ public final class RuleSignalStage {
 			return List.of();
 		}
 
-		ScamRules.PatternSet patterns = ruleConfig.patterns();
-		ScamRules.BehaviorPatternSet behaviorPatterns = ruleConfig.behaviorPatterns();
+		ScamRules.PatternSet patterns = ScamRules.patternSet();
+		ScamRules.BehaviorPatternSet behaviorPatterns = ScamRules.behaviorPatternSet();
 		String message = event.normalizedMessage();
 		List<Signal> signals = new ArrayList<>();
 
 		String linkMatch = firstMatch(patterns.link(), message);
-		if (linkMatch != null && ruleConfig.isEnabled(ScamRules.ScamRule.SUSPICIOUS_LINK)) {
+		if (linkMatch != null && ScamRules.isRuleEnabled(ScamRules.ScamRule.SUSPICIOUS_LINK)) {
 			signals.add(new Signal(
 				ScamRules.ScamRule.SUSPICIOUS_LINK.name(),
 				SignalSource.RULE,
@@ -96,7 +86,7 @@ public final class RuleSignalStage {
 			));
 		}
 
-		if (ruleConfig.isEnabled(ScamRules.ScamRule.PRESSURE_AND_URGENCY)) {
+		if (ScamRules.isRuleEnabled(ScamRules.ScamRule.PRESSURE_AND_URGENCY)) {
 			PhraseScore urgencyScore = scorePhrase(message, URGENCY_KEYWORDS, URGENCY_PHRASES);
 			boolean hasSuspiciousContext = hasSuspiciousContext(message, patterns, behaviorPatterns);
 			if (urgencyScore.score() >= URGENCY_SCORE_THRESHOLD && !(URGENCY_ALLOWLIST.matcher(message).find() && !hasSuspiciousContext)
@@ -115,7 +105,7 @@ public final class RuleSignalStage {
 		}
 
 		String paymentMatch = firstMatch(patterns.paymentFirst(), message);
-		if (paymentMatch != null && ruleConfig.isEnabled(ScamRules.ScamRule.UPFRONT_PAYMENT)) {
+		if (paymentMatch != null && ScamRules.isRuleEnabled(ScamRules.ScamRule.UPFRONT_PAYMENT)) {
 			signals.add(new Signal(
 				ScamRules.ScamRule.UPFRONT_PAYMENT.name(),
 				SignalSource.RULE,
@@ -127,7 +117,7 @@ public final class RuleSignalStage {
 		}
 
 		String accountMatch = firstMatch(patterns.accountData(), message);
-		if (accountMatch != null && ruleConfig.isEnabled(ScamRules.ScamRule.ACCOUNT_DATA_REQUEST)) {
+		if (accountMatch != null && ScamRules.isRuleEnabled(ScamRules.ScamRule.ACCOUNT_DATA_REQUEST)) {
 			signals.add(new Signal(
 				ScamRules.ScamRule.ACCOUNT_DATA_REQUEST.name(),
 				SignalSource.RULE,
@@ -139,7 +129,7 @@ public final class RuleSignalStage {
 		}
 
 		String tooGoodMatch = firstMatch(patterns.tooGood(), message);
-		if (tooGoodMatch != null && ruleConfig.isEnabled(ScamRules.ScamRule.TOO_GOOD_TO_BE_TRUE)) {
+		if (tooGoodMatch != null && ScamRules.isRuleEnabled(ScamRules.ScamRule.TOO_GOOD_TO_BE_TRUE)) {
 			signals.add(new Signal(
 				ScamRules.ScamRule.TOO_GOOD_TO_BE_TRUE.name(),
 				SignalSource.RULE,
@@ -150,7 +140,7 @@ public final class RuleSignalStage {
 			));
 		}
 
-		if (ruleConfig.isEnabled(ScamRules.ScamRule.TRUST_MANIPULATION)) {
+		if (ScamRules.isRuleEnabled(ScamRules.ScamRule.TRUST_MANIPULATION)) {
 			PhraseScore trustScore = scorePhrase(message, TRUST_KEYWORDS, TRUST_PHRASES);
 			if (trustScore.score() >= TRUST_SCORE_THRESHOLD) {
 				signals.add(new Signal(
@@ -181,7 +171,7 @@ public final class RuleSignalStage {
 			}
 		}
 
-		if (ruleConfig.isEnabled(ScamRules.ScamRule.DISCORD_HANDLE)) {
+		if (ScamRules.isRuleEnabled(ScamRules.ScamRule.DISCORD_HANDLE)) {
 			Matcher handleMatch = DISCORD_HANDLE_PATTERN.matcher(message);
 			if (DISCORD_WORD_PATTERN.matcher(message).find() && handleMatch.find()) {
 				String handle = handleMatch.group();

@@ -2,23 +2,16 @@ package eu.tango.scamscreener.pipeline.core;
 
 import eu.tango.scamscreener.ai.LocalAiScorer;
 import eu.tango.scamscreener.rules.ScamRules;
+import lombok.RequiredArgsConstructor;
 
 import java.util.Locale;
 import eu.tango.scamscreener.pipeline.model.BehaviorAnalysis;
 import eu.tango.scamscreener.pipeline.model.Signal;
 import eu.tango.scamscreener.pipeline.model.SignalSource;
 
+@RequiredArgsConstructor
 public final class AiScorer {
 	private final LocalAiScorer localAiScorer;
-	private final RuleConfig ruleConfig;
-
-	/**
-	 * Uses the local model to turn a {@link BehaviorAnalysis} into a single AI {@link Signal}.
-	 */
-	public AiScorer(LocalAiScorer localAiScorer, RuleConfig ruleConfig) {
-		this.localAiScorer = localAiScorer;
-		this.ruleConfig = ruleConfig;
-	}
 
 	/**
 	 * Returns {@code null} when the AI is disabled or does not trigger.
@@ -29,7 +22,7 @@ public final class AiScorer {
 		if (analysis == null || !ScamRules.localAiEnabled()) {
 			return null;
 		}
-		if (!ruleConfig.isEnabled(ScamRules.ScamRule.LOCAL_AI_RISK_SIGNAL)) {
+		if (!ScamRules.isRuleEnabled(ScamRules.ScamRule.LOCAL_AI_RISK_SIGNAL)) {
 			return null;
 		}
 

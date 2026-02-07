@@ -1,8 +1,9 @@
 package eu.tango.scamscreener.ai;
 
+import eu.tango.scamscreener.ui.messages.TrainingMessages;
+
 import eu.tango.scamscreener.rules.ScamRules;
 import eu.tango.scamscreener.ui.MessageDispatcher;
-import eu.tango.scamscreener.ui.Messages;
 import eu.tango.scamscreener.ui.MessageFlagging;
 import eu.tango.scamscreener.util.IoErrorMapper;
 import eu.tango.scamscreener.config.LocalAiModelConfig;
@@ -28,17 +29,17 @@ public final class TrainingCommandHandler {
 	public int flagHoveredMessage(int label) {
 		String message = MessageFlagging.hoveredMessage();
 		if (message == null || message.isBlank()) {
-			MessageDispatcher.reply(Messages.noChatToCapture());
+			MessageDispatcher.reply(TrainingMessages.noChatToCapture());
 			return 0;
 		}
 		try {
 			trainingDataService.appendRows(List.of(message), label);
-			MessageDispatcher.reply(Messages.trainingSampleFlagged(label == LEGIT_LABEL ? "legit" : "scam"));
+			MessageDispatcher.reply(TrainingMessages.trainingSampleFlagged(label == LEGIT_LABEL ? "legit" : "scam"));
 			return 1;
 		} catch (IOException e) {
 			LOGGER.warn("Failed to save training sample from hover", e);
 			// Code: TR-SAVE-002
-			MessageDispatcher.reply(Messages.trainingSamplesSaveFailed(trainingErrorDetail(e, trainingDataService.trainingDataPath())));
+			MessageDispatcher.reply(TrainingMessages.trainingSamplesSaveFailed(trainingErrorDetail(e, trainingDataService.trainingDataPath())));
 			return 0;
 		}
 	}
@@ -46,22 +47,22 @@ public final class TrainingCommandHandler {
 	public int captureChatAsTrainingData(String playerName, int label, int count) {
 		List<String> lines = trainingDataService.recentLinesForPlayer(playerName, count);
 		if (lines.isEmpty()) {
-			MessageDispatcher.reply(Messages.noChatToCapture());
+			MessageDispatcher.reply(TrainingMessages.noChatToCapture());
 			return 0;
 		}
 
 		try {
 			trainingDataService.appendRows(lines, label);
 			if (lines.size() == 1) {
-				MessageDispatcher.reply(Messages.trainingSampleSaved(trainingDataService.trainingDataPath().toString(), label));
+				MessageDispatcher.reply(TrainingMessages.trainingSampleSaved(trainingDataService.trainingDataPath().toString(), label));
 			} else {
-				MessageDispatcher.reply(Messages.trainingSamplesSaved(trainingDataService.trainingDataPath().toString(), label, lines.size()));
+				MessageDispatcher.reply(TrainingMessages.trainingSamplesSaved(trainingDataService.trainingDataPath().toString(), label, lines.size()));
 			}
 			return 1;
 		} catch (IOException e) {
 			LOGGER.warn("Failed to save training samples", e);
 			// Code: TR-SAVE-002
-			MessageDispatcher.reply(Messages.trainingSamplesSaveFailed(trainingErrorDetail(e, trainingDataService.trainingDataPath())));
+			MessageDispatcher.reply(TrainingMessages.trainingSamplesSaveFailed(trainingErrorDetail(e, trainingDataService.trainingDataPath())));
 			return 0;
 		}
 	}
@@ -69,17 +70,17 @@ public final class TrainingCommandHandler {
 	public int captureMessageById(String messageId, int label) {
 		String message = MessageFlagging.messageById(messageId);
 		if (message == null || message.isBlank()) {
-			MessageDispatcher.reply(Messages.noChatToCapture());
+			MessageDispatcher.reply(TrainingMessages.noChatToCapture());
 			return 0;
 		}
 		try {
 			trainingDataService.appendRows(List.of(message), label);
-			MessageDispatcher.reply(Messages.trainingSampleFlagged(label == LEGIT_LABEL ? "legit" : "scam"));
+			MessageDispatcher.reply(TrainingMessages.trainingSampleFlagged(label == LEGIT_LABEL ? "legit" : "scam"));
 			return 1;
 		} catch (IOException e) {
 			LOGGER.warn("Failed to save training sample from message id", e);
 			// Code: TR-SAVE-002
-			MessageDispatcher.reply(Messages.trainingSamplesSaveFailed(trainingErrorDetail(e, trainingDataService.trainingDataPath())));
+			MessageDispatcher.reply(TrainingMessages.trainingSamplesSaveFailed(trainingErrorDetail(e, trainingDataService.trainingDataPath())));
 			return 0;
 		}
 	}
@@ -87,17 +88,17 @@ public final class TrainingCommandHandler {
 	public int captureBulkLegit(int count) {
 		List<String> lines = trainingDataService.recentLines(count);
 		if (lines.isEmpty()) {
-			MessageDispatcher.reply(Messages.noChatToCapture());
+			MessageDispatcher.reply(TrainingMessages.noChatToCapture());
 			return 0;
 		}
 		try {
 			trainingDataService.appendRows(lines, LEGIT_LABEL);
-			MessageDispatcher.reply(Messages.trainingSamplesSaved(trainingDataService.trainingDataPath().toString(), LEGIT_LABEL, lines.size()));
+			MessageDispatcher.reply(TrainingMessages.trainingSamplesSaved(trainingDataService.trainingDataPath().toString(), LEGIT_LABEL, lines.size()));
 			return 1;
 		} catch (IOException e) {
 			LOGGER.warn("Failed to save bulk legit samples", e);
 			// Code: TR-SAVE-002
-			MessageDispatcher.reply(Messages.trainingSamplesSaveFailed(trainingErrorDetail(e, trainingDataService.trainingDataPath())));
+			MessageDispatcher.reply(TrainingMessages.trainingSamplesSaveFailed(trainingErrorDetail(e, trainingDataService.trainingDataPath())));
 			return 0;
 		}
 	}
@@ -106,22 +107,22 @@ public final class TrainingCommandHandler {
 		try {
 			int updated = trainingDataService.migrateTrainingData();
 			if (updated <= 0) {
-				MessageDispatcher.reply(Messages.trainingDataUpToDate());
+				MessageDispatcher.reply(TrainingMessages.trainingDataUpToDate());
 			} else {
-				MessageDispatcher.reply(Messages.trainingDataMigrated(updated));
+				MessageDispatcher.reply(TrainingMessages.trainingDataMigrated(updated));
 			}
 			return 1;
 		} catch (IOException e) {
 			LOGGER.warn("Failed to migrate training data", e);
 			// Code: TR-SAVE-002
-			MessageDispatcher.reply(Messages.trainingSamplesSaveFailed(trainingErrorDetail(e, trainingDataService.trainingDataPath())));
+			MessageDispatcher.reply(TrainingMessages.trainingSamplesSaveFailed(trainingErrorDetail(e, trainingDataService.trainingDataPath())));
 			return 0;
 		}
 	}
 
 	public int trainLocalAiModel() {
 		if (trainingInProgress) {
-			MessageDispatcher.reply(Messages.trainingAlreadyRunning());
+			MessageDispatcher.reply(TrainingMessages.trainingAlreadyRunning());
 			return 0;
 		}
 		trainingInProgress = true;
@@ -129,18 +130,18 @@ public final class TrainingCommandHandler {
 			try {
 				LocalAiTrainer.TrainingResult result = localAiTrainer.trainAndSave(trainingDataService.trainingDataPath());
 				ScamRules.reloadConfig();
-				MessageDispatcher.reply(Messages.trainingCompleted(
+				MessageDispatcher.reply(TrainingMessages.trainingCompleted(
 					result.sampleCount(),
 					result.positiveCount(),
 					result.archivedDataPath().getFileName().toString()
 				));
 				if (result.ignoredUnigrams() > 0) {
-					MessageDispatcher.reply(Messages.trainingUnigramsIgnored(result.ignoredUnigrams()));
+					MessageDispatcher.reply(TrainingMessages.trainingUnigramsIgnored(result.ignoredUnigrams()));
 				}
 			} catch (IOException e) {
 				LOGGER.warn("Failed to train local AI model", e);
 				// Code: TR-TRAIN-001
-				MessageDispatcher.reply(Messages.trainingFailed(trainingErrorDetail(e, trainingDataService.trainingDataPath())));
+				MessageDispatcher.reply(TrainingMessages.trainingFailed(trainingErrorDetail(e, trainingDataService.trainingDataPath())));
 			} finally {
 				trainingInProgress = false;
 			}
@@ -153,7 +154,7 @@ public final class TrainingCommandHandler {
 	public int resetLocalAiModel() {
 		LocalAiModelConfig.save(new LocalAiModelConfig());
 		ScamRules.reloadConfig();
-		MessageDispatcher.reply(Messages.localAiModelReset());
+		MessageDispatcher.reply(TrainingMessages.localAiModelReset());
 		return 1;
 	}
 
@@ -161,3 +162,4 @@ public final class TrainingCommandHandler {
 		return IoErrorMapper.trainingErrorDetail(error, trainingPath);
 	}
 }
+

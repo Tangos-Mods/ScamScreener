@@ -7,20 +7,11 @@ import eu.tango.scamscreener.pipeline.model.BehaviorAnalysis;
 import eu.tango.scamscreener.pipeline.model.MessageEvent;
 
 public final class BehaviorAnalyzer {
-	private final RuleConfig ruleConfig;
 	private String lastPlayerKey;
 	private int consecutiveCount;
 	private final java.util.List<String> consecutiveMessages = new java.util.ArrayList<>();
 	private static final java.util.regex.Pattern DISCORD_HANDLE_PATTERN = java.util.regex.Pattern.compile("@[a-z0-9._-]{2,32}");
 	private static final java.util.regex.Pattern DISCORD_WORD_PATTERN = java.util.regex.Pattern.compile("\\bdiscord\\b");
-
-	/**
-	 * Extracts behavior flags from each chat line (e.g. external platform push).
-	 * Behavior flags are later turned into signals by {@link eu.tango.scamscreener.pipeline.stage.BehaviorSignalStage}.
-	 */
-	public BehaviorAnalyzer(RuleConfig ruleConfig) {
-		this.ruleConfig = ruleConfig;
-	}
 
 	/**
 	 * Builds a {@link BehaviorAnalysis} snapshot for the given event.
@@ -57,7 +48,7 @@ public final class BehaviorAnalyzer {
 		}
 		lastPlayerKey = playerKey;
 
-		ScamRules.BehaviorPatternSet patterns = ruleConfig.behaviorPatterns();
+		ScamRules.BehaviorPatternSet patterns = ScamRules.behaviorPatternSet();
 		boolean hasDiscordHandle = DISCORD_WORD_PATTERN.matcher(normalized).find()
 			&& DISCORD_HANDLE_PATTERN.matcher(normalized).find();
 		return new BehaviorAnalysis(
@@ -92,3 +83,4 @@ public final class BehaviorAnalyzer {
 		return pattern.matcher(text).find();
 	}
 }
+

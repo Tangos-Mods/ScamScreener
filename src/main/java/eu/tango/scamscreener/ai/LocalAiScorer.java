@@ -140,14 +140,6 @@ public final class LocalAiScorer {
 				sum += weight;
 			}
 		}
-
-		// Backward compatibility: support old model files that stored plain unigram keys without prefixes.
-		for (String token : TokenFeatureExtractor.tokenizeWords(message)) {
-			Double weight = tokenWeights.get(token);
-			if (weight != null) {
-				sum += weight;
-			}
-		}
 		return sum;
 	}
 
@@ -173,12 +165,6 @@ public final class LocalAiScorer {
 
 		if (w.tokenWeights != null && !w.tokenWeights.isEmpty()) {
 			for (String token : TokenFeatureExtractor.extractFeatureTokens(message)) {
-				Double weight = w.tokenWeights.get(token);
-				if (weight != null) {
-					contributions.add(new Contribution("token " + token, weight));
-				}
-			}
-			for (String token : TokenFeatureExtractor.tokenizeWords(message)) {
 				Double weight = w.tokenWeights.get(token);
 				if (weight != null) {
 					contributions.add(new Contribution("token " + token, weight));

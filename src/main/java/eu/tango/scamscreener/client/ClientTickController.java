@@ -1,12 +1,13 @@
 package eu.tango.scamscreener.client;
 
+import eu.tango.scamscreener.ui.messages.CommandMessages;
+
 import eu.tango.scamscreener.blacklist.BlacklistAlertService;
 import eu.tango.scamscreener.blacklist.BlacklistManager;
 import eu.tango.scamscreener.chat.mute.MutePatternManager;
 import eu.tango.scamscreener.lookup.PlayerLookup;
 import eu.tango.scamscreener.pipeline.core.DetectionPipeline;
 import eu.tango.scamscreener.ui.FlaggingController;
-import eu.tango.scamscreener.ui.Messages;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.world.scores.Team;
@@ -116,6 +117,7 @@ public final class ClientTickController {
 		if (blocked <= 0 || client.player == null) {
 			return;
 		}
-		client.player.displayClientMessage(Messages.blockedMessagesSummary(blocked, mutePatternManager.notifyIntervalSeconds()), false);
+		client.player.displayClientMessage(CommandMessages.blockedMessagesSummary(blocked, mutePatternManager.notifyIntervalSeconds()), false);
 	}
 }
+

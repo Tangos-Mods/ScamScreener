@@ -1,5 +1,13 @@
 package eu.tango.scamscreener.ui;
 
+import eu.tango.scamscreener.ui.messages.BlacklistMessages;
+import eu.tango.scamscreener.ui.messages.CommandMessages;
+import eu.tango.scamscreener.ui.messages.DebugMessages;
+import eu.tango.scamscreener.ui.messages.ModelUpdateMessages;
+import eu.tango.scamscreener.ui.messages.RiskMessages;
+import eu.tango.scamscreener.ui.messages.ScreenMessages;
+import eu.tango.scamscreener.ui.messages.TrainingMessages;
+
 import eu.tango.scamscreener.blacklist.BlacklistManager;
 import eu.tango.scamscreener.pipeline.model.DetectionLevel;
 import eu.tango.scamscreener.pipeline.model.DetectionResult;
@@ -10,11 +18,9 @@ import net.minecraft.network.chat.Component;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -22,9 +28,13 @@ import java.util.function.Supplier;
 
 public final class UiPreview {
 	private static final List<Class<?>> PREVIEW_CLASSES = List.of(
-		Messages.class,
-		DebugMessages.class,
-		ErrorMessages.class
+		CommandMessages.class,
+		BlacklistMessages.class,
+		ModelUpdateMessages.class,
+		TrainingMessages.class,
+		RiskMessages.class,
+		ScreenMessages.class,
+		DebugMessages.class
 	);
 
 	private UiPreview() {
@@ -139,9 +149,6 @@ public final class UiPreview {
 		if (type == DetectionResult.class) {
 			return ctx.demoResult;
 		}
-		if (type == ScamRules.ScamAssessment.class) {
-			return ctx.demoAssessment;
-		}
 		if (type == BlacklistManager.ScamEntry.class) {
 			return ctx.demoEntry;
 		}
@@ -158,7 +165,6 @@ public final class UiPreview {
 		private final UUID demoUuid = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
 		private final BlacklistManager.ScamEntry demoEntry = null;
 		private final String lastCapturedLine;
-		private ScamRules.ScamAssessment demoAssessment;
 		private final DetectionResult demoResult = new DetectionResult(
 			72.0,
 			DetectionLevel.CRITICAL,
@@ -184,30 +190,7 @@ public final class UiPreview {
 				}
 			}
 			lastCapturedLine = captured;
-			demoAssessment = new ScamRules.ScamAssessment(
-				72,
-				ScamRules.ScamRiskLevel.CRITICAL,
-				EnumSet.of(ScamRules.ScamRule.FAKE_MIDDLEMAN_CLAIM, ScamRules.ScamRule.LOCAL_AI_RISK_SIGNAL),
-				Map.of(
-					ScamRules.ScamRule.FAKE_MIDDLEMAN_CLAIM, "Behavior flag claimsTrustedMiddlemanWithoutProof=true (+20)",
-					ScamRules.ScamRule.LOCAL_AI_RISK_SIGNAL, "Local AI probability=0.812, threshold=0.560 (+22)"
-				),
-				"this is legit middleman trust me and pay first",
-				List.of("this is legit middleman trust me and pay first")
-			);
-			if (lastCapturedChatSupplier != null) {
-				String last = lastCapturedLine;
-				if (last != null && !last.isBlank()) {
-					demoAssessment = new ScamRules.ScamAssessment(
-						demoAssessment.riskScore(),
-						demoAssessment.riskLevel(),
-						demoAssessment.triggeredRules(),
-						demoAssessment.ruleDetails(),
-						last,
-						List.of(last)
-					);
-				}
-			}
 		}
 	}
 }
+

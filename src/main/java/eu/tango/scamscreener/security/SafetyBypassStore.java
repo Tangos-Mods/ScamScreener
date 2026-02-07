@@ -10,6 +10,8 @@ import java.util.regex.Pattern;
 public final class SafetyBypassStore {
 	private static final int MAX_PENDING = 5;
 	private static final int MAX_ALLOW_ONCE = 5;
+	private static final Pattern EMAIL_PATTERN = Pattern.compile("\\b[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,}\\b", Pattern.CASE_INSENSITIVE);
+	private static final Pattern DISCORD_LINK_PATTERN = Pattern.compile("(https?://)?(www\\.)?(discord\\.gg|discord\\.com/invite)/[a-z0-9-]+", Pattern.CASE_INSENSITIVE);
 
 	private final Kind kind;
 	private final Pattern pattern;
@@ -20,6 +22,14 @@ public final class SafetyBypassStore {
 	public SafetyBypassStore(Kind kind, Pattern pattern) {
 		this.kind = kind;
 		this.pattern = pattern;
+	}
+
+	public static SafetyBypassStore emailStore() {
+		return new SafetyBypassStore(Kind.EMAIL, EMAIL_PATTERN);
+	}
+
+	public static SafetyBypassStore discordLinkStore() {
+		return new SafetyBypassStore(Kind.DISCORD_LINK, DISCORD_LINK_PATTERN);
 	}
 
 	public BlockResult blockIfMatch(String message, boolean isCommand) {

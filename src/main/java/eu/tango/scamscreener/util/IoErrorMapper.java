@@ -10,24 +10,28 @@ public final class IoErrorMapper {
 	}
 
 	public static String trainingErrorDetail(IOException error, Path trainingPath) {
+		return fileErrorDetail(error, trainingPath, "Training data file not found: ", "Access denied while reading training data: ");
+	}
+
+	public static String fileErrorDetail(Exception error, Path expectedPath, String notFoundPrefix, String accessDeniedPrefix) {
 		if (error == null) {
 			return "unknown error";
 		}
 		if (error instanceof NoSuchFileException missing) {
 			String file = missing.getFile();
-			return "Training data file not found: " + (file == null ? "unknown" : file);
+			return (notFoundPrefix == null ? "File not found: " : notFoundPrefix) + (file == null ? "unknown" : file);
 		}
 		if (error instanceof AccessDeniedException denied) {
 			String file = denied.getFile();
-			return "Access denied while reading training data: " + (file == null ? "unknown" : file);
+			return (accessDeniedPrefix == null ? "Access denied: " : accessDeniedPrefix) + (file == null ? "unknown" : file);
 		}
 		String message = error.getMessage();
 		if (message == null || message.isBlank()) {
 			return error.getClass().getSimpleName();
 		}
 		String trimmed = message.trim();
-		if (trainingPath != null && trimmed.equals(trainingPath.toString())) {
-			return "Training data file not found: " + trimmed;
+		if (expectedPath != null && trimmed.equals(expectedPath.toString())) {
+			return (notFoundPrefix == null ? "File not found: " : notFoundPrefix) + trimmed;
 		}
 		return trimmed;
 	}
