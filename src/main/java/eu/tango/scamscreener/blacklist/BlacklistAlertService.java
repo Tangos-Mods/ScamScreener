@@ -25,6 +25,9 @@ public final class BlacklistAlertService {
 	}
 
 	public void checkTriggerAndWarn(String message, TriggerContext context) {
+		if (message == null || message.isBlank() || context == null) {
+			return;
+		}
 		String playerName = context.matchPlayerName(message);
 		if (playerName == null) {
 			return;
@@ -51,12 +54,13 @@ public final class BlacklistAlertService {
 
 	private void sendBlacklistWarning(String playerName, UUID uuid, String reason) {
 		Minecraft client = Minecraft.getInstance();
-		if (client.player == null) {
+		var player = client.player;
+		if (player == null) {
 			return;
 		}
 
-		BlacklistManager.ScamEntry entry = blacklist.get(uuid);
-		client.player.displayClientMessage(Messages.blacklistWarning(playerName, reason, entry), false);
+		BlacklistManager.ScamEntry entry = uuid == null ? null : blacklist.get(uuid);
+		player.displayClientMessage(Messages.blacklistWarning(playerName, reason, entry), false);
 		NotificationService.playWarningTone();
 	}
 }

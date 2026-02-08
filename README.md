@@ -8,7 +8,7 @@ Der Mod kombiniert:
 - ein lokales, trainierbares KI-Scoring (ohne Cloud-Zwang),
 - sowie Chat-Muting ueber eigene Pattern.
 
-> Aktueller Stand laut `gradle.properties`: **Version 0.10.0**
+> Aktueller Stand laut `gradle.properties`: **Version 0.13.4**
 
 ## Warum dieser Mod?
 
@@ -31,7 +31,8 @@ ScamScreener bewertet solche Signale in Echtzeit und zeigt Warnungen mit nachvol
 - Spieler koennen manuell auf die lokale Blacklist gesetzt werden.
 - Der Mod warnt, wenn Blacklist-Spieler in relevanten Kontexte auftauchen:
   - Team/Party-Kontext,
-  - Party-Join/Party-Tab Situationen.
+  - Party-Join/Party-Tab Situationen,
+  - Party Finder Dungeon-Join (`Party Finder > <Name> joined the dungeon group! ...`).
 - Warnungen enthalten Name, Score, Reason, Timestamp und Trigger-Kontext.
 
 ## 2) Live-Chat-Erkennung (Rules + Local AI)

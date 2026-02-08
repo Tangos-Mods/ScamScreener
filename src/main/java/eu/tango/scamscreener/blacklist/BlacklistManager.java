@@ -18,6 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
 
 public final class BlacklistManager {
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -114,6 +115,19 @@ public final class BlacklistManager {
 			}
 		}
 		return null;
+	}
+
+	public boolean isBlacklisted(String playerName, Function<String, UUID> uuidResolver) {
+		if (playerName == null || playerName.isBlank()) {
+			return false;
+		}
+
+		String normalizedName = playerName.trim();
+		UUID uuid = uuidResolver == null ? null : uuidResolver.apply(normalizedName);
+		if (uuid != null) {
+			return contains(uuid);
+		}
+		return findByName(normalizedName) != null;
 	}
 
 	public boolean isEmpty() {

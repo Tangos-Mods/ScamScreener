@@ -130,7 +130,10 @@ public class ScamScreenerClient implements ClientModInitializer {
 	}
 
 	private void registerHypixelMessageChecks() {
-		ClientReceiveMessageEvents.ALLOW_GAME.register((message, overlay) -> !mutePatternManager.shouldBlock(message.getString()));
+		ClientReceiveMessageEvents.ALLOW_GAME.register((message, overlay) -> {
+			String plain = message == null ? "" : message.getString();
+			return !mutePatternManager.shouldBlock(plain);
+		});
 		ClientReceiveMessageEvents.ALLOW_CHAT.register((message, signedMessage, sender, params, timestamp) -> handleChatAllow(message));
 		ClientReceiveMessageEvents.GAME.register((message, overlay) -> handleHypixelMessage(message));
 		ClientReceiveMessageEvents.CHAT.register((message, signedMessage, sender, params, timestamp) -> handleHypixelMessage(message));
@@ -143,6 +146,9 @@ public class ScamScreenerClient implements ClientModInitializer {
 	}
 
 	private void handleHypixelMessage(Component message) {
+		if (message == null) {
+			return;
+		}
 		String plain = message.getString().trim();
 		trainingDataService.recordChatLine(plain);
 
@@ -176,7 +182,7 @@ public class ScamScreenerClient implements ClientModInitializer {
 			return true;
 		}
 
-		boolean blacklisted = isBlacklisted(parsed.playerName());
+		boolean blacklisted = BLACKLIST.isBlacklisted(parsed.playerName(), playerLookup::findUuidByName);
 		debugReporter.debugChatColor("line player=" + parsed.playerName() + " blacklisted=" + blacklisted);
 		Component decorated = ChatDecorator.decoratePlayerLine(message, parsed, blacklisted);
 		Minecraft client = Minecraft.getInstance();
@@ -191,19 +197,6 @@ public class ScamScreenerClient implements ClientModInitializer {
 		handleHypixelMessage(message);
 		return false;
 	}
-
-
-	private boolean isBlacklisted(String playerName) {
-		if (playerName == null || playerName.isBlank()) {
-			return false;
-		}
-		UUID uuid = playerLookup.findUuidByName(playerName);
-		if (uuid != null) {
-			return BLACKLIST.contains(uuid);
-		}
-		return BLACKLIST.findByName(playerName) != null;
-	}
-
 
 	private void setAllDebug(boolean enabled) {
 		modelUpdateService.setDebugEnabled(enabled);
