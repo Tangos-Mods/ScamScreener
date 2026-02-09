@@ -81,6 +81,10 @@ public class ScamRules {
 		return config.showAutoLeaveMessage();
 	}
 
+	public static boolean notifyAiUpToDateOnJoin() {
+		return config.notifyAiUpToDateOnJoin();
+	}
+
 	public static int levelMediumThreshold() {
 		return config.levelMediumThreshold();
 	}
@@ -189,6 +193,14 @@ public class ScamRules {
 		ScamRulesConfig.save(cfg);
 		reloadConfig();
 		return config.showAutoLeaveMessage();
+	}
+
+	public static boolean setNotifyAiUpToDateOnJoin(boolean enabled) {
+		ScamRulesConfig cfg = ScamRulesConfig.loadOrCreate();
+		cfg.notifyAiUpToDateOnJoin = enabled;
+		ScamRulesConfig.save(cfg);
+		reloadConfig();
+		return config.notifyAiUpToDateOnJoin();
 	}
 
 	public static Set<ScamRule> disabledRules() {
@@ -367,6 +379,7 @@ public class ScamRules {
 		boolean showBlacklistWarningMessage,
 		boolean pingOnBlacklistWarning,
 		boolean showAutoLeaveMessage,
+		boolean notifyAiUpToDateOnJoin,
 		int levelMediumThreshold,
 		int levelHighThreshold,
 		int levelCriticalThreshold,
@@ -403,6 +416,7 @@ public class ScamRules {
 				config.showBlacklistWarningMessage,
 				config.pingOnBlacklistWarning,
 				config.showAutoLeaveMessage,
+				Boolean.TRUE.equals(config.notifyAiUpToDateOnJoin),
 				config.levelMedium,
 				config.levelHigh,
 				config.levelCritical,

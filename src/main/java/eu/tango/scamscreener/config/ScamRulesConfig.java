@@ -37,6 +37,7 @@ public final class ScamRulesConfig {
 	public static final boolean DEFAULT_SHOW_BLACKLIST_WARNING_MESSAGE = true;
 	public static final boolean DEFAULT_PING_ON_BLACKLIST_WARNING = true;
 	public static final boolean DEFAULT_SHOW_AUTO_LEAVE_MESSAGE = true;
+	public static final boolean DEFAULT_NOTIFY_AI_UP_TO_DATE_ON_JOIN = true;
 	public static final int DEFAULT_LEVEL_MEDIUM = 20;
 	public static final int DEFAULT_LEVEL_HIGH = 40;
 	public static final int DEFAULT_LEVEL_CRITICAL = 70;
@@ -75,6 +76,7 @@ public final class ScamRulesConfig {
 	public boolean showBlacklistWarningMessage = DEFAULT_SHOW_BLACKLIST_WARNING_MESSAGE;
 	public boolean pingOnBlacklistWarning = DEFAULT_PING_ON_BLACKLIST_WARNING;
 	public boolean showAutoLeaveMessage = DEFAULT_SHOW_AUTO_LEAVE_MESSAGE;
+	public Boolean notifyAiUpToDateOnJoin = DEFAULT_NOTIFY_AI_UP_TO_DATE_ON_JOIN;
 	public int levelMedium = DEFAULT_LEVEL_MEDIUM;
 	public int levelHigh = DEFAULT_LEVEL_HIGH;
 	public int levelCritical = DEFAULT_LEVEL_CRITICAL;
@@ -178,6 +180,9 @@ public final class ScamRulesConfig {
 		}
 		if (isBlank(autoCaptureAlertLevel)) {
 			autoCaptureAlertLevel = DEFAULT_AUTO_CAPTURE_ALERT_LEVEL;
+		}
+		if (notifyAiUpToDateOnJoin == null) {
+			notifyAiUpToDateOnJoin = DEFAULT_NOTIFY_AI_UP_TO_DATE_ON_JOIN;
 		}
 		if (disabledRules == null) {
 			disabledRules = new LinkedHashSet<>();

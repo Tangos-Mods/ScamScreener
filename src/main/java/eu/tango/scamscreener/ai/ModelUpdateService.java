@@ -45,14 +45,17 @@ public final class ModelUpdateService {
 
 	public void checkForUpdateAsync(Consumer<Component> reply) {
 		debug(reply, "check started");
-		Thread thread = new Thread(() -> checkForUpdate(reply, false, false), "scamscreener-model-check");
+		Thread thread = new Thread(
+			() -> checkForUpdate(reply, false, false, ScamRules.notifyAiUpToDateOnJoin()),
+			"scamscreener-model-check"
+		);
 		thread.setDaemon(true);
 		thread.start();
 	}
 
 	public void checkForUpdateAndDownloadAsync(Consumer<Component> reply, boolean force) {
 		debug(reply, "check started (command)");
-		Thread thread = new Thread(() -> checkForUpdate(reply, force, true), "scamscreener-model-check");
+		Thread thread = new Thread(() -> checkForUpdate(reply, force, true, true), "scamscreener-model-check");
 		thread.setDaemon(true);
 		thread.start();
 	}
@@ -164,7 +167,7 @@ public final class ModelUpdateService {
 		return 0;
 	}
 
-	private void checkForUpdate(Consumer<Component> reply, boolean force, boolean autoDownload) {
+	private void checkForUpdate(Consumer<Component> reply, boolean force, boolean autoDownload, boolean notifyWhenUpToDate) {
 		FetchResult fetch = fetchVersionInfo();
 		ModelVersionInfo info = fetch.info();
 		if (info == null) {
@@ -184,7 +187,9 @@ public final class ModelUpdateService {
 		if (!force && localHash != null && info.sha256 != null && !info.sha256.isBlank()
 			&& localHash.equalsIgnoreCase(info.sha256.trim())) {
 			debug(reply, "no update (hash match)");
-			reply.accept(Messages.modelUpdateUpToDate());
+			if (notifyWhenUpToDate) {
+				reply.accept(Messages.modelUpdateUpToDate());
+			}
 			return;
 		}
 

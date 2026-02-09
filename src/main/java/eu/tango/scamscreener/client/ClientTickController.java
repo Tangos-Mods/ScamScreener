@@ -1,6 +1,7 @@
 package eu.tango.scamscreener.client;
 
 import eu.tango.scamscreener.chat.mute.MutePatternManager;
+import eu.tango.scamscreener.location.LocationService;
 import eu.tango.scamscreener.pipeline.core.DetectionPipeline;
 import eu.tango.scamscreener.ui.Messages;
 import net.minecraft.client.Minecraft;
@@ -9,16 +10,19 @@ public final class ClientTickController {
 	private final MutePatternManager mutePatternManager;
 	private final DetectionPipeline detectionPipeline;
 	private final Runnable openSettingsAction;
+	private final LocationService locationService;
 	private boolean checkedModelUpdate;
 	private boolean openSettingsRequested;
 
 	public ClientTickController(MutePatternManager mutePatternManager,
 		DetectionPipeline detectionPipeline,
-		Runnable openSettingsAction
+		Runnable openSettingsAction,
+		LocationService locationService
 	) {
 		this.mutePatternManager = mutePatternManager;
 		this.detectionPipeline = detectionPipeline;
 		this.openSettingsAction = openSettingsAction;
+		this.locationService = locationService;
 	}
 
 	public void requestOpenSettings() {
@@ -35,12 +39,18 @@ public final class ClientTickController {
 
 		if (client.player == null || client.getConnection() == null) {
 			detectionPipeline.reset();
+			if (locationService != null) {
+				locationService.reset();
+			}
 			checkedModelUpdate = false;
 			return;
 		}
 		if (!checkedModelUpdate) {
 			checkedModelUpdate = true;
 			modelUpdateCheck.run();
+		}
+		if (locationService != null) {
+			locationService.onClientTick(client);
 		}
 
 		maybeNotifyBlockedMessages(client);

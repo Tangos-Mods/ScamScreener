@@ -41,8 +41,9 @@ public final class BlacklistAlertService {
 		}
 
 		UUID uuid = playerLookup.findUuidByName(playerName);
-		debugReporter.debugTrade("trade trigger " + context.name().toLowerCase(Locale.ROOT) + " player=" + playerName + " blacklisted=" + (uuid != null && blacklist.contains(uuid)));
-		if (uuid == null || !blacklist.contains(uuid)) {
+		boolean blacklisted = blacklist.isBlacklisted(playerName, playerLookup::findUuidByName);
+		debugReporter.debugTrade("blacklist trigger " + context.name().toLowerCase(Locale.ROOT) + " player=" + playerName + " blacklisted=" + blacklisted);
+		if (!blacklisted) {
 			return;
 		}
 
@@ -57,6 +58,9 @@ public final class BlacklistAlertService {
 		}
 
 		BlacklistManager.ScamEntry entry = uuid == null ? null : blacklist.get(uuid);
+		if (entry == null && playerName != null && !playerName.isBlank()) {
+			entry = blacklist.findByName(playerName);
+		}
 		if (ScamRules.showBlacklistWarningMessage()) {
 			player.displayClientMessage(Messages.blacklistWarning(playerName, reason, entry), false);
 		}

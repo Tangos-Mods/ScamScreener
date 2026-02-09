@@ -1,6 +1,7 @@
 package eu.tango.scamscreener.gui;
 
 import eu.tango.scamscreener.ai.ModelUpdateService;
+import eu.tango.scamscreener.rules.ScamRules;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -17,6 +18,7 @@ final class AiUpdateSettingsScreen extends GUI {
 	private Button statusButton;
 	private Button checkButton;
 	private Button forceCheckButton;
+	private Button joinNotifyButton;
 	private Button acceptButton;
 	private Button mergeButton;
 	private Button ignoreButton;
@@ -60,6 +62,12 @@ final class AiUpdateSettingsScreen extends GUI {
 		forceCheckButton.active = triggerForceAiUpdateHandler != null;
 		y += ROW_HEIGHT;
 
+		joinNotifyButton = this.addRenderableWidget(Button.builder(Component.empty(), button -> {
+			ScamRules.setNotifyAiUpToDateOnJoin(!ScamRules.notifyAiUpToDateOnJoin());
+			refreshState();
+		}).bounds(x, y, buttonWidth, 20).build());
+		y += ROW_HEIGHT;
+
 		int third = (buttonWidth - 16) / 3;
 		acceptButton = this.addRenderableWidget(Button.builder(Component.literal("Accept"), button -> applyAction("accept"))
 			.bounds(x, y, third, 20)
@@ -98,6 +106,8 @@ final class AiUpdateSettingsScreen extends GUI {
 	}
 
 	private void refreshState() {
+		refreshJoinNotifyButton();
+
 		ModelUpdateService.PendingUpdateSnapshot snapshot = aiUpdateSnapshotSupplier == null ? null : aiUpdateSnapshotSupplier.get();
 		if (snapshot == null) {
 			statusButton.setMessage(Component.literal("No update ready. Press \"Check / Download\" or \"Force Check\"."));
@@ -138,6 +148,12 @@ final class AiUpdateSettingsScreen extends GUI {
 		}
 		if (ignoreButton != null) {
 			ignoreButton.active = active;
+		}
+	}
+
+	private void refreshJoinNotifyButton() {
+		if (joinNotifyButton != null) {
+			joinNotifyButton.setMessage(onOffLine("Join Up-to-Date Message: ", ScamRules.notifyAiUpToDateOnJoin()));
 		}
 	}
 }

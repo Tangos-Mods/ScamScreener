@@ -253,6 +253,22 @@ public final class Messages extends MessageBuilder {
 			.append(Component.literal("Model update ignored.").withStyle(ChatFormatting.GRAY));
 	}
 
+	public static MutableComponent aiUpdateJoinNotifyStatus(boolean enabled) {
+		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
+			.append(Component.literal("AI up-to-date message on server join: ").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal(enabled ? "ON" : "OFF").withStyle(enabled ? ChatFormatting.GOLD : ChatFormatting.YELLOW));
+	}
+
+	public static MutableComponent aiUpdateJoinNotifyEnabled() {
+		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
+			.append(Component.literal("AI up-to-date message on server join enabled.").withStyle(ChatFormatting.GRAY));
+	}
+
+	public static MutableComponent aiUpdateJoinNotifyDisabled() {
+		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
+			.append(Component.literal("AI up-to-date message on server join disabled.").withStyle(ChatFormatting.GRAY));
+	}
+
 
 	public static MutableComponent trainingCompleted(int sampleCount, int positiveCount, String archivedFilename) {
 		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
@@ -312,7 +328,7 @@ public final class Messages extends MessageBuilder {
 			.append(Component.literal("\n- /scamscreener list").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener mute [pattern]").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener unmute <pattern>").withStyle(ChatFormatting.GRAY))
-			.append(Component.literal("\n- /scamscreener autoleave [on|off|status]").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal("\n- /scamscreener autoleave [on|off]").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener ai capture <player> <scam|legit> [count]").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener ai train").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener ai reset").withStyle(ChatFormatting.GRAY))
@@ -393,6 +409,25 @@ public final class Messages extends MessageBuilder {
 		return line;
 	}
 
+	public static MutableComponent coopAddSafetyBlocked(String playerName, String bypassId, boolean blacklisted) {
+		String id = bypassId == null ? "" : bypassId;
+		String safePlayer = playerName == null || playerName.isBlank() ? "unknown" : playerName;
+		MutableComponent line = prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
+			.append(Component.literal("Player ").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal(safePlayer).withStyle(ChatFormatting.AQUA));
+
+		if (blacklisted) {
+			line.append(Component.literal(" is ").withStyle(ChatFormatting.GRAY))
+				.append(Component.literal("blacklisted").withStyle(ChatFormatting.DARK_RED, ChatFormatting.BOLD))
+				.append(Component.literal(". /coopadd blocked. Double-check. ").withStyle(ChatFormatting.GRAY));
+		} else {
+			line.append(Component.literal(" was detected in /coopadd. Confirm before sending. ").withStyle(ChatFormatting.GRAY));
+		}
+
+		line.append(actionTag("BYPASS", ChatFormatting.DARK_RED, "Invite anyway", "/scamscreener bypass " + id));
+		return line;
+	}
+
 	public static MutableComponent emailBypassSent() {
 		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
 			.append(Component.literal("Bypass sent.").withStyle(ChatFormatting.GRAY));
@@ -465,6 +500,7 @@ public final class Messages extends MessageBuilder {
 			.append(Component.literal("\n- /scamscreener ai capture <player> <scam|legit> [count]").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener ai capturebulk <count>").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener ai migrate").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal("\n- /scamscreener ai update notify [on|off]").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener ai model <download|accept|merge|ignore> <id>").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener ai train").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener ai reset").withStyle(ChatFormatting.GRAY))

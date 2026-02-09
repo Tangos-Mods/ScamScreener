@@ -76,6 +76,7 @@ public final class SafetyBypassStore {
 
 	public enum Kind {
 		EMAIL,
-		DISCORD_LINK
+		DISCORD_LINK,
+		COOP_BLACKLIST
 	}
 }

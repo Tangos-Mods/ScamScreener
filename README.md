@@ -11,7 +11,7 @@ ScamScreener combines:
 - message muting with custom patterns
 - outgoing safety guard for email addresses and Discord invite links
 
-Current version in `gradle.properties`: **0.14.7**
+Current version in `gradle.properties`: **0.15.1**
 
 ## Why this mod?
 
@@ -28,6 +28,9 @@ Scams in trade/party contexts often use pressure tactics, trust manipulation, ex
   - active trade session
   - party confirmation (`You'll be partying with: <Name>`)
   - party finder dungeon join (`Party Finder > <Name> joined the dungeon group...`)
+  - co-op join request (`<Name> ... join your SkyBlock Co-op`)
+  - co-op invite sent (`You invited <Name> to your co-op!`)
+  - co-op member joined (`<Name> joined your SkyBlock Co-op!`)
 - Optional auto `/p leave` on blacklist hit.
 - Warning output can show player, score, reason, timestamp, and trigger context.
 
@@ -79,11 +82,13 @@ When thresholds are reached:
 - Blocks outgoing chat/commands containing:
   - email addresses
   - Discord invite links (`discord.gg`, `discord.com/invite`)
+- Blocks `/coopadd <player>` once and requires `[BYPASS]` confirmation
 - Shows a clickable `[BYPASS]` action that allows one resend for the blocked content.
 
 ### 7) In-game settings GUI
 
 Open with `/scamscreener settings`.
+If `ModMenu` is installed, the same settings screen is available via the mod menu config button.
 
 Screens available:
 
@@ -100,6 +105,7 @@ Screens available:
 - Fabric Loader `>= 0.18.4`
 - Fabric API matching your MC version
 - Java `21+`
+- Optional: ModMenu (`>= 16.0.0`) for config access from mod list
 
 ## Installation
 
@@ -123,7 +129,7 @@ Artifact output: `build/libs/`
 - `/scamscreener list`
 - `/scamscreener rules <list|disable|enable> [rule]`
 - `/scamscreener alertlevel [low|medium|high|critical]`
-- `/scamscreener autoleave [on|off|status]` (no args = toggle)
+- `/scamscreener autoleave [on|off]` (no args = status)
 - `/scamscreener settings`
 - `/scamscreener debug`
 - `/scamscreener debug <true|false> [updater|trade|mute|chatcolor]`
@@ -139,6 +145,7 @@ Artifact output: `build/libs/`
 - `/scamscreener ai migrate`
 - `/scamscreener ai update`
 - `/scamscreener ai update force`
+- `/scamscreener ai update notify [on|off]` (no args = status)
 - `/scamscreener ai model <download|accept|merge|ignore> <id>`
 - `/scamscreener ai train`
 - `/scamscreener ai reset`
@@ -155,7 +162,7 @@ Short capture aliases:
 - `/scamscreener mute <pattern>`
 - `/scamscreener unmute` (disable mute filter)
 - `/scamscreener unmute <pattern>`
-- `/scamscreener bypass <id>` (send blocked email/Discord content once)
+- `/scamscreener bypass <id>` (send blocked email/Discord/`/coopadd` content once)
 
 ## Configuration files
 
@@ -207,4 +214,4 @@ Tips:
 
 ## License
 
-See `LICENSE` (CC0-1.0).
+See `LICENSE` (MIT).

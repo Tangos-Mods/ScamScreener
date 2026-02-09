@@ -23,6 +23,18 @@ public enum TriggerContext {
 	PARTY_FINDER_DUNGEON_JOIN(
 		"joined your dungeon group via party finder",
 		Pattern.compile("^Party Finder > ([A-Za-z0-9_]{3,16}) joined the dungeon group(?:!.*)?$")
+	),
+	COOP_JOIN_REQUEST(
+		"co-op join request",
+		Pattern.compile("^([A-Za-z0-9_]{3,16}) (?:has )?(?:requested|asks|asked) to join your (?:SkyBlock )?co-?op!?$", Pattern.CASE_INSENSITIVE)
+	),
+	COOP_INVITE_SENT(
+		"invited to your co-op",
+		Pattern.compile("^You invited ([A-Za-z0-9_]{3,16}) to your (?:SkyBlock )?co-?op!?$", Pattern.CASE_INSENSITIVE)
+	),
+	COOP_MEMBER_JOINED(
+		"joined your SkyBlock Co-op",
+		Pattern.compile("^([A-Za-z0-9_]{3,16}) joined your (?:SkyBlock )?co-?op!?$", Pattern.CASE_INSENSITIVE)
 	);
 
 	private final String triggerReason;

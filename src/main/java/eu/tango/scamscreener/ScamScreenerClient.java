@@ -20,6 +20,7 @@ import eu.tango.scamscreener.pipeline.model.DetectionOutcome;
 import eu.tango.scamscreener.pipeline.core.DetectionPipeline;
 import eu.tango.scamscreener.pipeline.model.MessageEvent;
 import eu.tango.scamscreener.pipeline.core.MessageEventParser;
+import eu.tango.scamscreener.location.LocationService;
 import eu.tango.scamscreener.lookup.MojangProfileService;
 import eu.tango.scamscreener.lookup.PlayerLookup;
 import eu.tango.scamscreener.lookup.TargetResolutionService;
@@ -45,10 +46,13 @@ import eu.tango.scamscreener.security.EmailSafety;
 import eu.tango.scamscreener.security.DiscordSafety;
 import eu.tango.scamscreener.security.OutgoingMessageGuard;
 import eu.tango.scamscreener.security.BypassCommandHandler;
+import eu.tango.scamscreener.security.CoopAddSafety;
+import net.minecraft.client.gui.screens.Screen;
 
 public class ScamScreenerClient implements ClientModInitializer {
 	private static final BlacklistManager BLACKLIST = new BlacklistManager();
 	private static final Logger LOGGER = LoggerFactory.getLogger(ScamScreenerClient.class);
+	private static ScamScreenerClient INSTANCE;
 	private final PlayerLookup playerLookup = new PlayerLookup();
 	private final MojangProfileService mojangProfileService = new MojangProfileService();
 	private final TrainingDataService trainingDataService = new TrainingDataService();
@@ -56,12 +60,14 @@ public class ScamScreenerClient implements ClientModInitializer {
 	private final ModelUpdateService modelUpdateService = new ModelUpdateService();
 	private final MutePatternManager mutePatternManager = new MutePatternManager();
 	private final DetectionPipeline detectionPipeline = new DetectionPipeline(mutePatternManager, new LocalAiScorer());
+	private final LocationService locationService = new LocationService();
 	private final EmailSafety emailSafety = new EmailSafety();
 	private final DiscordSafety discordSafety = new DiscordSafety();
+	private final CoopAddSafety coopAddSafety = new CoopAddSafety(BLACKLIST, playerLookup);
 	private final TrainingCommandHandler trainingCommandHandler = new TrainingCommandHandler(trainingDataService, localAiTrainer);
-	private final OutgoingMessageGuard outgoingMessageGuard = new OutgoingMessageGuard(emailSafety, discordSafety);
+	private final OutgoingMessageGuard outgoingMessageGuard = new OutgoingMessageGuard(emailSafety, discordSafety, coopAddSafety);
 	private final ModelUpdateCommandHandler modelUpdateCommandHandler = new ModelUpdateCommandHandler(modelUpdateService);
-	private final BypassCommandHandler bypassCommandHandler = new BypassCommandHandler(emailSafety, discordSafety);
+	private final BypassCommandHandler bypassCommandHandler = new BypassCommandHandler(emailSafety, discordSafety, coopAddSafety);
 	private final TargetResolutionService targetResolutionService = new TargetResolutionService(playerLookup, mojangProfileService, BLACKLIST);
 	private boolean autoLeaveOnBlacklist;
 	private DebugConfig debugConfig;
@@ -71,6 +77,7 @@ public class ScamScreenerClient implements ClientModInitializer {
 
 	@Override
 	public void onInitializeClient() {
+		INSTANCE = this;
 		BLACKLIST.load();
 		ScamRules.reloadConfig();
 		autoLeaveOnBlacklist = ScamRulesConfig.loadOrCreate().autoLeaveOnBlacklist;
@@ -83,25 +90,16 @@ public class ScamScreenerClient implements ClientModInitializer {
 			if (client == null) {
 				return;
 			}
-			client.setScreen(new MainSettingsScreen(
-				client.screen,
-				BLACKLIST,
-				mutePatternManager,
-				() -> autoLeaveOnBlacklist,
-				this::setAutoLeaveEnabled,
-				this::setAllDebug,
-				this::setDebugKey,
-				this::debugStateSnapshot,
-				() -> modelUpdateCommandHandler.handleModelUpdateCheck(false),
-				() -> modelUpdateCommandHandler.handleModelUpdateCheck(true),
-				modelUpdateCommandHandler::latestPendingSnapshot,
-				modelUpdateCommandHandler::handleModelUpdateCommand
-			));
+			Screen settingsScreen = createSettingsScreen(client.screen);
+			if (settingsScreen != null) {
+				client.setScreen(settingsScreen);
+			}
 		};
 		tickController = new ClientTickController(
 			mutePatternManager,
 			detectionPipeline,
-			openSettingsAction
+			openSettingsAction,
+			locationService
 		);
 		registerCommands();
 		registerHypixelMessageChecks();
@@ -136,6 +134,31 @@ public class ScamScreenerClient implements ClientModInitializer {
 			MessageDispatcher::reply
 		);
 		commands.register();
+	}
+
+	public static Screen createSettingsScreen(Screen parent) {
+		ScamScreenerClient instance = INSTANCE;
+		if (instance == null) {
+			return parent;
+		}
+		return instance.createMainSettingsScreen(parent);
+	}
+
+	private MainSettingsScreen createMainSettingsScreen(Screen parent) {
+		return new MainSettingsScreen(
+			parent,
+			BLACKLIST,
+			mutePatternManager,
+			() -> autoLeaveOnBlacklist,
+			this::setAutoLeaveEnabled,
+			this::setAllDebug,
+			this::setDebugKey,
+			this::debugStateSnapshot,
+			() -> modelUpdateCommandHandler.handleModelUpdateCheck(false),
+			() -> modelUpdateCommandHandler.handleModelUpdateCheck(true),
+			modelUpdateCommandHandler::latestPendingSnapshot,
+			modelUpdateCommandHandler::handleModelUpdateCommand
+		);
 	}
 
 	private void registerHypixelMessageChecks() {

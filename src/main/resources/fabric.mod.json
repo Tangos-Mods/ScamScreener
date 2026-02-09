@@ -5,18 +5,25 @@
 	"name": "Scam Screener",
 	"description": "Client-side Scam detection for Hypixel SkyBlock trades, with blacklist alerts and local AI-assisted risk scoring.",
 	"authors": [
-		"Pankraz01"
+		"Pankraz01",
+		"",
+		"Contributor:",
+		"Kd_Gaming1"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"homepage": "https://modrinth.com/mod/scamscreener/",
+		"sources": "https://github.com/Tangos-Mods/ScamScreener/",
+		"issues": "https://github.com/Tangos-Mods/ScamScreener/issues/new"
 	},
-	"license": "CC0-1.0",
+	"license": "MIT",
 	"icon": "assets/scam-screener/icon.png",
 	"environment": "client",
 	"entrypoints": {
 		"client": [
 			"eu.tango.scamscreener.ScamScreenerClient"
+		],
+		"modmenu": [
+			"eu.tango.scamscreener.modmenu.ScamScreenerModMenuApi"
 		]
 	},
 	"depends": {
@@ -24,5 +31,8 @@
 		"minecraft": "~1.21.10",
 		"java": ">=21",
 		"fabric-api": "*"
+	},
+	"suggests": {
+		"modmenu": "*"
 	}
 }

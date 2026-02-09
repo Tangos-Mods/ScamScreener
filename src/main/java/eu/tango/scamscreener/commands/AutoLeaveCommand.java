@@ -20,16 +20,9 @@ final class AutoLeaveCommand {
 	) {
 		return ClientCommandManager.literal("autoleave")
 			.executes(context -> {
-				boolean enabled = !enabledSupplier.getAsBoolean();
-				setEnabledHandler.accept(enabled);
-				reply.accept(enabled ? Messages.autoLeaveEnabled() : Messages.autoLeaveDisabled());
+				reply.accept(Messages.autoLeaveStatus(enabledSupplier.getAsBoolean()));
 				return 1;
 			})
-			.then(ClientCommandManager.literal("status")
-				.executes(context -> {
-					reply.accept(Messages.autoLeaveStatus(enabledSupplier.getAsBoolean()));
-					return 1;
-				}))
 			.then(ClientCommandManager.literal("on")
 				.executes(context -> {
 					setEnabledHandler.accept(true);

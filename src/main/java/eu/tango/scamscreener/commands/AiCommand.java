@@ -83,7 +83,24 @@ final class AiCommand {
 
 		LiteralArgumentBuilder<FabricClientCommandSource> update = ClientCommandManager.literal("update")
 			.executes(context -> updateCheckHandler.check(false))
-			.then(ClientCommandManager.literal("force").executes(context -> updateCheckHandler.check(true)));
+			.then(ClientCommandManager.literal("force").executes(context -> updateCheckHandler.check(true)))
+			.then(ClientCommandManager.literal("notify")
+				.executes(context -> {
+					reply.accept(Messages.aiUpdateJoinNotifyStatus(ScamRules.notifyAiUpToDateOnJoin()));
+					return 1;
+				})
+				.then(ClientCommandManager.literal("on")
+					.executes(context -> {
+						ScamRules.setNotifyAiUpToDateOnJoin(true);
+						reply.accept(Messages.aiUpdateJoinNotifyEnabled());
+						return 1;
+					}))
+				.then(ClientCommandManager.literal("off")
+					.executes(context -> {
+						ScamRules.setNotifyAiUpToDateOnJoin(false);
+						reply.accept(Messages.aiUpdateJoinNotifyDisabled());
+						return 1;
+					})));
 
 		return ClientCommandManager.literal("ai")
 			.executes(context -> {
