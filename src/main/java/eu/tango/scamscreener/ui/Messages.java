@@ -362,6 +362,7 @@ public final class Messages {
 			.append(Component.literal("\n- /scamscreener list").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener mute [pattern]").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener unmute <pattern>").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal("\n- /scamscreener autoleave [on|off|status]").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener ai capture <player> <scam|legit> [count]").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener ai train").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener ai reset").withStyle(ChatFormatting.GRAY))
@@ -392,6 +393,34 @@ public final class Messages {
 		return Component.literal(PREFIX)
 			.withStyle(style -> style.withColor(PREFIX_LIGHT_RED))
 			.append(Component.literal("Mute filter disabled.").withStyle(ChatFormatting.GRAY));
+	}
+
+	public static MutableComponent autoLeaveStatus(boolean enabled) {
+		return Component.literal(PREFIX)
+			.withStyle(style -> style.withColor(PREFIX_LIGHT_RED))
+			.append(Component.literal("Auto party leave on blacklist: ").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal(enabled ? "ON" : "OFF").withStyle(enabled ? ChatFormatting.GOLD : ChatFormatting.YELLOW));
+	}
+
+	public static MutableComponent autoLeaveEnabled() {
+		return Component.literal(PREFIX)
+			.withStyle(style -> style.withColor(PREFIX_LIGHT_RED))
+			.append(Component.literal("Auto party leave enabled.").withStyle(ChatFormatting.GRAY));
+	}
+
+	public static MutableComponent autoLeaveDisabled() {
+		return Component.literal(PREFIX)
+			.withStyle(style -> style.withColor(PREFIX_LIGHT_RED))
+			.append(Component.literal("Auto party leave disabled.").withStyle(ChatFormatting.GRAY));
+	}
+
+	public static MutableComponent autoLeaveExecuted(String playerName) {
+		String safeName = playerName == null || playerName.isBlank() ? "unknown" : playerName;
+		return Component.literal(PREFIX)
+			.withStyle(style -> style.withColor(PREFIX_LIGHT_RED))
+			.append(Component.literal("Blacklisted player detected (").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal(safeName).withStyle(ChatFormatting.AQUA))
+			.append(Component.literal("). Executed /p leave.").withStyle(ChatFormatting.GRAY));
 	}
 
 	public static MutableComponent emailSafetyBlocked(String bypassId) {

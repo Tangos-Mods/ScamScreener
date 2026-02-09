@@ -8,7 +8,7 @@ Der Mod kombiniert:
 - ein lokales, trainierbares KI-Scoring (ohne Cloud-Zwang),
 - sowie Chat-Muting ueber eigene Pattern.
 
-> Aktueller Stand laut `gradle.properties`: **Version 0.13.4**
+> Aktueller Stand laut `gradle.properties`: **Version 0.13.5**
 
 ## Warum dieser Mod?
 
@@ -33,6 +33,7 @@ ScamScreener bewertet solche Signale in Echtzeit und zeigt Warnungen mit nachvol
   - Team/Party-Kontext,
   - Party-Join/Party-Tab Situationen,
   - Party Finder Dungeon-Join (`Party Finder > <Name> joined the dungeon group! ...`).
+- Optional: automatisches `/p leave` per Toggle-Command bei Blacklist-Treffer.
 - Warnungen enthalten Name, Score, Reason, Timestamp und Trigger-Kontext.
 
 ## 2) Live-Chat-Erkennung (Rules + Local AI)
@@ -131,6 +132,7 @@ Artefakt liegt danach in `build/libs/`.
 - `/scamscreener remove <player>`
 - `/scamscreener list`
 - `/scamscreener alertlevel [low|medium|high|critical]`
+- `/scamscreener autoleave [on|off|status]` (ohne Argument: Toggle)
 - `/scamscreener rules <list|disable|enable> [rule]`
 - `/scamscreener version`
 - `/scamscreener preview` (Dry-Run + Live-Preview anhand letzter Chatzeile)
@@ -160,6 +162,7 @@ Alle Mod-Dateien liegen unter:
 Wichtige Dateien:
 
 - `scam-screener-blacklist.json` -> Blacklist-Entries
+- `scam-screener-auto-leave.json` -> Auto-`/p leave` bei Blacklist-Treffer
 - `scam-screener-rules.json` -> Rule-Pattern, AI-Thresholds, disabled rules
 - `scam-screener-local-ai-model.json` -> lokales Modell + Weights
 - `scam-screener-training-data.csv` -> Trainingssamples

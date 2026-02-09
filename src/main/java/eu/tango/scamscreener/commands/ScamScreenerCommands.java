@@ -11,6 +11,7 @@ import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.network.chat.Component;
 
 import java.util.UUID;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntSupplier;
@@ -30,6 +31,8 @@ public final class ScamScreenerCommands {
 	private final java.util.function.Consumer<Boolean> setAllDebugHandler;
 	private final java.util.function.BiConsumer<String, Boolean> setDebugKeyHandler;
 	private final java.util.function.Supplier<java.util.Map<String, Boolean>> debugStateSupplier;
+	private final BooleanSupplier autoLeaveEnabledSupplier;
+	private final Consumer<Boolean> setAutoLeaveEnabledHandler;
 	private final IntSupplier trainHandler;
 	private final IntSupplier resetAiHandler;
 	private final Supplier<String> lastCapturedChatSupplier;
@@ -50,6 +53,8 @@ public final class ScamScreenerCommands {
 		java.util.function.Consumer<Boolean> setAllDebugHandler,
 		java.util.function.BiConsumer<String, Boolean> setDebugKeyHandler,
 		java.util.function.Supplier<java.util.Map<String, Boolean>> debugStateSupplier,
+		BooleanSupplier autoLeaveEnabledSupplier,
+		Consumer<Boolean> setAutoLeaveEnabledHandler,
 		IntSupplier trainHandler,
 		IntSupplier resetAiHandler,
 		Supplier<String> lastCapturedChatSupplier,
@@ -69,6 +74,8 @@ public final class ScamScreenerCommands {
 		this.setAllDebugHandler = setAllDebugHandler;
 		this.setDebugKeyHandler = setDebugKeyHandler;
 		this.debugStateSupplier = debugStateSupplier;
+		this.autoLeaveEnabledSupplier = autoLeaveEnabledSupplier;
+		this.setAutoLeaveEnabledHandler = setAutoLeaveEnabledHandler;
 		this.trainHandler = trainHandler;
 		this.resetAiHandler = resetAiHandler;
 		this.lastCapturedChatSupplier = lastCapturedChatSupplier;
@@ -91,25 +98,26 @@ public final class ScamScreenerCommands {
 				return 1;
 			})
 			.then(AddCommand.build(blacklist, targetResolver, reply))
-			.then(RemoveCommand.build(blacklist, targetResolver, onBlacklistRemoved, reply))
-			.then(ListCommand.build(blacklist, reply))
-			.then(MuteCommand.build(mutePatternManager, reply))
-			.then(UnmuteCommand.build(mutePatternManager, reply))
-			.then(EmailBypassCommand.build(emailBypassHandler, reply))
-			.then(AiCommand.build(
-				captureByPlayerHandler,
-				captureByMessageHandler,
-				captureBulkHandler,
-				migrateTrainingHandler,
-				modelUpdateHandler,
-				updateCheckHandler,
-				trainHandler,
-				resetAiHandler,
-				reply
-			))
-			.then(RuleCommand.build(reply))
-			.then(AlertLevelCommand.build(reply))
-			.then(DebugCommand.build(setAllDebugHandler, setDebugKeyHandler, debugStateSupplier, reply))
+				.then(RemoveCommand.build(blacklist, targetResolver, onBlacklistRemoved, reply))
+				.then(ListCommand.build(blacklist, reply))
+				.then(MuteCommand.build(mutePatternManager, reply))
+				.then(UnmuteCommand.build(mutePatternManager, reply))
+				.then(EmailBypassCommand.build(emailBypassHandler, reply))
+				.then(AiCommand.build(
+					captureByPlayerHandler,
+					captureByMessageHandler,
+					captureBulkHandler,
+					migrateTrainingHandler,
+					modelUpdateHandler,
+					updateCheckHandler,
+					trainHandler,
+					resetAiHandler,
+					reply
+				))
+				.then(RuleCommand.build(reply))
+				.then(AlertLevelCommand.build(reply))
+				.then(AutoLeaveCommand.build(autoLeaveEnabledSupplier, setAutoLeaveEnabledHandler, reply))
+				.then(DebugCommand.build(setAllDebugHandler, setDebugKeyHandler, debugStateSupplier, reply))
 			.then(VersionCommand.build(reply))
 			.then(PreviewCommand.build(reply, lastCapturedChatSupplier));
 	}

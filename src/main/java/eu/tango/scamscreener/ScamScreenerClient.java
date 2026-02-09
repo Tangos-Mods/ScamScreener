@@ -10,6 +10,7 @@ import eu.tango.scamscreener.blacklist.BlacklistManager;
 import eu.tango.scamscreener.blacklist.BlacklistAlertService;
 import eu.tango.scamscreener.client.ClientTickController;
 import eu.tango.scamscreener.commands.ScamScreenerCommands;
+import eu.tango.scamscreener.config.AutoLeaveConfig;
 import eu.tango.scamscreener.config.DebugConfig;
 import eu.tango.scamscreener.chat.mute.MutePatternManager;
 import eu.tango.scamscreener.chat.parser.ChatLineParser;
@@ -41,10 +42,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.UUID;
 import eu.tango.scamscreener.security.EmailSafety;
 import eu.tango.scamscreener.security.DiscordSafety;
 import eu.tango.scamscreener.security.OutgoingMessageGuard;
@@ -62,8 +60,6 @@ public class ScamScreenerClient implements ClientModInitializer {
 	private final ModelUpdateService modelUpdateService = new ModelUpdateService();
 	private final MutePatternManager mutePatternManager = new MutePatternManager();
 	private final DetectionPipeline detectionPipeline = new DetectionPipeline(mutePatternManager, new LocalAiScorer());
-	private final Set<UUID> currentlyDetected = new HashSet<>();
-	private final Set<String> warnedContexts = new HashSet<>();
 	private final EmailSafety emailSafety = new EmailSafety();
 	private final DiscordSafety discordSafety = new DiscordSafety();
 	private final TrainingCommandHandler trainingCommandHandler = new TrainingCommandHandler(trainingDataService, localAiTrainer);
@@ -71,6 +67,7 @@ public class ScamScreenerClient implements ClientModInitializer {
 	private final ModelUpdateCommandHandler modelUpdateCommandHandler = new ModelUpdateCommandHandler(modelUpdateService);
 	private final BypassCommandHandler bypassCommandHandler = new BypassCommandHandler(emailSafety, discordSafety);
 	private final TargetResolutionService targetResolutionService = new TargetResolutionService(playerLookup, mojangProfileService, BLACKLIST);
+	private AutoLeaveConfig autoLeaveConfig;
 	private DebugConfig debugConfig;
 	private DebugReporter debugReporter;
 	private BlacklistAlertService blacklistAlertService;
@@ -82,19 +79,15 @@ public class ScamScreenerClient implements ClientModInitializer {
 		BLACKLIST.load();
 		ScamRules.reloadConfig();
 		mutePatternManager.load();
+		loadAutoLeaveConfig();
 		loadDebugConfig();
 		debugReporter = new DebugReporter(debugConfig);
-		blacklistAlertService = new BlacklistAlertService(BLACKLIST, playerLookup, warnedContexts, debugReporter);
+		blacklistAlertService = new BlacklistAlertService(BLACKLIST, playerLookup, debugReporter, this::isAutoLeaveEnabled);
 		flaggingController = new FlaggingController(trainingCommandHandler);
 		tickController = new ClientTickController(
 			flaggingController,
 			mutePatternManager,
 			detectionPipeline,
-			BLACKLIST,
-			blacklistAlertService,
-			playerLookup,
-			currentlyDetected,
-			warnedContexts,
 			LEGIT_LABEL,
 			SCAM_LABEL
 		);
@@ -120,10 +113,12 @@ public class ScamScreenerClient implements ClientModInitializer {
 			this::setAllDebug,
 			this::setDebugKey,
 			this::debugStateSnapshot,
+			this::isAutoLeaveEnabled,
+			this::setAutoLeaveEnabled,
 			trainingCommandHandler::trainLocalAiModel,
 			trainingCommandHandler::resetLocalAiModel,
 			trainingDataService::lastCapturedLine,
-			currentlyDetected::remove,
+			ignored -> {},
 			MessageDispatcher::reply
 		);
 		commands.register();
@@ -231,6 +226,28 @@ public class ScamScreenerClient implements ClientModInitializer {
 			debugConfig = new DebugConfig();
 		}
 		modelUpdateService.setDebugEnabled(debugConfig.isEnabled("updater"));
+	}
+
+	private void loadAutoLeaveConfig() {
+		autoLeaveConfig = AutoLeaveConfig.loadOrCreate();
+		if (autoLeaveConfig == null) {
+			autoLeaveConfig = new AutoLeaveConfig();
+		}
+		if (autoLeaveConfig.enabled == null) {
+			autoLeaveConfig.enabled = false;
+		}
+	}
+
+	private boolean isAutoLeaveEnabled() {
+		return autoLeaveConfig != null && Boolean.TRUE.equals(autoLeaveConfig.enabled);
+	}
+
+	private void setAutoLeaveEnabled(boolean enabled) {
+		if (autoLeaveConfig == null) {
+			autoLeaveConfig = new AutoLeaveConfig();
+		}
+		autoLeaveConfig.enabled = enabled;
+		AutoLeaveConfig.save(autoLeaveConfig);
 	}
 
 	private void updateDebugConfig() {
