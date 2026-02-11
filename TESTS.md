@@ -1,91 +1,106 @@
 # Tests
 
-Diese Datei beschreibt, welche automatisierten Tests aktuell vorhanden sind, was sie abdecken und wie sie die Funktionalitaet pruefen.
+This file describes which automated tests currently exist, what they cover, and how they validate functionality.
 
-## Test-Ausfuehrung
+## Running Tests
 
-- Alle Tests laufen mit: `.\gradlew.bat test`
+- All tests run with: `.\gradlew.bat test`
 - Framework: JUnit 5
 
-## Aktuelle Testklassen
+## Current Test Classes
 
-### `src/test/java/eu/tango/scamscreener/ai/ModelUpdateServiceHashTest.java`
-- **Was wird getestet:**
-  - Hash-Validierung bei Model-Updates (`hashMatchesExpected` in `ModelUpdateService`).
-  - Regression fuer LF/CRLF + BOM/no BOM Varianten.
-- **Wie wird getestet:**
-  - Aufruf der privaten statischen Methode per Reflection.
-  - Vergleich mit lokal berechneten SHA-256 Hashes.
-  - Positive und negative Faelle:
-    - exakter Hash matcht,
-    - semantisch gleicher Text mit anderen UTF-8 Varianten matcht,
-    - geaenderter Inhalt matcht nicht,
-    - fehlende Eingaben (`null`/blank) liefern `false`.
+Base directory: `src/test/java/eu/tango/scamscreener/`
 
-### `src/test/java/eu/tango/scamscreener/chat/parser/ChatLineParserTest.java`
-- **Was wird getestet:**
-  - Erkennung gueltiger Player-Chat-Zeilen.
-  - Abgrenzung zu System- und NPC-Zeilen.
-- **Wie wird getestet:**
-  - Direkte Input-Output Assertions auf `parsePlayerLine` und `isSystemLine`.
-  - Positivfaelle (Direktchat, Whisper) und Negativfaelle (Trade-Systemmeldung, `[NPC]`).
+### `ai/ModelUpdateServiceHashTest.java`
+- **What is tested:**
+  - Hash validation during model updates (`hashMatchesExpected` in `ModelUpdateService`).
+  - Regression for LF/CRLF and BOM/no BOM variants.
+- **How it is tested:**
+  - Calls the private static method via reflection.
+  - Compares against locally computed SHA-256 hashes.
+  - Positive and negative cases:
+    - exact hash matches,
+    - semantically identical text with UTF-8 variants matches,
+    - changed content does not match,
+    - missing inputs (`null`/blank) return `false`.
 
-### `src/test/java/eu/tango/scamscreener/pipeline/core/MessageEventParserTest.java`
-- **Was wird getestet:**
-  - Mapping von Chat-Formaten auf Kontext/Kanal (`party`, `team`, `pm`, `public`).
-  - Filterung von Systemzeilen.
-- **Wie wird getestet:**
-  - Parsing typischer Beispielzeilen mit festen Timestamps.
-  - Assertions auf `MessageContext`, `channel` und `null` bei Systemzeilen.
+### `chat/parser/ChatLineParserTest.java`
+- **What is tested:**
+  - Detection of valid player chat lines.
+  - Separation from system and NPC lines.
+- **How it is tested:**
+  - Direct input/output assertions on `parsePlayerLine` and `isSystemLine`.
+  - Positive cases (direct chat, whisper) and negative cases (trade system message, `[NPC]`).
 
-### `src/test/java/eu/tango/scamscreener/pipeline/core/WarningDeduplicatorTest.java`
-- **Was wird getestet:**
-  - Deduplizierung: gleiche Kombination aus Spieler + Risiko-Level nur einmal warnen.
-  - Verhalten bei ungueltigen Eingaben.
-  - Ruecksetzen via `reset()`.
-- **Wie wird getestet:**
-  - Stateful Sequenztests:
-    - erster Aufruf `true`, zweiter gleicher Aufruf `false`,
-    - anderes Level fuer gleichen Spieler weiterhin `true`,
-    - nach `reset()` wieder `true`.
+### `pipeline/core/MessageEventParserTest.java`
+- **What is tested:**
+  - Mapping chat formats to context/channel (`party`, `team`, `pm`, `public`).
+  - Filtering of system lines.
+- **How it is tested:**
+  - Parses representative example lines with fixed timestamps.
+  - Asserts `MessageContext`, `channel`, and `null` for system lines.
 
-### `src/test/java/eu/tango/scamscreener/security/SafetyBypassStoreTest.java`
-- **Was wird getestet:**
-  - Blockieren per Pattern und Abruf von Pending-Eintraegen.
-  - One-time Allow-Logik (`allowOnce`/`consumeAllowOnce`).
-  - Begrenzung der Allow-Queue.
-- **Wie wird getestet:**
-  - Test-Store mit einfachem Regex (`secret`) in `@BeforeEach`.
-  - Lifecycle-Assertions:
-    - `blockIfMatch` erzeugt ID + Pending,
-    - `takePending` konsumiert genau einmal,
-    - `allowOnce` ist single-use und nach `isCommand` getrennt,
-    - bei 6 Eintraegen wird der aelteste (Limit 5) verworfen.
+### `pipeline/core/WarningDeduplicatorTest.java`
+- **What is tested:**
+  - Deduplication: same player + risk-level combination warns only once.
+  - Behavior with invalid inputs.
+  - Reset behavior via `reset()`.
+- **How it is tested:**
+  - Stateful sequence tests:
+    - first call returns `true`, second identical call returns `false`,
+    - different level for the same player still returns `true`,
+    - after `reset()`, it returns `true` again.
 
-### `src/test/java/eu/tango/scamscreener/util/IoErrorMapperTest.java`
-- **Was wird getestet:**
-  - Fehlertext-Mapping fuer Training-IO-Fehler.
-- **Wie wird getestet:**
-  - Gezielte Exception-Typen (`NoSuchFileException`, `AccessDeniedException`, allgemeine `IOException`).
-  - Assertions auf exakte erwartete Meldung fuer:
-    - `null` Fehler,
-    - fehlende Datei,
-    - Zugriff verweigert,
-    - path-only Nachricht,
-    - leere Nachricht (Fallback auf Klassenname).
+### `security/SafetyBypassStoreTest.java`
+- **What is tested:**
+  - Pattern-based blocking and retrieval of pending entries.
+  - One-time allow logic (`allowOnce`/`consumeAllowOnce`).
+  - Allow queue limits.
+- **How it is tested:**
+  - Uses a test store with a simple regex (`secret`) in `@BeforeEach`.
+  - Lifecycle assertions:
+    - `blockIfMatch` creates ID + pending entry,
+    - `takePending` consumes exactly once,
+    - `allowOnce` is single-use and scoped by `isCommand`,
+    - with 6 entries, the oldest one is dropped (limit 5).
 
-### `src/test/java/eu/tango/scamscreener/util/TextUtilTest.java`
-- **Was wird getestet:**
-  - Text-Normalisierung und Command-Normalisierung.
-  - Anonymisierung fuer AI (`@name`, Command-Targets, gemischte Name-Tokens).
-  - Stabilitaet von `anonymizedSpeakerKey`.
-- **Wie wird getestet:**
-  - Deterministische String-zu-String Assertions.
-  - Gleichheitspruefungen fuer case-insensitive Key-Bildung und Fallback `"speaker-unknown"`.
+### `ui/MessagesTest.java`
+- **What is tested:**
+  - Message factory stability for most `Messages` methods.
+  - Contract checks for critical message contents (error codes, bypass actions, fallback text).
+- **How it is tested:**
+  - Reflection-based smoke test:
+    - calls all safe `public static` message methods and checks `!= null`.
+  - Contract tests:
+    - error messages include stable codes (e.g., `MU-CHECK-001`, `TR-SAVE-001`, `MUTE-REGEX-001`),
+    - `[BYPASS]` messages include expected run command (`/scamscreener bypass <id>`),
+    - download-link message includes expected run command,
+    - null inputs fall back to safe defaults like `unknown`, `n/a`, `0`.
 
-### `src/test/java/eu/tango/scamscreener/util/UuidUtilTest.java`
-- **Was wird getestet:**
-  - UUID-Parsing fuer gueltige/ungueltige Eingaben.
-- **Wie wird getestet:**
-  - Positivfall mit zufaellig generierter UUID (inkl. Whitespace-Trim).
-  - Negativfaelle (`null`, leer, ungueltig) mit `null`-Erwartung.
+### `util/IoErrorMapperTest.java`
+- **What is tested:**
+  - Error detail mapping for training I/O failures.
+- **How it is tested:**
+  - Targeted exception types (`NoSuchFileException`, `AccessDeniedException`, generic `IOException`).
+  - Exact-message assertions for:
+    - `null` error,
+    - missing file,
+    - access denied,
+    - path-only message,
+    - blank message (fallback to class name).
+
+### `util/TextUtilTest.java`
+- **What is tested:**
+  - Text normalization and command normalization.
+  - AI anonymization (`@name`, command targets, mixed-name tokens).
+  - Stability of `anonymizedSpeakerKey`.
+- **How it is tested:**
+  - Deterministic string-to-string assertions.
+  - Equality checks for case-insensitive key generation and fallback `"speaker-unknown"`.
+
+### `util/UuidUtilTest.java`
+- **What is tested:**
+  - UUID parsing for valid and invalid inputs.
+- **How it is tested:**
+  - Positive case using a randomly generated UUID (including whitespace trimming).
+  - Negative cases (`null`, empty, invalid) expecting `null`.

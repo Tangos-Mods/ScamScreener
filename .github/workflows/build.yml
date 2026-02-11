@@ -6,9 +6,29 @@
 name: build
 on: [pull_request, push]
 
+permissions:
+  contents: read
+  checks: write
+
 jobs:
-  build:
+  test:
     runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - suite: ai
+            test_pattern: "eu.tango.scamscreener.ai.*"
+          - suite: chat
+            test_pattern: "eu.tango.scamscreener.chat.*"
+          - suite: pipeline
+            test_pattern: "eu.tango.scamscreener.pipeline.*"
+          - suite: security
+            test_pattern: "eu.tango.scamscreener.security.*"
+          - suite: ui
+            test_pattern: "eu.tango.scamscreener.ui.*"
+          - suite: util
+            test_pattern: "eu.tango.scamscreener.util.*"
     steps:
       - name: checkout repository
         uses: actions/checkout@v4
@@ -17,14 +37,56 @@ jobs:
       - name: setup jdk
         uses: actions/setup-java@v4
         with:
-          java-version: '25'
-          distribution: 'microsoft'
+          java-version: '21'
+          distribution: 'temurin'
+      - name: setup gradle cache
+        uses: gradle/actions/setup-gradle@v4
       - name: make gradle wrapper executable
         run: chmod +x ./gradlew
-      - name: build
-        run: ./gradlew build
+      - name: compile
+        run: ./gradlew classes --console=plain
+      - name: test (${{ matrix.suite }})
+        run: ./gradlew test --console=plain --tests "${{ matrix.test_pattern }}"
+      - name: publish junit test report
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: JUnit Tests (${{ matrix.suite }})
+          path: build/test-results/test/TEST-*.xml
+          reporter: java-junit
+          fail-on-error: 'false'
+      - name: upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports-${{ matrix.suite }}
+          path: |
+            build/test-results/test/
+            build/reports/tests/test/
+          if-no-files-found: warn
+
+  assemble:
+    runs-on: ubuntu-24.04
+    needs: test
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v4
+      - name: validate gradle wrapper
+        uses: gradle/actions/wrapper-validation@v4
+      - name: setup jdk
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+      - name: setup gradle cache
+        uses: gradle/actions/setup-gradle@v4
+      - name: make gradle wrapper executable
+        run: chmod +x ./gradlew
+      - name: assemble
+        run: ./gradlew assemble --console=plain
       - name: capture build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: Artifacts
           path: build/libs/
+          if-no-files-found: warn
