@@ -59,7 +59,22 @@ if ($null -ne $model.PSObject.Properties["modelVersion"]) {
 $modelJson = $model | ConvertTo-Json -Depth 64
 Set-Content -Path $modelPath -Value $modelJson -Encoding UTF8
 
-$hash = (Get-FileHash -Algorithm SHA256 $modelPath).Hash.ToLowerInvariant()
+$modelBytes = [System.IO.File]::ReadAllBytes($modelPath)
+$hasBom = $modelBytes.Length -ge 3 -and $modelBytes[0] -eq 0xEF -and $modelBytes[1] -eq 0xBB -and $modelBytes[2] -eq 0xBF
+$modelText = [System.Text.Encoding]::UTF8.GetString($modelBytes)
+$modelTextNoBom = $modelText.TrimStart([char]0xFEFF)
+$canonicalText = ($modelTextNoBom -replace "`r`n", "`n") -replace "`r", "`n"
+if ($hasBom) {
+	$canonicalText = [char]0xFEFF + $canonicalText
+}
+$canonicalBytes = [System.Text.Encoding]::UTF8.GetBytes($canonicalText)
+$sha = [System.Security.Cryptography.SHA256]::Create()
+try {
+	$hashBytes = $sha.ComputeHash($canonicalBytes)
+} finally {
+	$sha.Dispose()
+}
+$hash = -join ($hashBytes | ForEach-Object { $_.ToString("x2") })
 $rawUrl = "https://raw.githubusercontent.com/Tangos-Mods/ScamScreener/main/scripts/scam-screener-local-ai-model.json"
 
 $data = [ordered]@{

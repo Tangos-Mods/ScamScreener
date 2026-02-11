@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to this project are documented in this file.
 
+## [0.16.5] - 2026-02-11 (HOTFIX)
+
+### Fixed
+- Fixed false `sha256 mismatch` errors when downloading AI model updates by tolerating equivalent UTF-8 payload variants (LF/CRLF, BOM/no BOM).
+- Fixed model release hash generation so `scripts/model-version.json` SHA-256 matches GitHub raw model payload bytes.
+
 ## [0.16.x] - 2026-02-10 to 2026-02-11
 
 ### Added
@@ -24,6 +30,7 @@ All notable changes to this project are documented in this file.
 - Funnel-AI trigger threshold and max score are sourced from `ScamRulesConfig` (no hardcoded trigger values).
 - Model updater validates schema and preserves/normalizes funnel-head weights on apply/merge.
 - Model version update script validates schema before calculating SHA and publishing metadata.
+- Local AI model release metadata was bumped to version `13` (schema `10`) with refreshed SHA-256 in `scripts/model-version.json`.
 - Warning action tags use direct one-click command execution (`[legit]`, `[scam]`, `[blacklist]`, `[block]`).
 - Internal player tracking/training/debug flow now uses anonymized speaker keys and anonymized training capture context.
 

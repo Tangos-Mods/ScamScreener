@@ -27,7 +27,9 @@ import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.time.Duration;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
@@ -201,11 +203,11 @@ public final class ModelUpdateService {
 			reply.accept(Messages.modelUpdateCheckFailed("missing update url"));
 			return;
 		}
-		String localHash = hashLocalModel();
+		byte[] localModelBytes = readLocalModelBytes();
+		String localHash = sha256(localModelBytes);
 		debug(reply, "local hash=" + (localHash == null ? "none" : localHash));
 		debug(reply, "remote sha256=" + (info.sha256 == null ? "none" : info.sha256));
-		if (!force && localHash != null && info.sha256 != null && !info.sha256.isBlank()
-			&& localHash.equalsIgnoreCase(info.sha256.trim())) {
+		if (!force && hashMatchesExpected(localModelBytes, info.sha256)) {
 			debug(reply, "no update (hash match)");
 			if (notifyWhenUpToDate) {
 				reply.accept(Messages.modelUpdateUpToDate());
@@ -236,8 +238,7 @@ public final class ModelUpdateService {
 			return;
 		}
 		if (pendingModel.info().sha256 != null && !pendingModel.info().sha256.isBlank()) {
-			String hash = sha256(payload.getBytes(StandardCharsets.UTF_8));
-			if (hash != null && !hash.equalsIgnoreCase(pendingModel.info().sha256.trim())) {
+			if (!hashMatchesExpected(payload.getBytes(StandardCharsets.UTF_8), pendingModel.info().sha256)) {
 				debug(reply, "sha256 mismatch");
 				// Code: MU-UPDATE-001
 				reply.accept(Messages.modelUpdateFailed("sha256 mismatch"));
@@ -345,19 +346,76 @@ public final class ModelUpdateService {
 		return trimmed;
 	}
 
-	private static String hashLocalModel() {
+	private static byte[] readLocalModelBytes() {
 		try {
-			if (!Files.exists(LocalAiModelConfig.filePath())) {
+			Path modelPath = LocalAiModelConfig.filePath();
+			if (!Files.exists(modelPath)) {
 				return null;
 			}
-			byte[] bytes = Files.readAllBytes(LocalAiModelConfig.filePath());
-			return sha256(bytes);
+			return Files.readAllBytes(modelPath);
 		} catch (IOException ignored) {
 			return null;
 		}
 	}
 
+	private static boolean hashMatchesExpected(byte[] bytes, String expectedSha) {
+		if (bytes == null || expectedSha == null || expectedSha.isBlank()) {
+			return false;
+		}
+		String expected = expectedSha.trim();
+		String directHash = sha256(bytes);
+		if (directHash != null && directHash.equalsIgnoreCase(expected)) {
+			return true;
+		}
+		String text = new String(bytes, StandardCharsets.UTF_8);
+		Set<String> variants = new LinkedHashSet<>();
+		addHashTextVariants(variants, text);
+		addHashTextVariants(variants, normalizeLineEndingsToLf(text));
+		addHashTextVariants(variants, normalizeLineEndingsToCrlf(text));
+		for (String variant : variants) {
+			String variantHash = sha256(variant.getBytes(StandardCharsets.UTF_8));
+			if (variantHash != null && variantHash.equalsIgnoreCase(expected)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private static void addHashTextVariants(Set<String> variants, String value) {
+		if (value == null) {
+			return;
+		}
+		String withoutBom = stripUtf8Bom(value);
+		variants.add(withoutBom);
+		variants.add("\uFEFF" + withoutBom);
+	}
+
+	private static String normalizeLineEndingsToLf(String value) {
+		if (value == null || value.isEmpty()) {
+			return value;
+		}
+		return value.replace("\r\n", "\n").replace("\r", "\n");
+	}
+
+	private static String normalizeLineEndingsToCrlf(String value) {
+		String lf = normalizeLineEndingsToLf(value);
+		if (lf == null || lf.isEmpty()) {
+			return lf;
+		}
+		return lf.replace("\n", "\r\n");
+	}
+
+	private static String stripUtf8Bom(String value) {
+		if (value != null && !value.isEmpty() && value.charAt(0) == '\uFEFF') {
+			return value.substring(1);
+		}
+		return value;
+	}
+
 	private static String sha256(byte[] bytes) {
+		if (bytes == null) {
+			return null;
+		}
 		try {
 			MessageDigest digest = MessageDigest.getInstance("SHA-256");
 			byte[] hash = digest.digest(bytes);
