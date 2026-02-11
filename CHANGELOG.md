@@ -4,28 +4,20 @@ All notable changes to this project are documented in this file.
 ## [0.16.7] - 2026-02-11
 
 ### Added
+- Added funnel behavior/regression tests in `FunnelSignalStageTest` for no-funnel, partial-chain, and full-chain scenarios.
+- Added updater version-comparison test coverage in `ModelUpdateServiceHashTest`.
 - Added funnel coverage for an upfront-payment variant (`OFFER -> PAYMENT`) with automated tests.
 - Added a ready-to-train `funnel.csv` sample in the current training-data CSV schema.
 
 ### Changed
+- Local AI trainer now preserves the current model version when retraining instead of forcing a static version value.
+- Updated Funnel TODO and test documentation to match the current funnel architecture and new automated coverage.
 - `IntentTagger` now recognizes upfront-payment phrasing directly from message text (not only from upstream signals).
 - Model release metadata bumped to version `14` with refreshed SHA-256 in `scripts/model-version.json`.
 
 ### Fixed
-- Funnel detection and AI funnel context now also handle the upfront-payment funnel path (`OFFER -> PAYMENT`).
-
-## [0.16.6] - 2026-02-11
-
-### Added
-- Added funnel behavior/regression tests in `FunnelSignalStageTest` for no-funnel, partial-chain, and full-chain scenarios.
-- Added updater version-comparison test coverage in `ModelUpdateServiceHashTest`.
-
-### Changed
-- Local AI trainer now preserves the current model version when retraining instead of forcing a static version value.
-- Updated Funnel TODO and test documentation to match the current funnel architecture and new automated coverage.
-
-### Fixed
 - Model updater now treats remote models with equal or older model version as up-to-date and skips unnecessary update prompts.
+- Funnel detection and AI funnel context now also handle the upfront-payment funnel path (`OFFER -> PAYMENT`).
 
 ## [0.16.5] - 2026-02-11 (HOTFIX)
 
