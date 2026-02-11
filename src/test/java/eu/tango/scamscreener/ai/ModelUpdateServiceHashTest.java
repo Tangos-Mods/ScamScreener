@@ -8,15 +8,19 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ModelUpdateServiceHashTest {
 	private static Method hashMatchesExpectedMethod;
+	private static Method compareModelVersionsMethod;
 
 	@BeforeAll
 	static void setUpReflection() throws Exception {
 		hashMatchesExpectedMethod = ModelUpdateService.class.getDeclaredMethod("hashMatchesExpected", byte[].class, String.class);
 		hashMatchesExpectedMethod.setAccessible(true);
+		compareModelVersionsMethod = ModelUpdateService.class.getDeclaredMethod("compareModelVersions", String.class, byte[].class);
+		compareModelVersionsMethod.setAccessible(true);
 	}
 
 	@Test
@@ -51,8 +55,49 @@ class ModelUpdateServiceHashTest {
 		assertFalse(hashMatchesExpected("abc".getBytes(StandardCharsets.UTF_8), " "));
 	}
 
+	@Test
+	void compareModelVersionsMarksOlderOrEqualRemoteAsUpToDate() throws Exception {
+		byte[] localPayload = "{\"version\":13}".getBytes(StandardCharsets.UTF_8);
+
+		Object equal = compareModelVersions("13", localPayload);
+		Object older = compareModelVersions("12", localPayload);
+
+		assertTrue(readBooleanRecordField(equal, "comparable"));
+		assertTrue(readBooleanRecordField(equal, "upToDate"));
+		assertTrue(readBooleanRecordField(older, "upToDate"));
+	}
+
+	@Test
+	void compareModelVersionsMarksNewerRemoteAsNotUpToDate() throws Exception {
+		byte[] localPayload = "{\"version\":13}".getBytes(StandardCharsets.UTF_8);
+
+		Object comparison = compareModelVersions("14", localPayload);
+
+		assertTrue(readBooleanRecordField(comparison, "comparable"));
+		assertFalse(readBooleanRecordField(comparison, "upToDate"));
+	}
+
+	@Test
+	void compareModelVersionsFallsBackWhenVersionsCannotBeParsed() throws Exception {
+		Object comparison = compareModelVersions("invalid", "not-json".getBytes(StandardCharsets.UTF_8));
+
+		assertNotNull(comparison);
+		assertFalse(readBooleanRecordField(comparison, "comparable"));
+		assertFalse(readBooleanRecordField(comparison, "upToDate"));
+	}
+
 	private static boolean hashMatchesExpected(byte[] payload, String expectedSha) throws Exception {
 		return (boolean) hashMatchesExpectedMethod.invoke(null, payload, expectedSha);
+	}
+
+	private static Object compareModelVersions(String remoteVersion, byte[] localBytes) throws Exception {
+		return compareModelVersionsMethod.invoke(null, remoteVersion, localBytes);
+	}
+
+	private static boolean readBooleanRecordField(Object target, String accessor) throws Exception {
+		Method method = target.getClass().getDeclaredMethod(accessor);
+		method.setAccessible(true);
+		return (boolean) method.invoke(target);
 	}
 
 	private static String sha256(byte[] bytes) throws Exception {

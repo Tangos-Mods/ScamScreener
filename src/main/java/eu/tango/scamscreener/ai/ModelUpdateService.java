@@ -207,6 +207,17 @@ public final class ModelUpdateService {
 		String localHash = sha256(localModelBytes);
 		debug(reply, "local hash=" + (localHash == null ? "none" : localHash));
 		debug(reply, "remote sha256=" + (info.sha256 == null ? "none" : info.sha256));
+		VersionComparison versionComparison = compareModelVersions(info.version, localModelBytes);
+		if (versionComparison.comparable()) {
+			debug(reply, "local version=" + versionComparison.localVersion() + ", remote version=" + versionComparison.remoteVersion());
+		}
+		if (!force && versionComparison.upToDate()) {
+			debug(reply, "no update (version compare)");
+			if (notifyWhenUpToDate) {
+				reply.accept(Messages.modelUpdateUpToDate());
+			}
+			return;
+		}
 		if (!force && hashMatchesExpected(localModelBytes, info.sha256)) {
 			debug(reply, "no update (hash match)");
 			if (notifyWhenUpToDate) {
@@ -358,6 +369,40 @@ public final class ModelUpdateService {
 		}
 	}
 
+	private static VersionComparison compareModelVersions(String remoteVersionRaw, byte[] localModelBytes) {
+		Integer remoteVersion = parseVersionNumber(remoteVersionRaw);
+		Integer localVersion = extractLocalModelVersion(localModelBytes);
+		return new VersionComparison(localVersion, remoteVersion);
+	}
+
+	private static Integer extractLocalModelVersion(byte[] localModelBytes) {
+		if (localModelBytes == null || localModelBytes.length == 0) {
+			return null;
+		}
+		try {
+			String text = stripUtf8Bom(new String(localModelBytes, StandardCharsets.UTF_8));
+			ModelVersionProbe parsed = GSON.fromJson(text, ModelVersionProbe.class);
+			if (parsed == null || parsed.version() == null || parsed.version() < 1) {
+				return null;
+			}
+			return parsed.version();
+		} catch (Exception ignored) {
+			return null;
+		}
+	}
+
+	private static Integer parseVersionNumber(String rawVersion) {
+		if (rawVersion == null || rawVersion.isBlank()) {
+			return null;
+		}
+		try {
+			int parsed = Integer.parseInt(rawVersion.trim());
+			return parsed < 1 ? null : parsed;
+		} catch (Exception ignored) {
+			return null;
+		}
+	}
+
 	private static boolean hashMatchesExpected(byte[] bytes, String expectedSha) {
 		if (bytes == null || expectedSha == null || expectedSha.isBlank()) {
 			return false;
@@ -497,6 +542,19 @@ public final class ModelUpdateService {
 	}
 
 	private record ModelVersionInfo(String version, String sha256, String url) {
+	}
+
+	private record ModelVersionProbe(Integer version) {
+	}
+
+	private record VersionComparison(Integer localVersion, Integer remoteVersion) {
+		private boolean comparable() {
+			return localVersion != null && remoteVersion != null;
+		}
+
+		private boolean upToDate() {
+			return comparable() && remoteVersion <= localVersion;
+		}
 	}
 
 	private record FetchResult(ModelVersionInfo info, String error) {

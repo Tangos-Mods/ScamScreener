@@ -51,6 +51,24 @@ Base directory: `src/test/java/eu/tango/scamscreener/`
     - different level for the same player still returns `true`,
     - after `reset()`, it returns `true` again.
 
+### `pipeline/stage/FunnelSignalStageTest.java`
+- **What is tested:**
+  - Funnel behavior scenarios from the Funnel TODO block:
+    - benign service offer only -> no funnel signal,
+    - discord mention only -> no funnel signal,
+    - rep + redirect + instruction -> high partial funnel signal,
+    - full offer + rep + redirect + instruction -> full funnel signal,
+    - offer + upfront-payment request -> partial funnel signal.
+  - Regression-focused cases:
+    - guild recruiting context suppresses offer/free intent tags,
+    - legit carry ads without redirect/instruction do not trigger funnel.
+  - Stage integration boundary:
+    - `FunnelSignalStage` consumes upstream-like `existingSignals` (e.g. `EXTERNAL_PLATFORM_PUSH`) to derive redirect intent.
+- **How it is tested:**
+  - Uses a test `RuleConfig` with default regex patterns and funnel weights.
+  - Feeds timestamped `MessageEvent`s through `FunnelSignalStage` with stateful `FunnelStore`.
+  - Asserts emitted signal count, sequence evidence text, and bonus weights for partial/full chains.
+
 ### `security/SafetyBypassStoreTest.java`
 - **What is tested:**
   - Pattern-based blocking and retrieval of pending entries.

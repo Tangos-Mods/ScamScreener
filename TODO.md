@@ -81,18 +81,20 @@
 # Funnel Stage
 
 ## Evaluation & Regression Safety
-- [ ] Add unit tests for FunnelSignalStage:
+- [x] Add behavior tests for funnel detection (FunnelStore + IntentTagger + pipeline integration):
   - benign service offer only => low/no funnel
   - discord mention only => low
   - rep request + discord + instruction => high
   - full chain => critical
-- [ ] Add regression tests for common false positives:
-  - guild recruiting posts
+- [x] Add regression tests for common false positives:
+  - guild recruiting posts (negative intent should suppress offer/free funnel steps)
   - legit carry ads without redirect/instruction
-- [ ] Add metrics logging (local):
+- [ ] Add local funnel metrics aggregation (beyond per-message evidence strings):
   - false positive rate (user-marked)
   - funnel detection rate
   - threshold boundary cases (uncertain decisions)
 
 ## Performance & Storage
-- [ ] Ensure stored training logs are privacy-safe (optional hashing/redaction)
+- [ ] Harden stored training logs for privacy:
+  - keep hashed speaker keys (already done)
+  - redact/hash training message text before storage (currently only normalized)

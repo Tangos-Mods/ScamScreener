@@ -84,6 +84,9 @@ public final class IntentTagger {
 		if (matches(config.communityAnchorPattern(), normalized)) {
 			tags.add(IntentTag.COMMUNITY_ANCHOR);
 		}
+		if (matches(ruleConfig.behaviorPatterns().upfrontPayment(), normalized) || containsUpfrontPaymentPhrase(normalized)) {
+			tags.add(IntentTag.PAYMENT_UPFRONT);
+		}
 		if (matches(config.platformRedirectPattern(), normalized)) {
 			tags.add(IntentTag.PLATFORM_REDIRECT);
 		}
@@ -163,6 +166,18 @@ public final class IntentTagger {
 			return false;
 		}
 		return CHANNEL_REDIRECT_PATTERN.matcher(normalized).find();
+	}
+
+	private static boolean containsUpfrontPaymentPhrase(String normalized) {
+		if (normalized == null || normalized.isBlank()) {
+			return false;
+		}
+		return normalized.contains("pay first")
+			|| normalized.contains("send first")
+			|| normalized.contains("you give me")
+			|| normalized.contains("give me first")
+			|| normalized.contains("before i give")
+			|| normalized.contains("before i send");
 	}
 
 	public record TaggingResult(Set<IntentTag> tags, boolean negativeContext) {

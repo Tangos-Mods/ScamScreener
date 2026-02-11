@@ -37,18 +37,20 @@ public final class AiFunnelContextTracker {
 		List<IntentRecord> snapshot = new ArrayList<>(history);
 		boolean hasOffer = find(snapshot, 0, IntentTag.SERVICE_OFFER, IntentTag.FREE_OFFER) >= 0;
 		int offerIdx = find(snapshot, 0, IntentTag.SERVICE_OFFER, IntentTag.FREE_OFFER);
+		int payIdx = offerIdx < 0 ? -1 : find(snapshot, offerIdx + 1, IntentTag.PAYMENT_UPFRONT);
 		int repIdx = offerIdx < 0 ? -1 : find(snapshot, offerIdx + 1, IntentTag.REP_REQUEST);
 		int redIdx = repIdx < 0 ? -1 : find(snapshot, repIdx + 1, IntentTag.PLATFORM_REDIRECT);
 		int instIdx = redIdx < 0 ? -1 : find(snapshot, redIdx + 1, IntentTag.INSTRUCTION_INJECTION);
 
 		int simpleRepRed = findSequence(snapshot, List.of(IntentTag.REP_REQUEST, IntentTag.PLATFORM_REDIRECT));
 		int simpleRedInst = findSequence(snapshot, List.of(IntentTag.PLATFORM_REDIRECT, IntentTag.INSTRUCTION_INJECTION));
+		int simpleOfferPay = findOfferPaymentSequence(snapshot);
 
 		int stepIndex = 0;
 		if (hasOffer) {
 			stepIndex = 1;
 		}
-		if (repIdx >= 0) {
+		if (repIdx >= 0 || payIdx >= 0) {
 			stepIndex = 2;
 		}
 		if (redIdx >= 0) {
@@ -59,7 +61,7 @@ public final class AiFunnelContextTracker {
 		}
 
 		boolean fullChain = instIdx >= 0;
-		boolean partialChain = !fullChain && (simpleRepRed >= 0 || simpleRedInst >= 0);
+		boolean partialChain = !fullChain && (simpleRepRed >= 0 || simpleRedInst >= 0 || simpleOfferPay >= 0);
 
 		double score = 0.0;
 		if (fullChain) {
@@ -113,6 +115,14 @@ public final class AiFunnelContextTracker {
 			from = last + 1;
 		}
 		return last;
+	}
+
+	private static int findOfferPaymentSequence(List<IntentRecord> history) {
+		int offer = find(history, 0, IntentTag.SERVICE_OFFER, IntentTag.FREE_OFFER);
+		if (offer < 0) {
+			return -1;
+		}
+		return find(history, offer + 1, IntentTag.PAYMENT_UPFRONT);
 	}
 
 	public record Snapshot(int stepIndex, double score, boolean fullChain, boolean partialChain) {

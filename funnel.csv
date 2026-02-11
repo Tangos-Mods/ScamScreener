@@ -1,0 +1,7 @@
+message,label,window_id,window_label,channel,delta_ms,intent_offer,intent_rep,intent_redirect,intent_instruction,intent_payment,intent_anchor,funnel_step_index,funnel_sequence_score,funnel_full_chain,funnel_partial_chain,rule_hits,similarity_hits,behavior_hits,trend_hits,funnel_hits,ai_hits,pushes_external_platform,demands_upfront_payment,requests_sensitive_data,claims_middleman_without_proof,too_good_to_be_true,repeated_contact_attempts,is_spam,asks_for_stuff,advertising,hard_negative,sample_weight
+"omg guys i just unlocked hex and im upgrading your armor for free",1,"speaker-b23a6a8439c0dde5:9837983",1,"public",0,1,0,0,0,0,0,1,0.0000,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,1.0000
+"i have a special offer for you",1,"speaker-c49e0770766b01e1:9837991",1,"pm",0,1,0,0,0,0,0,1,0.0000,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1,0,1.0000
+"i give you 1b when you give me 100m first",1,"speaker-c49e0770766b01e1:9837991",1,"pm",36133,0,0,0,0,1,0,2,14.0000,0,1,0,0,1,0,1,0,0,1,0,0,0,2,0,1,0,0,1.1200
+"you can record it trust me",1,"speaker-c49e0770766b01e1:9837991",1,"pm",10313,0,0,0,0,0,0,2,14.0000,0,1,1,0,0,0,1,0,0,0,0,0,0,3,0,0,0,0,1.1200
+"come on you can only win",1,"speaker-c49e0770766b01e1:9837991",1,"pm",47016,0,0,0,0,0,0,2,14.0000,0,1,0,0,0,0,1,0,0,0,0,0,1,4,0,0,0,0,1.2000
+"if i scam you my account gets wiped",1,"speaker-c49e0770766b01e1:9837991",1,"pm",11451,0,0,0,0,0,0,2,14.0000,0,1,1,0,0,0,1,0,0,0,0,0,0,5,0,0,0,0,1.2000

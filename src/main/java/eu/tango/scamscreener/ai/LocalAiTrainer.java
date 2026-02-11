@@ -34,6 +34,7 @@ public final class LocalAiTrainer {
 		int[] ignoredRows = new int[] {0};
 		List<Sample> samples = loadAllSamples(csvPath, ignoredRows);
 		validateSamples(samples);
+		int preservedModelVersion = currentModelVersion();
 
 		List<String> vocab = TokenFeatureExtractor.buildVocab(samples, MAX_VOCAB_SIZE, MIN_TOKEN_COUNT);
 		Map<String, Integer> vocabIndex = new HashMap<>();
@@ -123,7 +124,7 @@ public final class LocalAiTrainer {
 		LinearModel funnelModel = trainLinear(funnelVectors, funnelDenseCount);
 
 		LocalAiModelConfig model = new LocalAiModelConfig();
-		model.version = 9;
+		model.version = preservedModelVersion;
 		model.intercept = mainModel.intercept();
 		model.denseFeatureWeights = new LinkedHashMap<>();
 		for (int i = 0; i < mainDenseCount; i++) {
@@ -287,6 +288,17 @@ public final class LocalAiTrainer {
 		Path archiveDir = modelPath.resolveSibling(OLD_DIR_NAME).resolve(OLD_MODELS_DIR_NAME);
 		Path target = nextArchiveTarget(modelPath, archiveDir);
 		Files.copy(modelPath, target, StandardCopyOption.COPY_ATTRIBUTES);
+	}
+
+	private static int currentModelVersion() {
+		try {
+			LocalAiModelConfig existing = LocalAiModelConfig.loadOrCreate();
+			if (existing != null && existing.version >= 9) {
+				return existing.version;
+			}
+		} catch (Exception ignored) {
+		}
+		return new LocalAiModelConfig().version;
 	}
 
 	private static List<Path> listArchiveCandidates(Path dir, String baseName) throws IOException {
