@@ -52,7 +52,7 @@ jobs:
         uses: dorny/test-reporter@v1
         with:
           name: JUnit Tests (${{ matrix.suite }})
-          path: build/test-results/test/TEST-*.xml
+          path: versions/*/build/test-results/test/TEST-*.xml
           reporter: java-junit
           fail-on-error: 'false'
       - name: upload test reports
@@ -61,8 +61,8 @@ jobs:
         with:
           name: test-reports-${{ matrix.suite }}
           path: |
-            build/test-results/test/
-            build/reports/tests/test/
+            versions/*/build/test-results/test/
+            versions/*/build/reports/tests/test/
           if-no-files-found: warn
 
   assemble:
