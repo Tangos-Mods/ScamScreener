@@ -31,6 +31,7 @@ public final class MainSettingsScreen extends GUI {
 	private final Runnable triggerForceAiUpdateHandler;
 	private final Supplier<ModelUpdateService.PendingUpdateSnapshot> aiUpdateSnapshotSupplier;
 	private final BiFunction<String, String, Integer> aiUpdateActionHandler;
+	private final Runnable uploadTrainingDataHandler;
 
 	private Button alertLevelButton;
 	private Button autoCaptureButton;
@@ -50,7 +51,8 @@ public final class MainSettingsScreen extends GUI {
 		Runnable triggerAiUpdateHandler,
 		Runnable triggerForceAiUpdateHandler,
 		Supplier<ModelUpdateService.PendingUpdateSnapshot> aiUpdateSnapshotSupplier,
-		BiFunction<String, String, Integer> aiUpdateActionHandler
+		BiFunction<String, String, Integer> aiUpdateActionHandler,
+		Runnable uploadTrainingDataHandler
 	) {
 		super(Component.literal("ScamScreener Settings"), parent);
 		this.blacklistManager = blacklistManager;
@@ -64,6 +66,7 @@ public final class MainSettingsScreen extends GUI {
 		this.triggerForceAiUpdateHandler = triggerForceAiUpdateHandler;
 		this.aiUpdateSnapshotSupplier = aiUpdateSnapshotSupplier;
 		this.aiUpdateActionHandler = aiUpdateActionHandler;
+		this.uploadTrainingDataHandler = uploadTrainingDataHandler;
 	}
 
 	@Override
@@ -129,6 +132,14 @@ public final class MainSettingsScreen extends GUI {
 				aiUpdateActionHandler
 			));
 		}).bounds(x + (thirdWidth + 8) * 2, y + ROW_HEIGHT, thirdWidth, 20).build());
+		y += ROW_HEIGHT * 2;
+
+		Button uploadTrainingButton = this.addRenderableWidget(Button.builder(Component.literal("Upload Training Data"), button -> {
+			if (uploadTrainingDataHandler != null) {
+				uploadTrainingDataHandler.run();
+			}
+		}).bounds(x, y, buttonWidth, 20).build());
+		uploadTrainingButton.active = uploadTrainingDataHandler != null;
 
 		addCloseButton(buttonWidth);
 		refreshMainButtons();

@@ -157,7 +157,8 @@ public class ScamScreenerClient implements ClientModInitializer {
 			() -> modelUpdateCommandHandler.handleModelUpdateCheck(false),
 			() -> modelUpdateCommandHandler.handleModelUpdateCheck(true),
 			modelUpdateCommandHandler::latestPendingSnapshot,
-			modelUpdateCommandHandler::handleModelUpdateCommand
+			modelUpdateCommandHandler::handleModelUpdateCommand,
+			() -> trainingCommandHandler.trainLocalAiModel()
 		);
 	}
 

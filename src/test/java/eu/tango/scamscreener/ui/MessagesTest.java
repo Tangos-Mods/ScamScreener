@@ -7,6 +7,7 @@ import net.minecraft.network.chat.MutableComponent;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -67,6 +68,19 @@ class MessagesTest {
 	}
 
 	@Test
+	void trainingUploadToDiscordIncludesGuidanceAndPath() {
+		String path = "C:/config/scamscreener/scam-screener-training-data.csv";
+		String expectedFolder = Path.of(path).getParent().toString();
+		MutableComponent message = Messages.trainingUploadToDiscord(path);
+		String text = message.getString();
+
+		assertTrue(text.contains("SkyblockEnhanced Discord"));
+		assertTrue(text.contains(path));
+		assertTrue(hasClickValue(message, "https://discord.gg/uzbJnXbfvA"));
+		assertTrue(hasClickValue(message, expectedFolder));
+	}
+
+	@Test
 	void nullInputsUseSafeFallbackText() {
 		String updated = Messages.updatedBlacklistEntry(null, -5, null).getString();
 		String autoLeave = Messages.autoLeaveExecuted(null).getString();
@@ -114,13 +128,17 @@ class MessagesTest {
 	}
 
 	private static boolean hasRunCommand(Component root, String expected) {
+		return hasClickValue(root, expected);
+	}
+
+	private static boolean hasClickValue(Component root, String expected) {
 		for (Component component : flatten(root)) {
 			ClickEvent event = component.getStyle().getClickEvent();
 			if (event == null) {
 				continue;
 			}
-			String command = extractClickCommand(event);
-			if (expected.equals(command)) {
+			String value = extractClickValue(event);
+			if (expected.equals(value)) {
 				return true;
 			}
 		}
@@ -143,24 +161,16 @@ class MessagesTest {
 		}
 	}
 
-	private static String extractClickCommand(ClickEvent event) {
-		try {
-			Method command = event.getClass().getMethod("command");
-			Object value = command.invoke(event);
-			return value == null ? null : value.toString();
-		} catch (Exception ignored) {
-		}
-		try {
-			Method value = event.getClass().getMethod("value");
-			Object out = value.invoke(event);
-			return out == null ? null : out.toString();
-		} catch (Exception ignored) {
-		}
-		try {
-			Method getValue = event.getClass().getMethod("getValue");
-			Object out = getValue.invoke(event);
-			return out == null ? null : out.toString();
-		} catch (Exception ignored) {
+	private static String extractClickValue(ClickEvent event) {
+		for (String accessor : List.of("command", "value", "getValue", "uri", "url", "file", "path")) {
+			try {
+				Method method = event.getClass().getMethod(accessor);
+				Object out = method.invoke(event);
+				if (out != null) {
+					return out.toString();
+				}
+			} catch (Exception ignored) {
+			}
 		}
 		return null;
 	}

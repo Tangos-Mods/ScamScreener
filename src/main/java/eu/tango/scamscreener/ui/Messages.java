@@ -1,17 +1,7 @@
 package eu.tango.scamscreener.ui;
 
-import eu.tango.scamscreener.blacklist.BlacklistManager;
-import eu.tango.scamscreener.pipeline.model.DetectionResult;
-import eu.tango.scamscreener.pipeline.core.DetectionScoring;
-import eu.tango.scamscreener.rules.ScamRules;
-
-import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.Style;
-import net.minecraft.network.chat.ClickEvent;
-import net.minecraft.network.chat.HoverEvent;
-
+import java.net.URI;
+import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
@@ -21,9 +11,21 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import eu.tango.scamscreener.blacklist.BlacklistManager;
+import eu.tango.scamscreener.pipeline.core.DetectionScoring;
+import eu.tango.scamscreener.pipeline.model.DetectionResult;
+import eu.tango.scamscreener.rules.ScamRules;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.ClickEvent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
+
 public final class Messages extends MessageBuilder {
 	private static final String PREFIX = DEFAULT_PREFIX;
 	private static final int PREFIX_LIGHT_RED = DEFAULT_PREFIX_COLOR;
+	private static final String SKYBLOCK_ENHANCED_DISCORD_URL = "https://discord.gg/uzbJnXbfvA";
 
 	private Messages() {
 	}
@@ -290,6 +292,42 @@ public final class Messages extends MessageBuilder {
 	public static MutableComponent trainingAlreadyRunning() {
 		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
 			.append(Component.literal("Training is already running.").withStyle(ChatFormatting.GRAY));
+	}
+
+	public static MutableComponent trainingUploadToDiscord(String path) {
+		String safePath = path == null ? "" : path;
+		String folderPath = safePath;
+		try {
+			Path parsed = Path.of(safePath);
+			Path parent = parsed.getParent();
+			if (parent != null) {
+				folderPath = parent.toString();
+			}
+		} catch (Exception ignored) {
+		}
+
+		MutableComponent folderLink = Component.literal(safePath).setStyle(
+			Style.EMPTY
+				.withColor(ChatFormatting.YELLOW)
+				.withClickEvent(new ClickEvent.OpenFile(folderPath))
+				.withHoverEvent(new HoverEvent.ShowText(Component.literal("Click to open containing folder in Explorer")))
+		);
+
+		Style discordStyle = Style.EMPTY
+			.withColor(ChatFormatting.AQUA)
+			.withHoverEvent(new HoverEvent.ShowText(Component.literal("Open Discord invite").withStyle(ChatFormatting.YELLOW)));
+		try {
+			discordStyle = discordStyle.withClickEvent(new ClickEvent.OpenUrl(URI.create(SKYBLOCK_ENHANCED_DISCORD_URL)));
+		} catch (Exception ignored) {
+		}
+		MutableComponent discordLink = Component.literal("SkyblockEnhanced Discord").setStyle(discordStyle);
+
+		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
+			.append(Component.literal("Please upload ").withStyle(ChatFormatting.GRAY))
+			.append(folderLink)
+			.append(Component.literal(" in ").withStyle(ChatFormatting.GRAY))
+			.append(discordLink)
+			.append(Component.literal(" so the AI model can be trained for everyone.").withStyle(ChatFormatting.GRAY));
 	}
 
 	public static MutableComponent trainingFailed(String errorMessage) {
@@ -700,7 +738,7 @@ public final class Messages extends MessageBuilder {
 
 		MutableComponent message = Component.empty()
 			.append(Component.literal(WARNING_BORDER).withStyle(ChatFormatting.DARK_RED))
-			.append(Component.literal("\n" + centered("SCAM WARNING")).withStyle(style -> style.withColor(ChatFormatting.DARK_RED).withBold(true)))
+			.append(Component.literal("\n" + centered("BLACKLIST WARNING")).withStyle(style -> style.withColor(ChatFormatting.DARK_RED).withBold(true)))
 			.append(Component.literal("\n" + leftCenterPadding(playerScoreLine)))
 			.append(Component.literal(safePlayer).withStyle(ChatFormatting.AQUA))
 			.append(Component.literal(" | ").withStyle(ChatFormatting.DARK_GRAY))

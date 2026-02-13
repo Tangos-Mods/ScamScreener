@@ -41,3 +41,13 @@ replay_*.log
 
 # local agent instructions
 AGENTS.md
+
+# local environment secrets
+.env
+
+# local AI files
+funnel.csv
+/.gradle-user
+/.gradle-user-autocapture
+/.gradle-user-autocapture2
+/.gradle-user-ci-check

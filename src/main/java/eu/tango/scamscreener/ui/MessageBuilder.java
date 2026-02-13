@@ -18,6 +18,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.nio.file.Path;
+import java.net.URI;
 import java.util.stream.Collectors;
 
 /**
@@ -78,6 +80,45 @@ public abstract class MessageBuilder {
 				.withUnderlined(true)
 				.withClickEvent(new ClickEvent.OpenFile(safePath))
 				.withHoverEvent(new HoverEvent.ShowText(Component.literal("Click to open this file in Explorer")))
+		);
+	}
+
+	protected static MutableComponent clickableContainingFolderPath(String filePath) {
+		String safePath = filePath == null ? "" : filePath;
+		String folderPath = safePath;
+		try {
+			Path parsed = Path.of(safePath);
+			Path parent = parsed.getParent();
+			if (parent != null) {
+				folderPath = parent.toString();
+			}
+		} catch (Exception ignored) {
+		}
+		return Component.literal(safePath).setStyle(
+			Style.EMPTY
+				.withColor(ChatFormatting.YELLOW)
+				.withUnderlined(true)
+				.withClickEvent(new ClickEvent.OpenFile(folderPath))
+				.withHoverEvent(new HoverEvent.ShowText(Component.literal("Click to open containing folder in Explorer")))
+		);
+	}
+
+	protected static MutableComponent clickableUrl(String label, String url, String hoverText) {
+		String safeLabel = safeText(label);
+		String safeUrl = safeText(url);
+		String safeHover = hoverText == null || hoverText.isBlank() ? safeUrl : hoverText;
+		Style style = Style.EMPTY
+			.withColor(ChatFormatting.AQUA)
+			.withUnderlined(true)
+			.withHoverEvent(new HoverEvent.ShowText(Component.literal(safeHover).withStyle(ChatFormatting.YELLOW)));
+		if (!safeUrl.isBlank()) {
+			try {
+				style = style.withClickEvent(new ClickEvent.OpenUrl(URI.create(safeUrl)));
+			} catch (Exception ignored) {
+			}
+		}
+		return Component.literal(safeLabel).setStyle(
+			style
 		);
 	}
 

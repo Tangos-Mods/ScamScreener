@@ -8,6 +8,9 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.DoubleFunction;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import eu.tango.scamscreener.pipeline.core.DetectionScoring;
 import eu.tango.scamscreener.pipeline.model.DetectionLevel;
 import eu.tango.scamscreener.pipeline.model.DetectionResult;
@@ -15,6 +18,24 @@ import eu.tango.scamscreener.pipeline.model.MessageEvent;
 import eu.tango.scamscreener.pipeline.model.Signal;
 
 public final class ScoringStage {
+	private final DoubleFunction<DetectionLevel> levelMapper;
+	private final Supplier<String> autoCaptureSettingSupplier;
+	private final Function<DetectionLevel, ScamRules.ScamRiskLevel> riskLevelMapper;
+
+	public ScoringStage() {
+		this(DetectionScoring::mapLevel, ScamRules::autoCaptureAlertLevelSetting, DetectionScoring::toScamRiskLevel);
+	}
+
+	ScoringStage(
+		DoubleFunction<DetectionLevel> levelMapper,
+		Supplier<String> autoCaptureSettingSupplier,
+		Function<DetectionLevel, ScamRules.ScamRiskLevel> riskLevelMapper
+	) {
+		this.levelMapper = levelMapper;
+		this.autoCaptureSettingSupplier = autoCaptureSettingSupplier;
+		this.riskLevelMapper = riskLevelMapper;
+	}
+
 	/**
 	 * Sums signal weights, maps the total to a {@link DetectionLevel},
 	 * and builds a {@link DetectionResult} with rule details.
@@ -31,7 +52,7 @@ public final class ScoringStage {
 			total = Math.min(100, total);
 		}
 
-		DetectionLevel level = DetectionScoring.mapLevel(total);
+		DetectionLevel level = levelMapper.apply(total);
 		Map<ScamRules.ScamRule, String> ruleDetails = new LinkedHashMap<>();
 		Set<ScamRules.ScamRule> triggeredRules = new LinkedHashSet<>();
 		List<String> evaluatedMessages = new ArrayList<>();
@@ -59,17 +80,27 @@ public final class ScoringStage {
 	/**
 	 * Converts the detection level into the configured auto-capture threshold.
 	 */
-	private static boolean shouldAutoCapture(DetectionLevel level, double totalScore, Set<ScamRules.ScamRule> rules) {
+	private boolean shouldAutoCapture(DetectionLevel level, double totalScore, Set<ScamRules.ScamRule> rules) {
 		if (level == null || totalScore <= 0 || rules == null || rules.isEmpty()) {
 			return false;
 		}
-		String setting = ScamRules.autoCaptureAlertLevelSetting();
+		String setting = autoCaptureSettingSupplier.get();
 		if (setting == null || setting.isBlank() || setting.equalsIgnoreCase("OFF")) {
 			return false;
 		}
+		// Funnel-based positives are especially useful for model training, even when
+		// the overall score stays below the normal alert threshold.
+		if (rules.contains(ScamRules.ScamRule.FUNNEL_SEQUENCE_PATTERN)
+			|| rules.contains(ScamRules.ScamRule.LOCAL_AI_FUNNEL_SIGNAL)) {
+			return true;
+		}
 		try {
 			ScamRules.ScamRiskLevel minimum = ScamRules.ScamRiskLevel.valueOf(setting.trim().toUpperCase(java.util.Locale.ROOT));
-			return DetectionScoring.toScamRiskLevel(level).ordinal() >= minimum.ordinal();
+			ScamRules.ScamRiskLevel actual = riskLevelMapper.apply(level);
+			if (actual == null) {
+				return false;
+			}
+			return actual.ordinal() >= minimum.ordinal();
 		} catch (IllegalArgumentException ignored) {
 			return false;
 		}

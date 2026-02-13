@@ -149,6 +149,10 @@ public final class LocalAiTrainer {
 		return new TrainingResult(samples.size(), (int) positiveCount, archivedPath, ignoredRows[0]);
 	}
 
+	public Path archiveTrainingDataOnly(Path csvPath) throws IOException {
+		return archiveTrainingData(csvPath);
+	}
+
 	private static double[] vectorizeMain(Sample sample, Map<String, Integer> vocabIndex, int denseCount, int featureCount) {
 		double[] vector = new double[featureCount];
 		Map<String, Double> dense = AiFeatureSpace.extractDenseFeatures(sample.context());

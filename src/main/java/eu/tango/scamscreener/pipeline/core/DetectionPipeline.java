@@ -86,11 +86,12 @@ public final class DetectionPipeline {
 
 		DetectionResult result = scoringStage.score(safeEvent, signals);
 		DetectionDecision decision = decisionStage.decide(safeEvent, result);
-		if (!decision.shouldWarn()) {
+		if (decision.shouldWarn()) {
+			outputStage.output(safeEvent, result, decision, reply, warningSound);
+		}
+		if (!decision.shouldWarn() && !result.shouldCapture()) {
 			return Optional.empty();
 		}
-
-		outputStage.output(safeEvent, result, decision, reply, warningSound);
 		return Optional.of(new DetectionOutcome(safeEvent, result));
 	}
 

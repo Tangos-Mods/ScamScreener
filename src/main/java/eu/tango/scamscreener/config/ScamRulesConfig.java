@@ -33,7 +33,7 @@ public final class ScamRulesConfig {
 	public static final int DEFAULT_LOCAL_AI_FUNNEL_MAX_SCORE = 30;
 	public static final double DEFAULT_LOCAL_AI_FUNNEL_THRESHOLD_BONUS = 0.05;
 	public static final String DEFAULT_MIN_ALERT_RISK_LEVEL = "HIGH";
-	public static final String DEFAULT_AUTO_CAPTURE_ALERT_LEVEL = "OFF";
+	public static final String DEFAULT_AUTO_CAPTURE_ALERT_LEVEL = "HIGH";
 	public static final boolean DEFAULT_AUTO_LEAVE_ON_BLACKLIST = false;
 	public static final boolean DEFAULT_SHOW_SCAM_WARNING_MESSAGE = true;
 	public static final boolean DEFAULT_PING_ON_SCAM_WARNING = true;

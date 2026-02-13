@@ -1,6 +1,26 @@
 # Changelog
 All notable changes to this project are documented in this file.
 
+## [1.0.0] - 2026-02-13
+
+### Added
+- Added `scripts/train-model.ps1` as a local model-training wrapper for `train_local_ai.py` with Python auto-detection, `scikit-learn` precheck, configurable paths, and optional `-BumpModel`.
+- Added `.env.example` with a `MODRINTH_TOKEN` template.
+- Added an `Upload Training Data` action in `MainSettingsScreen` and wired it through `ScamScreenerClient` to `TrainingCommandHandler`.
+- Added upload guidance messaging in `Messages.trainingUploadToDiscord(...)` with clickable local folder path and clickable SkyblockEnhanced Discord invite.
+- Added click helper methods in `MessageBuilder` for containing-folder file links and URL links.
+- Added UI test coverage for training upload messaging and generalized click-event value extraction in `MessagesTest`.
+
+### Changed
+- Bumped mod version from `0.16.7` to `1.0.0`.
+- Local `/scamscreener ai train` flow now defaults to archiving local training CSV and prompting Discord upload guidance (instead of directly training on-client).
+- Modrinth publish changelog source now reads from `MODRINTH.md` instead of `CHANGELOG.md`.
+- Stonecutter version order now prioritizes `1.21.11` as first listed target in `settings.gradle.kts`.
+- Updated `.gitignore` with local env/model entries (`.env`, `funnel.csv`, `/.gradle-user`).
+
+### Fixed
+- Blacklist warning banner header now correctly shows `BLACKLIST WARNING` (instead of `SCAM WARNING`).
+
 ## [0.16.7] - 2026-02-11
 
 ### Added
