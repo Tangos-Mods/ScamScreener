@@ -9,14 +9,14 @@ if (-not (Test-Path $propertiesPath)) {
 }
 
 $properties = Get-Content -Path $propertiesPath -Raw -Encoding UTF8
-$match = [regex]::Match($properties, '(?m)^\s*mod_version\s*=\s*([^\r\n#]+?)\s*$')
+$match = [regex]::Match($properties, '(?m)^\s*mod\.version\s*=\s*([^\r\n#]+?)\s*$')
 if (-not $match.Success) {
-	throw "mod_version not found in gradle.properties"
+	throw "mod.version not found in gradle.properties"
 }
 
 $version = $match.Groups[1].Value.Trim()
 if ([string]::IsNullOrWhiteSpace($version)) {
-	throw "mod_version is empty in gradle.properties"
+	throw "mod.version is empty in gradle.properties"
 }
 
 $badgeDir = Split-Path -Parent $badgePath

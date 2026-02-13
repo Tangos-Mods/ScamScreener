@@ -87,7 +87,21 @@ final class BlacklistSettingsScreen extends GUI {
 		int reasonInputWidth = buttonWidth - reasonButtonWidth - dropdownWidth - 16;
 		reasonInput = this.addRenderableWidget(new EditBox(this.font, x, y, reasonInputWidth, 20, Component.literal("Reason")));
 		reasonInput.setMaxLength(64);
-		ruleReasonDropdown = this.addRenderableWidget(CycleButton.<ScamRules.ScamRule>builder(rule -> Component.literal(rule.name()))
+		//? if >=1.21.11 {
+		ruleReasonDropdown = this.addRenderableWidget(CycleButton.<ScamRules.ScamRule>builder(
+						rule -> Component.literal(rule.name()),
+						() -> ScamRules.ScamRule.SUSPICIOUS_LINK
+				).withValues(List.of(ScamRules.ScamRule.values()))
+				.create(
+						x + reasonInputWidth + 8,
+						y,
+						dropdownWidth,
+						20,
+						Component.literal("Rules"),
+						(button, value) -> applyRuleReasonFromDropdown(value)
+				));
+		//?} else {
+		/*ruleReasonDropdown = this.addRenderableWidget(CycleButton.<ScamRules.ScamRule>builder(rule -> Component.literal(rule.name()))
 			.withValues(List.of(ScamRules.ScamRule.values()))
 			.withInitialValue(ScamRules.ScamRule.SUSPICIOUS_LINK)
 			.create(
@@ -98,6 +112,7 @@ final class BlacklistSettingsScreen extends GUI {
 				Component.literal("Rules"),
 				(button, value) -> applyRuleReasonFromDropdown(value)
 			));
+		*///?}
 		setReasonButton = this.addRenderableWidget(Button.builder(Component.literal("Save"), button -> applyReasonInput())
 			.bounds(x + reasonInputWidth + dropdownWidth + 16, y, reasonButtonWidth, 20)
 			.build());

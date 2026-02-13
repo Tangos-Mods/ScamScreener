@@ -24,7 +24,11 @@ public final class NotificationService {
 			long delayMs = i * 120L;
 			WARNING_SOUND_EXECUTOR.schedule(() -> client.execute(() -> {
 				if (client.player != null) {
-					client.player.playNotifySound(SoundEvents.NOTE_BLOCK_PLING.value(), SoundSource.MASTER, 0.8F, 1.2F);
+					//? if <1.21.11 {
+					client.player.playSound(SoundEvents.NOTE_BLOCK_PLING.value(), 0.8F, 1.2F);
+					//?} else {
+					/*client.player.playNotifySound(SoundEvents.NOTE_BLOCK_PLING.value(), SoundSource.MASTER, 0.8F, 1.2F);
+					*///?}
 				}
 			}), delayMs, TimeUnit.MILLISECONDS);
 		}
