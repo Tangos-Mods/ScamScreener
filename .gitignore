@@ -47,9 +47,4 @@ AGENTS.md
 
 # local AI files
 funnel.csv
-/.gradle-user
-/.gradle-user-autocapture
-/.gradle-user-autocapture2
-/.gradle-user-ci-check
-/.gradle-user-discord-ci-check
-/.gradle-user-discord-ci-check2
+/.gradle-user*

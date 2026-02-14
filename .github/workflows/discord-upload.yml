@@ -10,8 +10,9 @@ permissions:
 
 jobs:
   integration-test:
-    if: ${{ secrets.DISCORD_UPLOAD_TEST_WEBHOOK_URL != '' }}
     runs-on: ubuntu-24.04
+    env:
+      DISCORD_UPLOAD_TEST_WEBHOOK_URL: ${{ secrets.DISCORD_UPLOAD_TEST_WEBHOOK_URL }}
     steps:
       - name: checkout repository
         uses: actions/checkout@v4
@@ -31,14 +32,19 @@ jobs:
       - name: make gradle wrapper executable
         run: chmod +x ./gradlew
 
+      - name: skip discord integration test (missing secret)
+        if: ${{ env.DISCORD_UPLOAD_TEST_WEBHOOK_URL == '' }}
+        run: echo "Skipping discord upload integration test."
+
       - name: run discord upload integration test
+        if: ${{ env.DISCORD_UPLOAD_TEST_WEBHOOK_URL != '' }}
         env:
-          SCAMSCREENER_DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_UPLOAD_TEST_WEBHOOK_URL }}
+          SCAMSCREENER_DISCORD_WEBHOOK_URL: ${{ env.DISCORD_UPLOAD_TEST_WEBHOOK_URL }}
           SCAMSCREENER_DISCORD_WEBHOOK_USERNAME: ScamScreener-CI
         run: ./gradlew test --console=plain --tests "eu.tango.scamscreener.discord.DiscordWebhookUploaderIntegrationTest" -Dscamscreener.discord.integration.enabled=true
 
       - name: upload integration test reports
-        if: always()
+        if: ${{ always() && env.DISCORD_UPLOAD_TEST_WEBHOOK_URL != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: discord-upload-test-reports

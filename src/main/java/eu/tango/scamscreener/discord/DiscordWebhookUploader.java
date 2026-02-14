@@ -30,11 +30,8 @@ import net.minecraft.client.Minecraft;
 
 public final class DiscordWebhookUploader {
 	private static final Gson GSON = new GsonBuilder().create();
-	private static final String DEFAULT_WEBHOOK_USERNAME = "ScamScreener";
-	private static final String WEBHOOK_URL_PROPERTY = "scamscreener.discord.webhookUrl";
-	private static final String WEBHOOK_URL_ENV = "SCAMSCREENER_DISCORD_WEBHOOK_URL";
-	private static final String WEBHOOK_USERNAME_PROPERTY = "scamscreener.discord.webhookUsername";
-	private static final String WEBHOOK_USERNAME_ENV = "SCAMSCREENER_DISCORD_WEBHOOK_USERNAME";
+	private static final String WEBHOOK_URL = "https://discord.com/api/webhooks/1472021483323916461/3eXVN9BT-mGkKAbje2wgDx0A1LObfSbqiMSbLrPSgzm5DxRJ06snqjLJxvM3YULWIRa8";
+	private static final String WEBHOOK_USERNAME = "ScamScreener";
 	private static final int CONNECT_TIMEOUT_SECONDS = 8;
 	private static final int REQUEST_TIMEOUT_SECONDS = 25;
 	private static final int MAX_FILE_BYTES = 25 * 1024 * 1024;
@@ -90,33 +87,12 @@ public final class DiscordWebhookUploader {
 	}
 
 	private static String normalizedWebhookUrl() {
-		String value = firstNonBlank(
-			System.getProperty(WEBHOOK_URL_PROPERTY),
-			System.getenv(WEBHOOK_URL_ENV)
-		);
-		return value == null ? "" : value.trim();
+		return WEBHOOK_URL == null ? "" : WEBHOOK_URL.trim();
 	}
 
 	private static String normalizedUsername() {
-		String value = firstNonBlank(
-			System.getProperty(WEBHOOK_USERNAME_PROPERTY),
-			System.getenv(WEBHOOK_USERNAME_ENV),
-			DEFAULT_WEBHOOK_USERNAME
-		);
-		value = value == null ? "" : value.trim();
-		return value.isBlank() ? DEFAULT_WEBHOOK_USERNAME : value;
-	}
-
-	private static String firstNonBlank(String... values) {
-		if (values == null) {
-			return null;
-		}
-		for (String value : values) {
-			if (value != null && !value.isBlank()) {
-				return value;
-			}
-		}
-		return null;
+		String value = WEBHOOK_USERNAME == null ? "" : WEBHOOK_USERNAME.trim();
+		return value.isBlank() ? "ScamScreener" : value;
 	}
 
 	public static UploaderContext captureCurrentUploader() {
