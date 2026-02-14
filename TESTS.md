@@ -30,7 +30,7 @@ Base directory: `src/test/java/eu/tango/scamscreener/`
   - Embed includes uploader test data, UUID, timestamp, and hash field.
 - **How it is tested:**
   - Opt-in integration test (`-Dscamscreener.discord.integration.enabled=true`).
-  - Requires test webhook via `SCAMSCREENER_DISCORD_WEBHOOK_URL` (or `-Dscamscreener.discord.webhookUrl=...`).
+  - Uses the configured webhook in `DiscordWebhookUploader`.
   - Creates a temporary `.csv.old.<n>` file, uploads it with fixed test context, and asserts successful response + `sha256=` in result detail.
 
 ### `chat/parser/ChatLineParserTest.java`

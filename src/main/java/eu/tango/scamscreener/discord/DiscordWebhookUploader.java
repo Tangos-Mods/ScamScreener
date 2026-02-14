@@ -35,7 +35,7 @@ public final class DiscordWebhookUploader {
 	private static final int CONNECT_TIMEOUT_SECONDS = 8;
 	private static final int REQUEST_TIMEOUT_SECONDS = 25;
 	private static final int MAX_FILE_BYTES = 25 * 1024 * 1024;
-	private static final DateTimeFormatter EMBED_TIMESTAMP_FORMATTER = DateTimeFormatter.ofPattern("dd.MM.yyyy hh:mm:ss");
+	private static final DateTimeFormatter EMBED_TIMESTAMP_FORMATTER = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
 
 	public boolean isConfigured() {
 		return looksLikeWebhookUrl(normalizedWebhookUrl());
