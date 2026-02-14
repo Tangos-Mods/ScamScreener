@@ -1,6 +1,7 @@
 package eu.tango.scamscreener.ai;
 
 import eu.tango.scamscreener.rules.ScamRules;
+import eu.tango.scamscreener.discord.DiscordWebhookUploader;
 import eu.tango.scamscreener.ui.MessageDispatcher;
 import eu.tango.scamscreener.ui.Messages;
 import eu.tango.scamscreener.ui.MessageFlagging;
@@ -13,7 +14,9 @@ import java.awt.Desktop;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Stream;
 
 public final class TrainingCommandHandler {
 	private static final Logger LOGGER = LoggerFactory.getLogger(TrainingCommandHandler.class);
@@ -21,11 +24,17 @@ public final class TrainingCommandHandler {
 	private static final boolean LOCAL_TRAINING_COMMAND_ENABLED = false;
 	private final TrainingDataService trainingDataService;
 	private final LocalAiTrainer localAiTrainer;
+	private final DiscordWebhookUploader discordWebhookUploader;
 	private volatile boolean trainingInProgress;
 
-	public TrainingCommandHandler(TrainingDataService trainingDataService, LocalAiTrainer localAiTrainer) {
+	public TrainingCommandHandler(
+		TrainingDataService trainingDataService,
+		LocalAiTrainer localAiTrainer,
+		DiscordWebhookUploader discordWebhookUploader
+	) {
 		this.trainingDataService = trainingDataService;
 		this.localAiTrainer = localAiTrainer;
+		this.discordWebhookUploader = discordWebhookUploader == null ? new DiscordWebhookUploader() : discordWebhookUploader;
 	}
 
 	public int captureChatAsTrainingData(String playerName, int label, int count) {
@@ -118,8 +127,19 @@ public final class TrainingCommandHandler {
 					MessageDispatcher.reply(Messages.trainingFailed(trainingErrorDetail(e, trainingDataService.trainingDataPath())));
 					return 0;
 				}
+			} else {
+				Path latestArchived = findLatestArchivedTrainingFile(trainingPath);
+				if (latestArchived != null) {
+					uploadPath = latestArchived;
+				}
 			}
-			MessageDispatcher.reply(Messages.trainingUploadToDiscord(uploadPath.toString()));
+			if (Files.isRegularFile(uploadPath)) {
+				MessageDispatcher.reply(Messages.trainingUploadWebhookStarted(uploadPath.toString()));
+				uploadArchivedTrainingDataAsync(uploadPath);
+			} else {
+				// Code: TR-UPLOAD-002
+				MessageDispatcher.reply(Messages.trainingUploadUnavailable("Training data file not found: " + uploadPath));
+			}
 			return 1;
 		}
 		if (trainingInProgress) {
@@ -181,6 +201,22 @@ public final class TrainingCommandHandler {
 		}
 	}
 
+	private void uploadArchivedTrainingDataAsync(Path archivedPath) {
+		DiscordWebhookUploader.UploaderContext uploaderContext = DiscordWebhookUploader.captureCurrentUploader();
+		Thread thread = new Thread(() -> {
+			DiscordWebhookUploader.UploadResult result = discordWebhookUploader.uploadTrainingFile(archivedPath, uploaderContext);
+			if (result.success()) {
+				MessageDispatcher.reply(Messages.trainingUploadWebhookSucceeded(archivedPath.toString(), result.detail()));
+				return;
+			}
+			LOGGER.warn("Failed to upload training data to Discord webhook: {}", result.detail());
+			// Code: TR-UPLOAD-001
+			MessageDispatcher.reply(Messages.trainingUploadWebhookFailed(result.detail()));
+		}, "scamscreener-discord-upload");
+		thread.setDaemon(true);
+		thread.start();
+	}
+
 	private static Path resolveOldFolder(Path archivedPath) {
 		Path cursor = archivedPath;
 		while (cursor != null) {
@@ -191,5 +227,44 @@ public final class TrainingCommandHandler {
 			cursor = cursor.getParent();
 		}
 		return archivedPath.getParent();
+	}
+
+	private static Path findLatestArchivedTrainingFile(Path trainingPath) {
+		if (trainingPath == null || trainingPath.getFileName() == null) {
+			return null;
+		}
+		Path archiveDir = trainingPath.resolveSibling("old").resolve("training-data");
+		if (!Files.isDirectory(archiveDir)) {
+			return null;
+		}
+		String baseName = trainingPath.getFileName().toString();
+		try (Stream<Path> files = Files.list(archiveDir)) {
+			return files
+				.filter(Files::isRegularFile)
+				.filter(path -> {
+					String name = path.getFileName().toString();
+					return name.startsWith(baseName + ".old.");
+				})
+				.max(Comparator.comparingInt(TrainingCommandHandler::archiveSuffixIndex))
+				.orElse(null);
+		} catch (IOException ignored) {
+			return null;
+		}
+	}
+
+	private static int archiveSuffixIndex(Path archiveFile) {
+		if (archiveFile == null || archiveFile.getFileName() == null) {
+			return -1;
+		}
+		String name = archiveFile.getFileName().toString();
+		int marker = name.lastIndexOf(".old.");
+		if (marker < 0 || marker + 5 >= name.length()) {
+			return -1;
+		}
+		try {
+			return Integer.parseInt(name.substring(marker + 5));
+		} catch (NumberFormatException ignored) {
+			return -1;
+		}
 	}
 }

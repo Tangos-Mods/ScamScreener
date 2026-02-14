@@ -15,6 +15,7 @@ import eu.tango.scamscreener.config.ScamRulesConfig;
 import eu.tango.scamscreener.chat.mute.MutePatternManager;
 import eu.tango.scamscreener.chat.parser.ChatLineParser;
 import eu.tango.scamscreener.chat.trigger.TriggerContext;
+import eu.tango.scamscreener.discord.DiscordWebhookUploader;
 import eu.tango.scamscreener.gui.MainSettingsScreen;
 import eu.tango.scamscreener.pipeline.model.DetectionOutcome;
 import eu.tango.scamscreener.pipeline.core.DetectionPipeline;
@@ -57,6 +58,7 @@ public class ScamScreenerClient implements ClientModInitializer {
 	private final MojangProfileService mojangProfileService = new MojangProfileService();
 	private final TrainingDataService trainingDataService = new TrainingDataService();
 	private final LocalAiTrainer localAiTrainer = new LocalAiTrainer();
+	private final DiscordWebhookUploader discordWebhookUploader = new DiscordWebhookUploader();
 	private final ModelUpdateService modelUpdateService = new ModelUpdateService();
 	private final MutePatternManager mutePatternManager = new MutePatternManager();
 	private final DetectionPipeline detectionPipeline = new DetectionPipeline(mutePatternManager, new LocalAiScorer());
@@ -64,7 +66,11 @@ public class ScamScreenerClient implements ClientModInitializer {
 	private final EmailSafety emailSafety = new EmailSafety();
 	private final DiscordSafety discordSafety = new DiscordSafety();
 	private final CoopAddSafety coopAddSafety = new CoopAddSafety(BLACKLIST, playerLookup);
-	private final TrainingCommandHandler trainingCommandHandler = new TrainingCommandHandler(trainingDataService, localAiTrainer);
+	private final TrainingCommandHandler trainingCommandHandler = new TrainingCommandHandler(
+		trainingDataService,
+		localAiTrainer,
+		discordWebhookUploader
+	);
 	private final OutgoingMessageGuard outgoingMessageGuard = new OutgoingMessageGuard(emailSafety, discordSafety, coopAddSafety);
 	private final ModelUpdateCommandHandler modelUpdateCommandHandler = new ModelUpdateCommandHandler(modelUpdateService);
 	private final BypassCommandHandler bypassCommandHandler = new BypassCommandHandler(emailSafety, discordSafety, coopAddSafety);

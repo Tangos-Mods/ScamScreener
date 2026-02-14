@@ -7,7 +7,6 @@ import net.minecraft.network.chat.MutableComponent;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -42,6 +41,8 @@ class MessagesTest {
 	void errorMessagesIncludeStableErrorCodes() {
 		assertTrue(Messages.modelUpdateCheckFailed("boom").getString().contains("[MU-CHECK-001]"));
 		assertTrue(Messages.trainingSaveFailed("boom").getString().contains("[TR-SAVE-001]"));
+		assertTrue(Messages.trainingUploadWebhookFailed("boom").getString().contains("[TR-UPLOAD-001]"));
+		assertTrue(Messages.trainingUploadUnavailable("boom").getString().contains("[TR-UPLOAD-002]"));
 		assertTrue(Messages.mutePatternInvalid("(bad").getString().contains("[MUTE-REGEX-001]"));
 	}
 
@@ -68,16 +69,12 @@ class MessagesTest {
 	}
 
 	@Test
-	void trainingUploadToDiscordIncludesGuidanceAndPath() {
-		String path = "C:/config/scamscreener/scam-screener-training-data.csv";
-		String expectedFolder = Path.of(path).getParent().toString();
-		MutableComponent message = Messages.trainingUploadToDiscord(path);
-		String text = message.getString();
+	void trainingWebhookMessagesUseSimpleStatusText() {
+		MutableComponent started = Messages.trainingUploadWebhookStarted("ignored-path");
+		MutableComponent success = Messages.trainingUploadWebhookSucceeded("ignored-path", "ignored-detail");
 
-		assertTrue(text.contains("SkyblockEnhanced Discord"));
-		assertTrue(text.contains(path));
-		assertTrue(hasClickValue(message, "https://discord.gg/uzbJnXbfvA"));
-		assertTrue(hasClickValue(message, expectedFolder));
+		assertTrue(started.getString().contains("Uploading..."));
+		assertTrue(success.getString().contains("Training data uploaded sucessfully."));
 	}
 
 	@Test

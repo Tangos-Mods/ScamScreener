@@ -51,3 +51,5 @@ funnel.csv
 /.gradle-user-autocapture
 /.gradle-user-autocapture2
 /.gradle-user-ci-check
+/.gradle-user-discord-ci-check
+/.gradle-user-discord-ci-check2

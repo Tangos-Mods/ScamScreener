@@ -1,7 +1,5 @@
 package eu.tango.scamscreener.ui;
 
-import java.net.URI;
-import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
@@ -25,7 +23,6 @@ import net.minecraft.network.chat.Style;
 public final class Messages extends MessageBuilder {
 	private static final String PREFIX = DEFAULT_PREFIX;
 	private static final int PREFIX_LIGHT_RED = DEFAULT_PREFIX_COLOR;
-	private static final String SKYBLOCK_ENHANCED_DISCORD_URL = "https://discord.gg/uzbJnXbfvA";
 
 	private Messages() {
 	}
@@ -294,40 +291,34 @@ public final class Messages extends MessageBuilder {
 			.append(Component.literal("Training is already running.").withStyle(ChatFormatting.GRAY));
 	}
 
-	public static MutableComponent trainingUploadToDiscord(String path) {
-		String safePath = path == null ? "" : path;
-		String folderPath = safePath;
-		try {
-			Path parsed = Path.of(safePath);
-			Path parent = parsed.getParent();
-			if (parent != null) {
-				folderPath = parent.toString();
-			}
-		} catch (Exception ignored) {
-		}
-
-		MutableComponent folderLink = Component.literal(safePath).setStyle(
-			Style.EMPTY
-				.withColor(ChatFormatting.YELLOW)
-				.withClickEvent(new ClickEvent.OpenFile(folderPath))
-				.withHoverEvent(new HoverEvent.ShowText(Component.literal("Click to open containing folder in Explorer")))
-		);
-
-		Style discordStyle = Style.EMPTY
-			.withColor(ChatFormatting.AQUA)
-			.withHoverEvent(new HoverEvent.ShowText(Component.literal("Open Discord invite").withStyle(ChatFormatting.YELLOW)));
-		try {
-			discordStyle = discordStyle.withClickEvent(new ClickEvent.OpenUrl(URI.create(SKYBLOCK_ENHANCED_DISCORD_URL)));
-		} catch (Exception ignored) {
-		}
-		MutableComponent discordLink = Component.literal("SkyblockEnhanced Discord").setStyle(discordStyle);
-
+	public static MutableComponent trainingUploadWebhookStarted(String path) {
 		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
-			.append(Component.literal("Please upload ").withStyle(ChatFormatting.GRAY))
-			.append(folderLink)
-			.append(Component.literal(" in ").withStyle(ChatFormatting.GRAY))
-			.append(discordLink)
-			.append(Component.literal(" so the AI model can be trained for everyone.").withStyle(ChatFormatting.GRAY));
+			.append(Component.literal("Uploading...").withStyle(ChatFormatting.GRAY));
+	}
+
+	public static MutableComponent trainingUploadWebhookSucceeded(String path, String verificationDetail) {
+		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
+			.append(Component.literal("Training data uploaded sucessfully.").withStyle(ChatFormatting.GRAY));
+	}
+
+	public static MutableComponent trainingUploadWebhookFailed(String errorMessage) {
+		return buildError(
+			PREFIX,
+			PREFIX_LIGHT_RED,
+			"Discord webhook upload failed.",
+			"TR-UPLOAD-001",
+			errorMessage
+		);
+	}
+
+	public static MutableComponent trainingUploadUnavailable(String detail) {
+		return buildError(
+			PREFIX,
+			PREFIX_LIGHT_RED,
+			"Training data upload unavailable.",
+			"TR-UPLOAD-002",
+			detail
+		);
 	}
 
 	public static MutableComponent trainingFailed(String errorMessage) {
