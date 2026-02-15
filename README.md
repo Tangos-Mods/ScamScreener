@@ -1,6 +1,6 @@
 # ScamScreener
 
-[![Build](https://github.com/Tangos-Mods/ScamScreener/actions/workflows/build.yml/badge.svg)](https://github.com/Tangos-Mods/ScamScreener/actions/workflows/build.yml) [![Modrinth Downloads](https://img.shields.io/modrinth/dt/scamscreener?logo=modrinth&label=Modrinth%20downloads)](https://modrinth.com/mod/scamscreener) [![Version](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Tangos-Mods/ScamScreener/main/.github/badges/version.json)](gradle.properties) [![AI Model](https://img.shields.io/badge/AI%20Model-v15-5555ff)](scripts/model-version.json)
+[![Build](https://github.com/Tangos-Mods/ScamScreener/actions/workflows/build.yml/badge.svg)](https://github.com/Tangos-Mods/ScamScreener/actions/workflows/build.yml) [![Modrinth Downloads](https://img.shields.io/modrinth/dt/scamscreener?logo=modrinth&label=Modrinth%20downloads)](https://modrinth.com/mod/scamscreener) [![Version](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Tangos-Mods/ScamScreener/main/.github/badges/version.json)](gradle.properties) [![AI Model](https://img.shields.io/badge/AI%20Model-v17-5555ff)](scripts/model-version.json)
 
 Client-side Fabric mod for **Minecraft 1.21.10 / 1.21.11** that analyzes Hypixel SkyBlock chat for scam risk.
 
