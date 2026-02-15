@@ -35,6 +35,8 @@ public final class ScamScreenerCommands {
 	private final Consumer<Boolean> setAutoLeaveEnabledHandler;
 	private final IntSupplier trainHandler;
 	private final IntSupplier resetAiHandler;
+	private final IntSupplier funnelMetricsStatusHandler;
+	private final IntSupplier funnelMetricsResetHandler;
 	private final Supplier<String> lastCapturedChatSupplier;
 	private final Consumer<UUID> onBlacklistRemoved;
 	private final Runnable openSettingsHandler;
@@ -58,6 +60,8 @@ public final class ScamScreenerCommands {
 		Consumer<Boolean> setAutoLeaveEnabledHandler,
 		IntSupplier trainHandler,
 		IntSupplier resetAiHandler,
+		IntSupplier funnelMetricsStatusHandler,
+		IntSupplier funnelMetricsResetHandler,
 		Supplier<String> lastCapturedChatSupplier,
 		Consumer<UUID> onBlacklistRemoved,
 		Runnable openSettingsHandler,
@@ -80,6 +84,8 @@ public final class ScamScreenerCommands {
 		this.setAutoLeaveEnabledHandler = setAutoLeaveEnabledHandler;
 		this.trainHandler = trainHandler;
 		this.resetAiHandler = resetAiHandler;
+		this.funnelMetricsStatusHandler = funnelMetricsStatusHandler;
+		this.funnelMetricsResetHandler = funnelMetricsResetHandler;
 		this.lastCapturedChatSupplier = lastCapturedChatSupplier;
 		this.onBlacklistRemoved = onBlacklistRemoved;
 		this.openSettingsHandler = openSettingsHandler;
@@ -114,6 +120,8 @@ public final class ScamScreenerCommands {
 				modelUpdateHandler,
 				updateCheckHandler,
 				resetAiHandler,
+				funnelMetricsStatusHandler,
+				funnelMetricsResetHandler,
 				reply
 			))
 			.then(ClientCommandManager.literal("upload").executes(context -> trainHandler.getAsInt()))

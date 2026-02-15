@@ -31,6 +31,8 @@ final class AiCommand {
 		ScamScreenerCommands.ModelUpdateHandler modelUpdateHandler,
 		ScamScreenerCommands.UpdateCheckHandler updateCheckHandler,
 		IntSupplier resetAiHandler,
+		IntSupplier funnelMetricsStatusHandler,
+		IntSupplier funnelMetricsResetHandler,
 		Consumer<Component> reply
 	) {
 		LiteralArgumentBuilder<FabricClientCommandSource> capture = ClientCommandManager.literal("capture")
@@ -101,6 +103,11 @@ final class AiCommand {
 						return 1;
 					})));
 
+		LiteralArgumentBuilder<FabricClientCommandSource> metrics = ClientCommandManager.literal("metrics")
+			.executes(context -> funnelMetricsStatusHandler.getAsInt())
+			.then(ClientCommandManager.literal("reset")
+				.executes(context -> funnelMetricsResetHandler.getAsInt()));
+
 		return ClientCommandManager.literal("ai")
 			.executes(context -> {
 				reply.accept(Messages.aiCommandHelp());
@@ -112,6 +119,7 @@ final class AiCommand {
 			.then(migrate)
 			.then(model)
 			.then(update)
+			.then(metrics)
 			.then(ClientCommandManager.literal("reset").executes(context -> resetAiHandler.getAsInt()))
 			.then(ClientCommandManager.literal("autocapture")
 				.executes(context -> {

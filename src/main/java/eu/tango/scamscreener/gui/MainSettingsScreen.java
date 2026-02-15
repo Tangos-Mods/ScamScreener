@@ -1,5 +1,6 @@
 package eu.tango.scamscreener.gui;
 
+import eu.tango.scamscreener.ai.FunnelMetricsService;
 import eu.tango.scamscreener.ai.ModelUpdateService;
 import eu.tango.scamscreener.blacklist.BlacklistManager;
 import eu.tango.scamscreener.chat.mute.MutePatternManager;
@@ -31,6 +32,7 @@ public final class MainSettingsScreen extends GUI {
 	private final Runnable triggerForceAiUpdateHandler;
 	private final Supplier<ModelUpdateService.PendingUpdateSnapshot> aiUpdateSnapshotSupplier;
 	private final BiFunction<String, String, Integer> aiUpdateActionHandler;
+	private final Supplier<FunnelMetricsService.Snapshot> metricsSnapshotSupplier;
 	private final Runnable uploadTrainingDataHandler;
 
 	private Button alertLevelButton;
@@ -52,6 +54,7 @@ public final class MainSettingsScreen extends GUI {
 		Runnable triggerForceAiUpdateHandler,
 		Supplier<ModelUpdateService.PendingUpdateSnapshot> aiUpdateSnapshotSupplier,
 		BiFunction<String, String, Integer> aiUpdateActionHandler,
+		Supplier<FunnelMetricsService.Snapshot> metricsSnapshotSupplier,
 		Runnable uploadTrainingDataHandler
 	) {
 		super(Component.literal("ScamScreener Settings"), parent);
@@ -66,15 +69,15 @@ public final class MainSettingsScreen extends GUI {
 		this.triggerForceAiUpdateHandler = triggerForceAiUpdateHandler;
 		this.aiUpdateSnapshotSupplier = aiUpdateSnapshotSupplier;
 		this.aiUpdateActionHandler = aiUpdateActionHandler;
+		this.metricsSnapshotSupplier = metricsSnapshotSupplier;
 		this.uploadTrainingDataHandler = uploadTrainingDataHandler;
 	}
 
 	@Override
 	protected void init() {
-		ColumnLayout layout = defaultColumnLayout();
-		int buttonWidth = layout.width();
-		int x = layout.x();
-		int y = layout.startY();
+		int buttonWidth = Math.min(320, Math.max(180, this.width - 40));
+		int x = (this.width - buttonWidth) / 2;
+		int y = 36;
 
 		alertLevelButton = this.addRenderableWidget(Button.builder(Component.empty(), button -> {
 			cycleAlertLevel();
@@ -106,22 +109,33 @@ public final class MainSettingsScreen extends GUI {
 		}).bounds(x, y, buttonWidth, 20).build());
 		y += ROW_HEIGHT;
 
-		int thirdWidth = (buttonWidth - 16) / 3;
+		int splitSpacing = 8;
+		int thirdWidth = Math.max(0, (buttonWidth - splitSpacing * 2) / 3);
+		int secondColumnX = x + thirdWidth + splitSpacing;
+		int thirdColumnX = x + (thirdWidth + splitSpacing) * 2;
+
 		this.addRenderableWidget(Button.builder(Component.literal("Rule Settings"), button -> {
 			openScreen(new RuleSettingsScreen(this));
 		}).bounds(x, y, thirdWidth, 20).build());
 
 		this.addRenderableWidget(Button.builder(Component.literal("Debug Settings"), button -> {
 			openScreen(new DebugSettingsScreen(this, setAllDebugHandler, setDebugKeyHandler, debugStateSupplier));
-		}).bounds(x + thirdWidth + 8, y, thirdWidth, 20).build());
+		}).bounds(secondColumnX, y, thirdWidth, 20).build());
 
 		this.addRenderableWidget(Button.builder(Component.literal("Blacklist"), button -> {
 			openScreen(new BlacklistSettingsScreen(this, blacklistManager));
-		}).bounds(x + (thirdWidth + 8) * 2, y, thirdWidth, 20).build());
+		}).bounds(thirdColumnX, y, thirdWidth, 20).build());
 
 		this.addRenderableWidget(Button.builder(Component.literal("Message Settings"), button -> {
 			openScreen(new MessageSettingsScreen(this));
-		}).bounds(x, y + ROW_HEIGHT, thirdWidth * 2 + 8, 20).build());
+		}).bounds(x, y + ROW_HEIGHT, thirdWidth, 20).build());
+
+		Button metricsButton = this.addRenderableWidget(Button.builder(Component.literal("Metrics"), button -> {
+			if (metricsSnapshotSupplier != null) {
+				openScreen(new MetricsSettingsScreen(this, metricsSnapshotSupplier));
+			}
+		}).bounds(secondColumnX, y + ROW_HEIGHT, thirdWidth, 20).build());
+		metricsButton.active = metricsSnapshotSupplier != null;
 
 		this.addRenderableWidget(Button.builder(Component.literal("AI Update"), button -> {
 			openScreen(new AiUpdateSettingsScreen(
@@ -131,7 +145,7 @@ public final class MainSettingsScreen extends GUI {
 				aiUpdateSnapshotSupplier,
 				aiUpdateActionHandler
 			));
-		}).bounds(x + (thirdWidth + 8) * 2, y + ROW_HEIGHT, thirdWidth, 20).build());
+		}).bounds(thirdColumnX, y + ROW_HEIGHT, thirdWidth, 20).build());
 		y += ROW_HEIGHT * 2;
 
 		Button uploadTrainingButton = this.addRenderableWidget(Button.builder(Component.literal("Upload Training Data"), button -> {

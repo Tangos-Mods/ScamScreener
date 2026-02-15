@@ -34,10 +34,10 @@ final class DebugSettingsScreen extends GUI {
 	@Override
 	protected void init() {
 		debugButtons.clear();
-		ColumnLayout layout = defaultColumnLayout();
-		int buttonWidth = layout.width();
-		int x = layout.x();
-		int y = layout.startY();
+		ColumnState column = defaultColumnState();
+		int buttonWidth = column.buttonWidth();
+		int x = column.x();
+		int y = column.y();
 
 		allButton = this.addRenderableWidget(Button.builder(Component.empty(), button -> {
 			Map<String, Boolean> states = currentStates();

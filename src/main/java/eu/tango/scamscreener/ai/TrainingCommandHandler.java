@@ -30,15 +30,18 @@ public final class TrainingCommandHandler {
 	private static final String UPLOAD_TOS_FALLBACK = "By uploading training data you confirm you have rights to share it, "
 		+ "the data may contain personal chat content, and no malware or unrelated files are included.";
 	private final TrainingDataService trainingDataService;
+	private final FunnelMetricsService funnelMetricsService;
 	private final LocalAiTrainer localAiTrainer;
 	private final DiscordWebhookUploader discordWebhookUploader;
 
 	public TrainingCommandHandler(
 		TrainingDataService trainingDataService,
+		FunnelMetricsService funnelMetricsService,
 		LocalAiTrainer localAiTrainer,
 		DiscordWebhookUploader discordWebhookUploader
 	) {
 		this.trainingDataService = trainingDataService;
+		this.funnelMetricsService = funnelMetricsService == null ? new FunnelMetricsService() : funnelMetricsService;
 		this.localAiTrainer = localAiTrainer;
 		this.discordWebhookUploader = discordWebhookUploader == null ? new DiscordWebhookUploader() : discordWebhookUploader;
 	}
@@ -74,6 +77,7 @@ public final class TrainingCommandHandler {
 		}
 		try {
 			trainingDataService.appendRows(List.of(message), label);
+			funnelMetricsService.recordUserMark(message, label);
 			MessageDispatcher.reply(Messages.trainingSampleFlagged(label == LEGIT_LABEL ? "legit" : "scam"));
 			return 1;
 		} catch (IOException e) {
@@ -155,6 +159,17 @@ public final class TrainingCommandHandler {
 		LocalAiModelConfig.save(new LocalAiModelConfig());
 		ScamRules.reloadConfig();
 		MessageDispatcher.reply(Messages.localAiModelReset());
+		return 1;
+	}
+
+	public int showFunnelMetrics() {
+		MessageDispatcher.reply(Messages.funnelMetricsSummary(funnelMetricsService.snapshot()));
+		return 1;
+	}
+
+	public int resetFunnelMetrics() {
+		funnelMetricsService.reset();
+		MessageDispatcher.reply(Messages.funnelMetricsReset());
 		return 1;
 	}
 

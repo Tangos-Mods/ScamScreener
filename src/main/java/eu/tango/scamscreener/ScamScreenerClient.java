@@ -6,6 +6,7 @@ import eu.tango.scamscreener.ai.TrainingDataService;
 import eu.tango.scamscreener.ai.LocalAiTrainer;
 import eu.tango.scamscreener.ai.ModelUpdateCommandHandler;
 import eu.tango.scamscreener.ai.TrainingCommandHandler;
+import eu.tango.scamscreener.ai.FunnelMetricsService;
 import eu.tango.scamscreener.blacklist.BlacklistManager;
 import eu.tango.scamscreener.blacklist.BlacklistAlertService;
 import eu.tango.scamscreener.client.ClientTickController;
@@ -58,6 +59,7 @@ public class ScamScreenerClient implements ClientModInitializer {
 	private final PlayerLookup playerLookup = new PlayerLookup();
 	private final MojangProfileService mojangProfileService = new MojangProfileService();
 	private final TrainingDataService trainingDataService = new TrainingDataService();
+	private final FunnelMetricsService funnelMetricsService = new FunnelMetricsService();
 	private final LocalAiTrainer localAiTrainer = new LocalAiTrainer();
 	private final DiscordWebhookUploader discordWebhookUploader = new DiscordWebhookUploader();
 	private final ModelUpdateService modelUpdateService = new ModelUpdateService();
@@ -69,6 +71,7 @@ public class ScamScreenerClient implements ClientModInitializer {
 	private final CoopAddSafety coopAddSafety = new CoopAddSafety(BLACKLIST, playerLookup);
 	private final TrainingCommandHandler trainingCommandHandler = new TrainingCommandHandler(
 		trainingDataService,
+		funnelMetricsService,
 		localAiTrainer,
 		discordWebhookUploader
 	);
@@ -135,6 +138,8 @@ public class ScamScreenerClient implements ClientModInitializer {
 			this::setAutoLeaveEnabled,
 			trainingCommandHandler::trainLocalAiModel,
 			trainingCommandHandler::resetLocalAiModel,
+			trainingCommandHandler::showFunnelMetrics,
+			trainingCommandHandler::resetFunnelMetrics,
 			trainingDataService::lastCapturedLine,
 			ignored -> {},
 			openSettingsHandler,
@@ -165,6 +170,7 @@ public class ScamScreenerClient implements ClientModInitializer {
 			() -> modelUpdateCommandHandler.handleModelUpdateCheck(true),
 			modelUpdateCommandHandler::latestPendingSnapshot,
 			modelUpdateCommandHandler::handleModelUpdateCommand,
+			funnelMetricsService::snapshot,
 			() -> trainingCommandHandler.trainLocalAiModel()
 		);
 	}
@@ -195,7 +201,7 @@ public class ScamScreenerClient implements ClientModInitializer {
 
 		MessageEvent event = MessageEventParser.parse(plain, System.currentTimeMillis());
 		if (event != null) {
-			detectionPipeline.process(event, MessageDispatcher::reply, NotificationService::playWarningTone)
+			detectionPipeline.process(event, MessageDispatcher::reply, NotificationService::playWarningTone, funnelMetricsService::recordEvaluation)
 				.ifPresent(this::autoAddFlaggedMessageToTrainingData);
 		}
 		if (BLACKLIST.isEmpty()) {

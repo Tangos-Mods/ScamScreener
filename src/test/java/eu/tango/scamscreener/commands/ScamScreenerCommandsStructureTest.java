@@ -37,6 +37,8 @@ class ScamScreenerCommandsStructureTest {
 			enabled -> {},
 			() -> 1,
 			() -> 1,
+			() -> 1,
+			() -> 1,
 			() -> "",
 			uuid -> {},
 			() -> {},
@@ -61,6 +63,7 @@ class ScamScreenerCommandsStructureTest {
 		CommandNode<FabricClientCommandSource> ai = root.getChild("ai");
 		assertNull(ai.getChild("train"));
 		assertNotNull(ai.getChild("reset"));
+		assertNotNull(ai.getChild("metrics"));
 		assertTrue(ai.getChildren().stream().anyMatch(node -> "capture".equals(node.getName())));
 	}
 }

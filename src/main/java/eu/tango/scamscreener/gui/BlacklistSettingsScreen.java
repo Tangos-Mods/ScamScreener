@@ -58,28 +58,28 @@ final class BlacklistSettingsScreen extends GUI {
 			y += ROW_HEIGHT;
 		}
 
-		int half = (buttonWidth - 8) / 2;
+		int half = halfWidth(buttonWidth);
 		previousPageButton = this.addRenderableWidget(Button.builder(Component.literal("< Previous"), button -> {
 			page = Math.max(0, page - 1);
 			refreshList();
-		}).bounds(x, y, half, 20).build());
+		}).bounds(columnX(x, half, 0), y, half, 20).build());
 
 		nextPageButton = this.addRenderableWidget(Button.builder(Component.literal("Next >"), button -> {
 			page = Math.min(Math.max(0, totalPages - 1), page + 1);
 			refreshList();
-		}).bounds(x + half + 8, y, half, 20).build());
+		}).bounds(columnX(x, half, 1), y, half, 20).build());
 		y += ROW_HEIGHT;
 
-		int third = (buttonWidth - 16) / 3;
+		int third = thirdWidth(buttonWidth);
 		scoreDownButton = this.addRenderableWidget(Button.builder(Component.literal("Score -" + SCORE_STEP).withStyle(style -> style.withColor(OFF_LIGHT_RED)), button -> {
 			adjustScore(-SCORE_STEP);
-		}).bounds(x, y, third, 20).build());
+		}).bounds(columnX(x, third, 0), y, third, 20).build());
 		scoreUpButton = this.addRenderableWidget(Button.builder(Component.literal("Score +" + SCORE_STEP).withStyle(style -> style.withColor(ON_LIGHT_GREEN)), button -> {
 			adjustScore(SCORE_STEP);
-		}).bounds(x + third + 8, y, third, 20).build());
+		}).bounds(columnX(x, third, 1), y, third, 20).build());
 		removeButton = this.addRenderableWidget(Button.builder(Component.literal("Remove"), button -> {
 			removeSelected();
-		}).bounds(x + (third + 8) * 2, y, third, 20).build());
+		}).bounds(columnX(x, third, 2), y, third, 20).build());
 		y += ROW_HEIGHT;
 
 		int reasonButtonWidth = 52;

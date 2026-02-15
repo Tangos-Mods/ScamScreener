@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import eu.tango.scamscreener.pipeline.model.BehaviorAnalysis;
 import eu.tango.scamscreener.pipeline.model.DetectionDecision;
+import eu.tango.scamscreener.pipeline.model.DetectionEvaluation;
 import eu.tango.scamscreener.pipeline.model.DetectionOutcome;
 import eu.tango.scamscreener.pipeline.model.DetectionResult;
 import eu.tango.scamscreener.pipeline.model.MessageEvent;
@@ -69,6 +70,19 @@ public final class DetectionPipeline {
 	 * -> {@link DecisionStage} -> {@link OutputStage}.
 	 */
 	public Optional<DetectionOutcome> process(MessageEvent event, Consumer<Component> reply, Runnable warningSound) {
+		return process(event, reply, warningSound, null);
+	}
+
+	/**
+	 * Same as {@link #process(MessageEvent, Consumer, Runnable)} but also exposes the
+	 * internal scoring/decision output for local telemetry aggregation.
+	 */
+	public Optional<DetectionOutcome> process(
+		MessageEvent event,
+		Consumer<Component> reply,
+		Runnable warningSound,
+		Consumer<DetectionEvaluation> evaluationConsumer
+	) {
 		Optional<MessageEvent> maybeEvent = muteStage.filter(event);
 		if (maybeEvent.isEmpty()) {
 			return Optional.empty();
@@ -86,6 +100,9 @@ public final class DetectionPipeline {
 
 		DetectionResult result = scoringStage.score(safeEvent, signals);
 		DetectionDecision decision = decisionStage.decide(safeEvent, result);
+		if (evaluationConsumer != null) {
+			evaluationConsumer.accept(new DetectionEvaluation(safeEvent, result, decision));
+		}
 		if (decision.shouldWarn()) {
 			outputStage.output(safeEvent, result, decision, reply, warningSound);
 		}

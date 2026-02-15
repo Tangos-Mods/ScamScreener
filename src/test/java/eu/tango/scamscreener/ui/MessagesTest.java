@@ -85,8 +85,10 @@ class MessagesTest {
 
 		assertTrue(commandHelp.contains("/scamscreener upload"));
 		assertFalse(commandHelp.contains("/scamscreener ai train"));
+		assertTrue(commandHelp.contains("/scamscreener ai metrics"));
 		assertTrue(aiHelp.contains("/scamscreener upload"));
 		assertFalse(aiHelp.contains("/scamscreener ai train"));
+		assertTrue(aiHelp.contains("/scamscreener ai metrics"));
 	}
 
 	@Test

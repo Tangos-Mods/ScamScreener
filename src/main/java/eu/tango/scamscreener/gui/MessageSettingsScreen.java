@@ -18,10 +18,10 @@ final class MessageSettingsScreen extends GUI {
 
 	@Override
 	protected void init() {
-		ColumnLayout layout = defaultColumnLayout();
-		int buttonWidth = layout.width();
-		int x = layout.x();
-		int y = layout.startY();
+		ColumnState column = defaultColumnState();
+		int buttonWidth = column.buttonWidth();
+		int x = column.x();
+		int y = column.y();
 
 		scamWarningMessageButton = this.addRenderableWidget(Button.builder(Component.empty(), button -> {
 			ScamRules.setShowScamWarningMessage(!ScamRules.showScamWarningMessage());

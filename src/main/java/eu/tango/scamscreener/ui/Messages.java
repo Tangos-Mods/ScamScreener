@@ -4,11 +4,13 @@ import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import eu.tango.scamscreener.ai.FunnelMetricsService;
 import eu.tango.scamscreener.blacklist.BlacklistManager;
 import eu.tango.scamscreener.pipeline.core.DetectionScoring;
 import eu.tango.scamscreener.pipeline.model.DetectionResult;
@@ -334,6 +336,7 @@ public final class Messages extends MessageBuilder {
 			.append(Component.literal("\n- /scamscreener ai capture <player> <scam|legit> [count]").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener upload").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener ai reset").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal("\n- /scamscreener ai metrics [reset]").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener ai autocapture [off|low|medium|high|critical]").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener rules <list|disable|enable> [rule]").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener alertlevel [low|medium|high|critical]").withStyle(ChatFormatting.GRAY))
@@ -506,6 +509,7 @@ public final class Messages extends MessageBuilder {
 			.append(Component.literal("\n- /scamscreener ai model <download|accept|merge|ignore> <id>").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener upload").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener ai reset").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal("\n- /scamscreener ai metrics [reset]").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener ai autocapture [off|low|medium|high|critical]").withStyle(ChatFormatting.GRAY));
 	}
 
@@ -581,6 +585,52 @@ public final class Messages extends MessageBuilder {
 	public static MutableComponent localAiModelReset() {
 		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
 			.append(Component.literal("Local AI model was reset to default weights.").withStyle(ChatFormatting.GRAY));
+	}
+
+	public static MutableComponent funnelMetricsSummary(FunnelMetricsService.Snapshot snapshot) {
+		FunnelMetricsService.Snapshot safe = snapshot == null
+			? new FunnelMetricsService.Snapshot(0, 0, 0, 0, 0, 0, 0.0, 0.0, 0.0, 5.0)
+			: snapshot;
+		String thresholdText = safe.alertThreshold() <= 0.0
+			? "n/a"
+			: String.format(Locale.ROOT, "%.0f", safe.alertThreshold());
+		String marginText = String.format(Locale.ROOT, "%.0f", Math.max(0.0, safe.uncertainMargin()));
+
+		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
+			.append(Component.literal("Funnel metrics (local):").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal("\n- evaluated messages: ").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal(String.valueOf(safe.evaluatedMessages())).withStyle(ChatFormatting.YELLOW))
+			.append(Component.literal("\n- funnel detections: ").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal(String.valueOf(safe.funnelDetections())).withStyle(ChatFormatting.GOLD))
+			.append(Component.literal(" (" + safe.detectionRatePercent() + ")").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal("\n- user-marked funnel cases: ").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal(String.valueOf(safe.userMarkedSamples())).withStyle(ChatFormatting.YELLOW))
+			.append(Component.literal("\n- false positive rate (user-marked legit): ").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal(safe.falsePositivePercent()).withStyle(ChatFormatting.GOLD))
+			.append(Component.literal(" (" + safe.userMarkedLegit() + "/" + safe.userMarkedSamples() + ")").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal("\n- uncertain threshold boundary cases: ").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal(String.valueOf(safe.uncertainBoundaryCases())).withStyle(ChatFormatting.YELLOW))
+			.append(Component.literal(" (+/-" + marginText + " around " + thresholdText + ")").withStyle(ChatFormatting.GRAY));
+	}
+
+	public static MutableComponent funnelMetricsReset() {
+		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
+			.append(Component.literal("Funnel metrics reset.").withStyle(ChatFormatting.GRAY));
+	}
+
+	public static MutableComponent funnelMetricsCopiedToClipboard() {
+		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
+			.append(Component.literal("Metrics copied to clipboard (Discord format).").withStyle(ChatFormatting.GRAY));
+	}
+
+	public static MutableComponent funnelMetricsClipboardUnavailable() {
+		return buildError(
+			PREFIX,
+			PREFIX_LIGHT_RED,
+			"Failed to copy metrics.",
+			"METRIC-CLIP-001",
+			"Clipboard handler is unavailable."
+		);
 	}
 
 	public static MutableComponent currentAutoCaptureAlertLevel(String level) {

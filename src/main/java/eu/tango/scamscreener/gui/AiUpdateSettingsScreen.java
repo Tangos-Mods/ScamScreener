@@ -22,7 +22,6 @@ final class AiUpdateSettingsScreen extends GUI {
 	private Button acceptButton;
 	private Button mergeButton;
 	private Button ignoreButton;
-	private int tickCounter;
 
 	AiUpdateSettingsScreen(
 		Screen parent,
@@ -40,25 +39,25 @@ final class AiUpdateSettingsScreen extends GUI {
 
 	@Override
 	protected void init() {
-		ColumnLayout layout = defaultColumnLayout();
-		int buttonWidth = layout.width();
-		int x = layout.x();
-		int y = layout.startY();
+		ColumnState column = defaultColumnState();
+		int buttonWidth = column.buttonWidth();
+		int x = column.x();
+		int y = column.y();
 
 		statusButton = this.addRenderableWidget(Button.builder(Component.empty(), button -> refreshState())
 			.bounds(x, y, buttonWidth, 20)
 			.build());
 		y += ROW_HEIGHT;
 
-		int half = (buttonWidth - 8) / 2;
+		int half = halfWidth(buttonWidth);
 		checkButton = this.addRenderableWidget(Button.builder(Component.literal("Check / Download"), button -> {
 			triggerCheck();
 			refreshState();
-		}).bounds(x, y, half, 20).build());
+		}).bounds(columnX(x, half, 0), y, half, 20).build());
 		forceCheckButton = this.addRenderableWidget(Button.builder(Component.literal("Force Check"), button -> {
 			triggerForceCheck();
 			refreshState();
-		}).bounds(x + half + 8, y, half, 20).build());
+		}).bounds(columnX(x, half, 1), y, half, 20).build());
 		forceCheckButton.active = triggerForceAiUpdateHandler != null;
 		y += ROW_HEIGHT;
 
@@ -68,15 +67,15 @@ final class AiUpdateSettingsScreen extends GUI {
 		}).bounds(x, y, buttonWidth, 20).build());
 		y += ROW_HEIGHT;
 
-		int third = (buttonWidth - 16) / 3;
+		int third = thirdWidth(buttonWidth);
 		acceptButton = this.addRenderableWidget(Button.builder(Component.literal("Accept"), button -> applyAction("accept"))
-			.bounds(x, y, third, 20)
+			.bounds(columnX(x, third, 0), y, third, 20)
 			.build());
 		mergeButton = this.addRenderableWidget(Button.builder(Component.literal("Merge"), button -> applyAction("merge"))
-			.bounds(x + third + 8, y, third, 20)
+			.bounds(columnX(x, third, 1), y, third, 20)
 			.build());
 		ignoreButton = this.addRenderableWidget(Button.builder(Component.literal("Ignore"), button -> applyAction("ignore"))
-			.bounds(x + (third + 8) * 2, y, third, 20)
+			.bounds(columnX(x, third, 2), y, third, 20)
 			.build());
 
 		addBackButton(buttonWidth);
@@ -87,8 +86,8 @@ final class AiUpdateSettingsScreen extends GUI {
 
 	@Override
 	public void tick() {
-		tickCounter++;
-		if (tickCounter % 10 == 0) {
+		super.tick();
+		if (isPeriodicTick(10)) {
 			refreshState();
 		}
 	}

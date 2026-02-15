@@ -45,15 +45,15 @@ public final class UploadTosScreen extends GUI {
 		int buttonsX = centeredX(buttonWidth);
 		int buttonsY = this.height - FOOTER_Y_OFFSET - 24;
 
-		int half = (buttonWidth - 8) / 2;
+		int half = halfWidth(buttonWidth);
 		this.addRenderableWidget(Button.builder(Component.literal("Accept"), button -> {
 			if (onAccept != null) {
 				onAccept.run();
 			}
 			this.onClose();
-		}).bounds(buttonsX, buttonsY, half, 20).build());
+		}).bounds(columnX(buttonsX, half, 0), buttonsY, half, 20).build());
 		this.addRenderableWidget(Button.builder(Component.literal("Cancel"), button -> this.onClose())
-			.bounds(buttonsX + half + 8, buttonsY, half, 20)
+			.bounds(columnX(buttonsX, half, 1), buttonsY, half, 20)
 			.build());
 
 		textAreaWidth = buttonWidth;
