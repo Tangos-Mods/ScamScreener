@@ -33,10 +33,10 @@ public final class DiscordWebhookUploader {
 	private static final Gson GSON = new GsonBuilder().create();
 
 	// Production Webhook
-	//private static final String WEBHOOK_URL = "https://discord.com/api/webhooks/1472422894935085086/xJQrNy5UYrezVdiK-7U-DmMkFufHcOV2aLaS_FfLMJwfocJfrU0SCfrnTsWJio3IqpMR";
+	private static final String WEBHOOK_URL = "https://discord.com/api/webhooks/1472422894935085086/xJQrNy5UYrezVdiK-7U-DmMkFufHcOV2aLaS_FfLMJwfocJfrU0SCfrnTsWJio3IqpMR";
 	
 	// Testing Webhook
-	private static final String WEBHOOK_URL = "https://discord.com/api/webhooks/1472021483323916461/3eXVN9BT-mGkKAbje2wgDx0A1LObfSbqiMSbLrPSgzm5DxRJ06snqjLJxvM3YULWIRa8";
+	//private static final String WEBHOOK_URL = "https://discord.com/api/webhooks/1472021483323916461/3eXVN9BT-mGkKAbje2wgDx0A1LObfSbqiMSbLrPSgzm5DxRJ06snqjLJxvM3YULWIRa8";
 	
 	private static final String WEBHOOK_URL_OVERRIDE_PROPERTY = "scamscreener.discord.webhook.url";
 	private static final String WEBHOOK_USERNAME = "ScamScreener";

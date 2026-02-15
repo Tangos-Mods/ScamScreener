@@ -1,6 +1,6 @@
 {
-    "version":  "17",
+    "version":  "18",
     "modelSchemaVersion":  10,
-    "sha256":  "8de1d09a695a541988f0660f3da78349c1e03d92de2bd2b9efd5b55f60f6121c",
+    "sha256":  "a8642669961bb0736861c5d4280efc49ea77db7af67cc31f90a10f4ac681911c",
     "url":  "https://raw.githubusercontent.com/Tangos-Mods/ScamScreener/main/scripts/scam-screener-local-ai-model.json"
 }

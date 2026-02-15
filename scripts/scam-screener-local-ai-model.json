@@ -1,5 +1,5 @@
 {
-    "version":  17,
+    "version":  18,
     "intercept":  -2.1424505017419273,
     "denseFeatureWeights":  {
                                 "kw_payment":  -0.4081894085081216,
@@ -29,7 +29,7 @@
                                 "funnel_sequence_norm":  0.5021159637803572,
                                 "funnel_full_chain":  0.15415331726505796,
                                 "funnel_partial_chain":  1.1180824839030803,
-                                "rapid_followup":  1.8308881658012195,
+                                "rapid_followup":  0.8308881658012195,
                                 "channel_pm":  1.2612769016342507,
                                 "channel_party":  0.0,
                                 "channel_public":  0.8754911772228031,
@@ -57,7 +57,7 @@
                                                    "funnel_sequence_norm":  0.5581717098675892,
                                                    "funnel_full_chain":  0.07229488148361381,
                                                    "funnel_partial_chain":  1.4236012745008295,
-                                                   "rapid_followup":  1.734794233683624,
+                                                   "rapid_followup":  0.834794233683624,
                                                    "funnel_hits_norm":  1.106117865369163
                                                }
                    }
