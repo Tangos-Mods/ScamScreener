@@ -86,11 +86,14 @@ public final class TrainingDataService {
 			return;
 		}
 
-		lastCapturedChatLine = parsed.rawMessage() == null ? "" : parsed.rawMessage().trim();
-		recentChat.addLast(new CapturedChat(parsed.playerName(), parsed.rawMessage(), parsed.channel(), parsed.timestampMs()));
-		while (recentChat.size() > MAX_CAPTURED_CHAT_LINES) {
-			recentChat.removeFirst();
+		pushCapture(new CapturedChat(parsed.playerName(), parsed.rawMessage(), parsed.channel(), parsed.timestampMs()));
+	}
+
+	public void recordOutgoingChatLine(String playerName, String message, String channel) {
+		if (message == null || message.isBlank()) {
+			return;
 		}
+		pushCapture(new CapturedChat(playerName, message.trim(), channel, System.currentTimeMillis()));
 	}
 
 	public String lastCapturedLine() {
@@ -592,6 +595,17 @@ public final class TrainingDataService {
 			speakerKey = toSpeakerKey(speakerKey);
 			rawMessage = rawMessage == null ? "" : rawMessage;
 			channel = channel == null || channel.isBlank() ? "unknown" : channel.trim().toLowerCase(Locale.ROOT);
+		}
+	}
+
+	private void pushCapture(CapturedChat capture) {
+		if (capture == null || capture.rawMessage() == null || capture.rawMessage().isBlank()) {
+			return;
+		}
+		lastCapturedChatLine = capture.rawMessage().trim();
+		recentChat.addLast(capture);
+		while (recentChat.size() > MAX_CAPTURED_CHAT_LINES) {
+			recentChat.removeFirst();
 		}
 	}
 }

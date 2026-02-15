@@ -30,7 +30,6 @@ final class AiCommand {
 		ScamScreenerCommands.MigrateTrainingHandler migrateTrainingHandler,
 		ScamScreenerCommands.ModelUpdateHandler modelUpdateHandler,
 		ScamScreenerCommands.UpdateCheckHandler updateCheckHandler,
-		IntSupplier trainHandler,
 		IntSupplier resetAiHandler,
 		Consumer<Component> reply
 	) {
@@ -113,7 +112,6 @@ final class AiCommand {
 			.then(migrate)
 			.then(model)
 			.then(update)
-			.then(ClientCommandManager.literal("train").executes(context -> trainHandler.getAsInt()))
 			.then(ClientCommandManager.literal("reset").executes(context -> resetAiHandler.getAsInt()))
 			.then(ClientCommandManager.literal("autocapture")
 				.executes(context -> {

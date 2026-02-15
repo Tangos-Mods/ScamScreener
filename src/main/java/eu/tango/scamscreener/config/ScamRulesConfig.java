@@ -28,6 +28,7 @@ public final class ScamRulesConfig {
 	public static final String DEFAULT_EXTERNAL_PLATFORM_PATTERN = "\\b(discord|telegram|t\\.me|dm me|add me|vc|voice chat|voice channel|call)\\b";
 	public static final String DEFAULT_MIDDLEMAN_PATTERN = "\\b(trusted middleman|legit middleman|middleman)\\b";
 	public static final boolean DEFAULT_LOCAL_AI_ENABLED = true;
+	public static final boolean DEFAULT_UPLOAD_TOS_ACCEPTED = false;
 	public static final int DEFAULT_LOCAL_AI_MAX_SCORE = 22;
 	public static final double DEFAULT_LOCAL_AI_TRIGGER_PROBABILITY = 0.620;
 	public static final int DEFAULT_LOCAL_AI_FUNNEL_MAX_SCORE = 30;
@@ -83,6 +84,7 @@ public final class ScamRulesConfig {
 	public String accountDataBehaviorPattern = DEFAULT_ACCOUNT_DATA_PATTERN;
 	public String middlemanPattern = DEFAULT_MIDDLEMAN_PATTERN;
 	public boolean localAiEnabled = DEFAULT_LOCAL_AI_ENABLED;
+	public Boolean tos = DEFAULT_UPLOAD_TOS_ACCEPTED;
 	public int localAiMaxScore = DEFAULT_LOCAL_AI_MAX_SCORE;
 	public double localAiTriggerProbability = DEFAULT_LOCAL_AI_TRIGGER_PROBABILITY;
 	public Integer localAiFunnelMaxScore = DEFAULT_LOCAL_AI_FUNNEL_MAX_SCORE;
@@ -193,6 +195,9 @@ public final class ScamRulesConfig {
 		}
 		if (isBlank(middlemanPattern)) {
 			middlemanPattern = DEFAULT_MIDDLEMAN_PATTERN;
+		}
+		if (tos == null) {
+			tos = DEFAULT_UPLOAD_TOS_ACCEPTED;
 		}
 		if (isBlank(funnelServiceOfferPattern)) {
 			funnelServiceOfferPattern = DEFAULT_FUNNEL_SERVICE_OFFER_PATTERN;

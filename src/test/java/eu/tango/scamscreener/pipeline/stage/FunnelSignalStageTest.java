@@ -86,6 +86,19 @@ class FunnelSignalStageTest {
 	}
 
 	@Test
+	void offerPaymentRedirectTriggersPartialFunnelSignal() {
+		FunnelHarness harness = new FunnelHarness("Trader123");
+		harness.process("i have a special offer for you", List.of());
+		harness.process("you give me 100m first then i send 1b", List.of());
+
+		List<Signal> funnelSignals = harness.process("join discord for proof", List.of());
+		Signal signal = onlySignal(funnelSignals);
+
+		assertEquals(ScamRulesConfig.DEFAULT_FUNNEL_PARTIAL_SEQUENCE_WEIGHT, signal.weight(), 0.001);
+		assertTrue(signal.evidence().contains("OFFER -> PAYMENT -> REDIRECT"));
+	}
+
+	@Test
 	void guildRecruitingIntentSuppressesOfferAndFreeTags() {
 		RuleConfig ruleConfig = new EnabledRuleConfig();
 		IntentTagger tagger = new IntentTagger(ruleConfig);

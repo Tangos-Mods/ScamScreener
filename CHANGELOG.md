@@ -1,6 +1,26 @@
 # Changelog
 All notable changes to this project are documented in this file.
 
+## [1.0.1] - 2026-02-15
+
+### Added
+- Added upload ToS consent flow with a dedicated `UploadTosScreen` and persisted consent flag in rules config.
+- Added outgoing chat command parsing (`/msg`, `/r`, party chat, guild chat, `ac`) plus parser tests to capture local outgoing text context.
+- Added normalized temporary upload file generation (`message,label`) before Discord training-data upload.
+- Added `scripts/publish-modrinth-from-env.ps1` to load `.env` and publish all StoneCutter `publishModrinth` targets.
+
+### Changed
+- Bumped mod version from `1.0.0` to `1.0.1`.
+- Discord upload embed now uses player header/avatar metadata, SHA-256 in a code block, and a single `Version | AI` line.
+- Replaced `/scamscreener ai train` with `/scamscreener upload`; the menu `Upload Training Data` action now uses the same upload handler.
+- Training upload now gates execution behind ToS acceptance and archives only the active training CSV before webhook submission.
+- Training capture now records outgoing chat and supported outgoing chat commands into the recent training context buffer.
+- `/scamscreener version` now reads both mod and AI version through shared `VersionInfo`.
+
+### Fixed
+- Upload no longer falls back to `config/scamscreener/old/training-data/*.old.*` when `config/scamscreener/scam-screener-training-data.csv` is missing.
+- Menu-triggered upload follows the same active-file requirement as `/scamscreener upload` and therefore cannot upload stale archived files.
+
 ## [1.0.0] - 2026-02-13
 
 ### Added

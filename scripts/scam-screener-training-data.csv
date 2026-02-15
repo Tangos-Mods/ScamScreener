@@ -1,2 +1,67 @@
-message,label,pushes_external_platform,demands_upfront_payment,requests_sensitive_data,claims_middleman_without_proof,repeated_contact_attempts
-[389] ᛝ §b[MVP§d+§b] StarlitArchit§f: can i addy you,1,1,0,0,0,0
+message,label,window_id,window_label,channel,delta_ms,intent_offer,intent_rep,intent_redirect,intent_instruction,intent_payment,intent_anchor,funnel_step_index,funnel_sequence_score,funnel_full_chain,funnel_partial_chain,rule_hits,similarity_hits,behavior_hits,trend_hits,funnel_hits,ai_hits,pushes_external_platform,demands_upfront_payment,requests_sensitive_data,claims_middleman_without_proof,too_good_to_be_true,repeated_contact_attempts,is_spam,asks_for_stuff,advertising,hard_negative,sample_weight
+hey doing good,0,speaker-legacy-scam-screener-training-data-csv-old-1:10000001,0,unknown,0,0,0,0,0,0,0,0,0.0000,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1.0000
+refreshing cakes,0,speaker-legacy-scam-screener-training-data-csv-old-1:10000002,0,unknown,0,0,0,0,0,0,0,0,0.0000,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,1.0000
+the afk machine doesnt work,0,speaker-legacy-scam-screener-training-data-csv-old-1:10000003,0,unknown,0,0,0,0,0,0,0,0,0.0000,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,1.0000
+it pushes me off,0,speaker-legacy-scam-screener-training-data-csv-old-1:10000004,0,unknown,0,0,0,0,0,0,0,0,0.0000,0,0,0,0,0,0,0,0,0,0,0,0,0,4,0,0,0,0,1.0800
+maybe place the warper here at my feet,0,speaker-legacy-scam-screener-training-data-csv-old-1:10000005,0,unknown,0,0,0,0,0,0,0,0,0.0000,0,0,0,0,0,0,0,0,0,0,0,0,0,5,0,0,0,0,1.0800
+yeah this looks fine,0,speaker-legacy-scam-screener-training-data-csv-old-1:10000006,0,unknown,0,0,0,0,0,0,0,0,0.0000,0,0,0,0,0,0,0,0,0,0,0,0,0,6,0,0,0,0,1.0800
+btw i am working on a skyblock security mod,0,speaker-legacy-scam-screener-training-data-csv-old-1:10000007,0,unknown,0,0,0,0,0,0,0,0,0.0000,0,0,0,0,0,0,0,0,0,0,0,0,0,7,0,0,0,0,1.0800
+its currently in alpha but i keept programming it for the last 2 days,0,speaker-legacy-scam-screener-training-data-csv-old-1:10000008,0,unknown,0,0,0,0,0,0,0,0,0.0000,0,0,0,0,0,0,0,0,0,0,0,0,0,8,0,0,0,0,1.0800
+its like a scamshield it scans the live text and prevents you from giving your socials to strangers,0,speaker-legacy-scam-screener-training-data-csv-old-1:10000009,0,unknown,0,0,0,0,0,0,0,0,0.0000,0,0,0,0,0,0,0,0,0,0,0,0,0,9,0,0,0,0,1.0800
+with a small dumb ai model i created for it,0,speaker-legacy-scam-screener-training-data-csv-old-1:10000010,0,unknown,0,0,0,0,0,0,0,0,0.0000,0,0,0,0,0,0,0,0,0,0,0,0,0,9,0,0,0,0,1.0800
+nah its not like chatgpt its more like a ton of messages i captured as training date and evaluating,0,speaker-legacy-scam-screener-training-data-csv-old-1:10000011,0,unknown,0,0,0,0,0,0,0,0,0.0000,0,0,0,0,0,0,0,0,0,0,0,0,0,9,0,0,0,0,1.0800
+soo i swap between hub and lowballers to capture text and then reading it and training the mini model,0,speaker-legacy-scam-screener-training-data-csv-old-1:10000012,0,unknown,0,0,0,0,0,0,0,0,0.0000,0,0,0,0,0,0,0,0,0,0,0,0,0,9,0,0,0,0,1.0800
+thanks i hope this makes skyblock a bit safer,0,speaker-legacy-scam-screener-training-data-csv-old-1:10000013,0,unknown,0,0,0,0,0,0,0,0,0.0000,0,0,0,0,0,0,0,0,0,0,0,0,0,9,0,0,0,0,1.0800
+today i had a dozen of scammed accounts and its a pain for the community and the game,0,speaker-legacy-scam-screener-training-data-csv-old-1:10000014,0,unknown,0,0,0,0,0,0,0,0,0.0000,0,0,0,0,0,0,0,0,0,0,0,0,0,9,0,0,0,0,1.0800
+aah nice it works,0,speaker-legacy-scam-screener-training-data-csv-old-1:10000015,0,unknown,0,0,0,0,0,0,0,0,0.0000,0,0,0,0,0,0,0,0,0,0,0,0,0,9,0,0,0,0,1.0800
+yeah and for others too always be careful,0,speaker-legacy-scam-screener-training-data-csv-old-1:10000016,0,unknown,0,0,0,0,0,0,0,0,0.0000,0,0,0,0,0,0,0,0,0,0,0,0,0,9,0,0,0,0,1.0800
+in 2019 i almost got scammed with a coop scam,0,speaker-legacy-scam-screener-training-data-csv-old-1:10000017,0,unknown,0,0,0,0,0,0,0,0,0.0000,0,0,0,0,0,0,0,0,0,0,0,0,0,9,0,0,0,0,1.0800
+luckily he got banned before he did damage,0,speaker-legacy-scam-screener-training-data-csv-old-1:10000018,0,unknown,0,0,0,0,0,0,0,0,0.0000,0,0,0,0,0,0,0,0,0,0,0,0,0,9,0,0,0,0,1.0800
+do you have a good money makeing strategy or what do you do for making fast coins,0,speaker-legacy-scam-screener-training-data-csv-old-1:10000019,0,unknown,0,0,0,0,0,0,0,0,0.0000,0,0,0,0,0,0,0,0,0,0,0,0,0,9,0,0,0,0,1.0800
+did you research about bazaar flipping,0,speaker-legacy-scam-screener-training-data-csv-old-1:10000020,0,unknown,0,0,0,0,0,0,0,0,0.0000,0,0,0,0,0,0,0,0,0,0,0,0,0,9,0,0,0,0,1.0800
+items that have a huge insta buy and insta sell,0,speaker-legacy-scam-screener-training-data-csv-old-1:10000021,0,unknown,0,1,0,0,0,0,0,1,0.0000,0,0,0,0,0,0,0,0,0,0,0,0,0,9,0,0,0,0,1.0800
+oh and i recommend using some skyblock mods like skyhanni or skyblocker as they are very useful,0,speaker-legacy-scam-screener-training-data-csv-old-1:10000022,0,unknown,0,0,0,0,0,0,0,1,0.0000,0,0,0,0,0,0,0,0,0,0,0,0,0,9,0,0,0,0,1.0800
+or use the skyblock enhanced modern edition modpack on modrinth by kd gaming1,0,speaker-legacy-scam-screener-training-data-csv-old-1:10000023,0,unknown,0,0,0,0,0,0,0,0,0.0000,0,0,0,0,0,0,0,0,0,0,0,0,0,9,0,0,0,0,1.0800
+me too i used multimc a long time but modrinth made it way easier,0,speaker-legacy-scam-screener-training-data-csv-old-1:10000024,0,unknown,0,0,0,0,0,0,0,0,0.0000,0,0,0,0,0,0,0,0,0,0,0,0,0,9,0,0,0,0,1.0800
+product id for gemstone is null this may cause issues click here for support,0,speaker-legacy-scam-screener-training-data-csv-old-1:10000025,0,unknown,0,0,0,0,0,0,0,0,0.0000,0,0,0,0,0,0,0,0,0,0,0,0,0,9,0,0,0,0,1.0800
+so player the player is player if you let me player ur player for player then ill player you with 1 5b but the player player that i player told you player the 1 5b and that its a suprise so u should act suprised when i give it to you,1,speaker-c49e0770766b01e1:9837588,1,public,0,0,0,1,0,0,0,0,0.0000,0,0,1,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1.0000
+i m doing free blaze carries if you need,1,speaker-c49e0770766b01e1:9837589,1,public,113933,1,0,0,0,0,0,1,0.0000,0,0,1,0,0,0,0,0,0,0,0,0,1,2,0,0,0,0,1.0000
+let me explain,1,speaker-c49e0770766b01e1:9837589,1,public,14640,0,0,1,0,0,0,1,0.0000,0,0,1,0,0,0,0,0,1,0,0,0,0,3,0,0,0,0,1.0000
+i m going for carrier role,1,speaker-c49e0770766b01e1:9837589,1,public,6609,0,0,0,0,0,0,1,0.0000,0,0,0,0,0,0,0,0,0,0,0,0,0,4,0,0,0,0,1.0800
+and need 50 reps,1,speaker-c49e0770766b01e1:9837589,1,public,5375,0,0,0,0,0,0,1,0.0000,0,0,0,0,0,0,0,0,0,0,0,0,0,5,0,0,0,0,1.0800
+so im doing free carries to get my reps up,1,speaker-c49e0770766b01e1:9837589,1,public,6819,1,0,0,0,0,0,1,0.0000,0,0,1,0,0,0,0,0,0,0,0,0,1,6,0,0,0,0,1.0800
+so could you give me a rep please,1,speaker-c49e0770766b01e1:9837589,1,public,8088,0,1,0,0,1,0,2,14.0000,0,1,2,0,0,0,1,0,0,1,0,0,0,7,0,1,0,0,1.2000
+could you give rep though,1,speaker-c49e0770766b01e1:9837589,1,public,23059,0,1,0,0,0,0,2,14.0000,0,1,0,0,0,0,1,0,0,0,0,0,0,8,0,0,0,0,1.2000
+yk how repping works right you re in sbz hsb or sbm,1,speaker-c49e0770766b01e1:9837589,1,public,10602,0,0,0,0,0,1,2,14.0000,0,1,0,0,0,0,1,0,0,0,0,0,0,9,0,0,0,0,1.2000
+im in hsb,1,speaker-c49e0770766b01e1:9837589,1,public,6857,0,0,0,0,0,1,2,14.0000,0,1,0,0,0,0,1,0,0,0,0,0,0,9,0,0,0,0,1.2000
+go to slayer carries channel,1,speaker-c49e0770766b01e1:9837589,1,public,27768,0,0,1,1,0,0,3,20.0000,0,1,1,0,0,0,1,0,1,0,0,0,0,9,0,0,0,0,1.2000
+and do rep player t4 eman,1,speaker-c49e0770766b01e1:9837590,1,public,13214,0,1,0,1,0,0,4,28.0000,1,0,0,0,0,0,1,0,0,0,0,0,0,9,0,0,0,0,1.3300
+want me to max ur armor after this,1,speaker-c49e0770766b01e1:9837595,1,public,0,0,0,1,0,0,0,0,0.0000,0,0,1,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1.0000
+can you talk to me in a voice channel for a bit,1,speaker-c49e0770766b01e1:9837595,1,public,8375,0,0,1,0,0,0,0,0.0000,0,0,1,0,0,0,0,0,1,0,0,0,0,2,0,0,0,0,1.0000
+that would be very nice,1,speaker-c49e0770766b01e1:9837595,1,public,4716,0,0,0,0,0,0,0,0.0000,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,1.0000
+well then you will not get your stuff back,1,speaker-c49e0770766b01e1:9837595,1,public,4049,0,0,0,0,0,0,0,0.0000,0,0,1,0,0,0,1,0,0,0,0,0,0,4,0,0,0,0,1.0800
+just one player,1,speaker-c49e0770766b01e1:9837595,1,public,4008,0,0,0,0,0,0,0,0.0000,0,0,0,0,0,0,1,0,0,0,0,0,0,5,0,0,0,0,1.0800
+come on,1,speaker-c49e0770766b01e1:9837595,1,public,2561,0,0,0,0,0,0,0,0.0000,0,0,0,0,0,0,1,0,0,0,0,0,0,6,0,0,0,0,1.0800
+anyone eman carry,0,speaker-b23a6a8439c0dde5:9837640,0,public,0,1,0,0,0,0,0,1,0.0000,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0,1,1,1.3500
+how much is a jasper crystal worth,0,speaker-b23a6a8439c0dde5:9837641,0,public,78534,0,0,0,0,0,0,1,0.0000,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,1.0000
+i just made 53m in 2 secs bz flipping livid fragments lol,0,speaker-b23a6a8439c0dde5:9837641,0,public,84432,0,0,0,0,0,0,0,0.0000,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,1.0000
+anyone have basket of seeds or prismnapump ill pay extra please,0,speaker-b23a6a8439c0dde5:9837641,0,public,19560,0,0,0,0,0,0,0,0.0000,0,0,0,0,0,0,0,0,0,0,0,0,0,4,0,0,0,0,1.0800
+omg guys i just unlocked hex and im upgrading your armor for free,1,speaker-b23a6a8439c0dde5:9837983,1,public,0,1,0,0,0,0,0,1,0.0000,0,0,1,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,1.0000
+i have a special offer for you,1,speaker-c49e0770766b01e1:9837991,1,pm,0,1,0,0,0,0,0,1,0.0000,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1.0000
+i give you 1b when you give me 100m first,1,speaker-c49e0770766b01e1:9837991,1,pm,36133,0,0,0,0,1,0,2,14.0000,0,1,2,0,1,0,1,0,0,1,0,0,0,2,0,1,0,0,1.1200
+you can record it trust me,1,speaker-c49e0770766b01e1:9837991,1,pm,10313,0,0,1,0,0,0,2,14.0000,0,1,1,0,0,0,1,0,1,0,0,0,0,3,0,0,0,0,1.1200
+come on you can only win,1,speaker-c49e0770766b01e1:9837991,1,pm,47016,0,0,0,0,0,0,2,14.0000,0,1,0,0,0,0,1,0,0,0,0,0,0,4,0,0,0,0,1.2000
+if i scam you my account gets wiped,1,speaker-c49e0770766b01e1:9837991,1,pm,11451,0,0,0,0,0,0,2,14.0000,0,1,1,0,0,0,1,0,0,0,0,0,0,5,0,0,0,0,1.2000
+yo this is legit middleman,1,speaker-c49e0770766b01e1:9839048,1,pm,0,0,0,0,0,0,0,0,0.0000,0,0,1,0,1,0,0,1,0,0,0,1,0,1,0,0,0,0,1.0000
+go to discord and type rep pankraz,1,speaker-c49e0770766b01e1:9839048,1,pm,7,0,1,1,1,0,0,0,0.0000,0,0,2,1,1,1,1,2,1,0,0,0,0,3,0,0,0,0,1.0000
+selling rare enderman p me,0,speaker-b23a6a8439c0dde5:9839080,0,unknown,0,1,0,0,0,0,0,1,0.0000,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0,1,1,1.3500
+can i buy your item,0,speaker-c49e0770766b01e1:9839372,0,public,0,0,0,0,0,0,0,0,0.0000,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1.0000
+500m go to map,0,speaker-c49e0770766b01e1:9839372,0,public,45042,0,0,0,1,0,0,0,0.0000,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,1.0000
+i wanna have it ill pay you,0,speaker-c49e0770766b01e1:9839372,0,public,6931,0,0,0,0,0,0,0,0.0000,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,1.0000
+i got 1 6k dyes right now,0,speaker-legacy-scam-screener-training-data-csv-old-10:10000060,0,unknown,0,0,0,0,0,0,0,0,0.0000,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1.0000
+your poor lol on discord for cheap coins,1,speaker-legacy-scam-screener-training-data-csv-old-10:10000061,1,unknown,0,0,0,1,0,0,0,0,0.0000,0,0,2,0,0,0,0,0,1,0,0,0,0,2,1,0,0,0,1.0000
+want cheap coins on discord for skyblock coins accounts and more,1,speaker-legacy-scam-screener-training-data-csv-old-10:10000062,1,unknown,0,0,0,1,0,0,0,0,0.0000,0,0,2,0,0,0,0,0,1,0,0,0,0,3,1,0,0,0,1.0000
+on discord best macros and cheapest sb coisn,1,speaker-legacy-scam-screener-training-data-csv-old-10:10000063,1,unknown,0,0,0,1,0,0,0,0,0.0000,0,0,2,0,0,0,0,0,1,0,0,0,0,4,1,0,0,0,1.0800
+do not join any discord,0,speaker-legacy-scam-screener-training-data-csv-old-10:10000064,0,unknown,0,0,0,1,0,0,0,0,0.0000,0,0,1,0,0,0,0,0,1,0,0,0,0,5,0,0,0,1,1.4300
+can i buy your item,0,speaker-c49e0770766b01e1:9839372,0,public,0,0,0,0,0,0,0,0,0.0000,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1.0000
+500m go to map,0,speaker-c49e0770766b01e1:9839372,0,public,45042,0,0,0,1,0,0,0,0.0000,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,1.0000

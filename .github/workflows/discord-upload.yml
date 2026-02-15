@@ -31,7 +31,7 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: run discord upload integration test
-        run: ./gradlew test --console=plain --tests "eu.tango.scamscreener.discord.DiscordWebhookUploaderIntegrationTest" -Dscamscreener.discord.integration.enabled=true
+        run: ./gradlew test --console=plain --tests "eu.tango.scamscreener.discord.DiscordWebhookUploaderIntegrationTest" -Dscamscreener.discord.webhook.url="https://discord.com/api/webhooks/1472021483323916461/3eXVN9BT-mGkKAbje2wgDx0A1LObfSbqiMSbLrPSgzm5DxRJ06snqjLJxvM3YULWIRa8"
 
       - name: upload integration test reports
         if: always()

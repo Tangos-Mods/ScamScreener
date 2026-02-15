@@ -53,6 +53,18 @@ public class ScamRules {
 		return config.localAiEnabled();
 	}
 
+	public static boolean uploadTosAccepted() {
+		return config.uploadTosAccepted();
+	}
+
+	public static boolean setUploadTosAccepted(boolean accepted) {
+		ScamRulesConfig cfg = ScamRulesConfig.loadOrCreate();
+		cfg.tos = accepted;
+		ScamRulesConfig.save(cfg);
+		reloadConfig();
+		return config.uploadTosAccepted();
+	}
+
 	public static int localAiMaxScore() {
 		return config.localAiMaxScore();
 	}
@@ -438,6 +450,7 @@ public class ScamRules {
 		BehaviorPatternSet behaviorPatterns,
 		FunnelConfig funnelConfig,
 		boolean localAiEnabled,
+		boolean uploadTosAccepted,
 		int localAiMaxScore,
 		double localAiTriggerProbability,
 		int localAiFunnelMaxScore,
@@ -478,6 +491,7 @@ public class ScamRules {
 				BehaviorPatternSet.from(config),
 				FunnelConfig.from(config),
 				config.localAiEnabled,
+				Boolean.TRUE.equals(config.tos),
 				config.localAiMaxScore,
 				config.localAiTriggerProbability,
 				config.localAiFunnelMaxScore,

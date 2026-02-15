@@ -13,7 +13,6 @@ import java.security.MessageDigest;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -26,11 +25,13 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import eu.tango.scamscreener.util.VersionInfo;
 import net.minecraft.client.Minecraft;
 
 public final class DiscordWebhookUploader {
 	private static final Gson GSON = new GsonBuilder().create();
-	private static final String WEBHOOK_URL = "https://discord.com/api/webhooks/1472021483323916461/3eXVN9BT-mGkKAbje2wgDx0A1LObfSbqiMSbLrPSgzm5DxRJ06snqjLJxvM3YULWIRa8";
+	private static final String WEBHOOK_URL = "https://discord.com/api/webhooks/1472422894935085086/xJQrNy5UYrezVdiK-7U-DmMkFufHcOV2aLaS_FfLMJwfocJfrU0SCfrnTsWJio3IqpMR";
+	private static final String WEBHOOK_URL_OVERRIDE_PROPERTY = "scamscreener.discord.webhook.url";
 	private static final String WEBHOOK_USERNAME = "ScamScreener";
 	private static final int CONNECT_TIMEOUT_SECONDS = 8;
 	private static final int REQUEST_TIMEOUT_SECONDS = 25;
@@ -87,6 +88,10 @@ public final class DiscordWebhookUploader {
 	}
 
 	private static String normalizedWebhookUrl() {
+		String override = System.getProperty(WEBHOOK_URL_OVERRIDE_PROPERTY);
+		if (override != null && !override.isBlank()) {
+			return override.trim();
+		}
 		return WEBHOOK_URL == null ? "" : WEBHOOK_URL.trim();
 	}
 
@@ -145,20 +150,37 @@ public final class DiscordWebhookUploader {
 	private static byte[] buildMultipartBody(String boundary, UploadPayload uploadPayload, String username, UploaderContext uploaderContext) throws IOException {
 		byte[] fileBytes = uploadPayload.fileBytes();
 		String filename = uploadPayload.filename();
+		String modVersion = VersionInfo.modVersion();
+		int aiVersion = VersionInfo.aiModelVersion();
 
 		Map<String, Object> payload = new LinkedHashMap<>();
 		payload.put("username", username);
-		payload.put("content", "New ScamScreener training data: " + filename);
 
 		Map<String, Object> embed = new LinkedHashMap<>();
-		embed.put("title", "ScamScreener Training Upload");
+		embed.put("title", "ScamScreener Upload");
 		embed.put("color", 0xFF5555);
-		List<Map<String, Object>> fields = new ArrayList<>();
-		fields.add(embedField("Uploader", uploaderContext.playerName(), true));
-		fields.add(embedField("UUID", uploaderContext.playerUuid(), false));
-		fields.add(embedField("Timestamp", uploaderContext.timestamp(), true));
-		fields.add(embedField("Hash-Code", uploadPayload.sha256(), false));
-		embed.put("fields", fields);
+
+		Map<String, Object> author = new LinkedHashMap<>();
+		author.put("name", safeEmbedValue(uploaderContext.playerName()));
+		String authorHeadUrl = playerHeadUrl(uploaderContext.playerUuid());
+		if (!authorHeadUrl.isBlank()) {
+			author.put("url", authorHeadUrl);
+			author.put("icon_url", authorHeadUrl);
+		}
+		embed.put("author", author);
+
+		String description = "```" + safeEmbedValue(uploadPayload.sha256()) + "```\n"
+			+ "Version: `" + safeEmbedValue(modVersion) + "` | AI: `" + safeEmbedValue(aiVersion > 0 ? String.valueOf(aiVersion) : "unknown") + "`";
+		embed.put("description", description);
+
+		Map<String, Object> footer = new LinkedHashMap<>();
+		footer.put(
+			"text",
+			"UUID: " + safeEmbedValue(uploaderContext.playerUuid())
+				+ " | Timestamp: " + safeEmbedValue(uploaderContext.timestamp())
+		);
+		embed.put("footer", footer);
+
 		payload.put("embeds", List.of(embed));
 
 		String payloadJson = GSON.toJson(payload);
@@ -179,12 +201,25 @@ public final class DiscordWebhookUploader {
 		return out.toByteArray();
 	}
 
-	private static Map<String, Object> embedField(String name, String value, boolean inline) {
-		Map<String, Object> field = new LinkedHashMap<>();
-		field.put("name", name == null || name.isBlank() ? "unknown" : name);
-		field.put("value", value == null || value.isBlank() ? "unknown" : value);
-		field.put("inline", inline);
-		return field;
+	private static String safeEmbedValue(String value) {
+		if (value == null || value.isBlank()) {
+			return "unknown";
+		}
+		return value.trim();
+	}
+
+	private static String playerHeadUrl(String playerUuid) {
+		if (playerUuid == null || playerUuid.isBlank() || "unknown".equalsIgnoreCase(playerUuid.trim())) {
+			return "";
+		}
+		String normalizedUuid = playerUuid.trim().replace("-", "");
+		for (int i = 0; i < normalizedUuid.length(); i++) {
+			char c = normalizedUuid.charAt(i);
+			if (!Character.isDigit(c) && (c < 'a' || c > 'f') && (c < 'A' || c > 'F')) {
+				return "";
+			}
+		}
+		return normalizedUuid.length() == 32 ? "https://mc-heads.net/avatar/" + normalizedUuid + "/64" : "";
 	}
 
 	private static void writeUtf8(ByteArrayOutputStream out, String text) {

@@ -4,6 +4,7 @@
 build/
 out/
 classes/
+/.gradle-user*
 
 # eclipse
 
@@ -47,4 +48,7 @@ AGENTS.md
 
 # local AI files
 funnel.csv
-/.gradle-user*
+scripts/scam-screener-training-data.csv
+
+#StoneCutter
+/versions

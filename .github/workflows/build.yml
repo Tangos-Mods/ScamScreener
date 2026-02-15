@@ -19,6 +19,8 @@ jobs:
         include:
           - suite: ai
             test_pattern: "eu.tango.scamscreener.ai.*"
+          - suite: commands
+            test_pattern: "eu.tango.scamscreener.commands.*"
           - suite: chat
             test_pattern: "eu.tango.scamscreener.chat.*"
           - suite: pipeline
@@ -97,7 +99,6 @@ jobs:
   discord-upload-integration:
     runs-on: ubuntu-24.04
     needs: test
-    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     steps:
       - name: checkout repository
         uses: actions/checkout@v4
@@ -113,7 +114,7 @@ jobs:
       - name: make gradle wrapper executable
         run: chmod +x ./gradlew
       - name: run discord upload integration test
-        run: ./gradlew test --console=plain --tests "eu.tango.scamscreener.discord.DiscordWebhookUploaderIntegrationTest" -Dscamscreener.discord.integration.enabled=true
+        run: ./gradlew test --console=plain --tests "eu.tango.scamscreener.discord.DiscordWebhookUploaderIntegrationTest" -Dscamscreener.discord.webhook.url="https://discord.com/api/webhooks/1472021483323916461/3eXVN9BT-mGkKAbje2wgDx0A1LObfSbqiMSbLrPSgzm5DxRJ06snqjLJxvM3YULWIRa8"
       - name: upload discord integration test reports
         if: always()
         uses: actions/upload-artifact@v4

@@ -1,6 +1,5 @@
 package eu.tango.scamscreener.discord;
 
-import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
@@ -10,13 +9,15 @@ import java.nio.file.Path;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DiscordWebhookUploaderIntegrationTest {
-	private static final String ENABLED_PROPERTY = "scamscreener.discord.integration.enabled";
+	private static final String WEBHOOK_OVERRIDE_PROPERTY = "scamscreener.discord.webhook.url";
+	private static final String LEGACY_TEST_WEBHOOK_URL = "https://discord.com/api/webhooks/1472021483323916461/3eXVN9BT-mGkKAbje2wgDx0A1LObfSbqiMSbLrPSgzm5DxRJ06snqjLJxvM3YULWIRa8";
 
 	@Test
 	void uploadsEmbedAndFileToWebhook() throws Exception {
-		Assumptions.assumeTrue(Boolean.getBoolean(ENABLED_PROPERTY), "Discord upload integration test disabled.");
+		String previousWebhook = System.getProperty(WEBHOOK_OVERRIDE_PROPERTY);
+		System.setProperty(WEBHOOK_OVERRIDE_PROPERTY, LEGACY_TEST_WEBHOOK_URL);
+
 		DiscordWebhookUploader uploader = new DiscordWebhookUploader();
-		Assumptions.assumeTrue(uploader.isConfigured(), "No Discord webhook configured for integration test.");
 
 		Path tempUploadFile = null;
 		try {
@@ -33,6 +34,11 @@ class DiscordWebhookUploaderIntegrationTest {
 			assertTrue(result.success(), () -> "Expected successful Discord upload, got: " + result.detail());
 			assertTrue(result.detail().contains("sha256="), "Expected upload result to include SHA-256 detail.");
 		} finally {
+			if (previousWebhook == null || previousWebhook.isBlank()) {
+				System.clearProperty(WEBHOOK_OVERRIDE_PROPERTY);
+			} else {
+				System.setProperty(WEBHOOK_OVERRIDE_PROPERTY, previousWebhook);
+			}
 			if (tempUploadFile != null) {
 				Files.deleteIfExists(tempUploadFile);
 			}

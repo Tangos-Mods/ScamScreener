@@ -14,6 +14,7 @@ import eu.tango.scamscreener.config.DebugConfig;
 import eu.tango.scamscreener.config.ScamRulesConfig;
 import eu.tango.scamscreener.chat.mute.MutePatternManager;
 import eu.tango.scamscreener.chat.parser.ChatLineParser;
+import eu.tango.scamscreener.chat.parser.OutgoingChatCommandParser;
 import eu.tango.scamscreener.chat.trigger.TriggerContext;
 import eu.tango.scamscreener.discord.DiscordWebhookUploader;
 import eu.tango.scamscreener.gui.MainSettingsScreen;
@@ -176,8 +177,8 @@ public class ScamScreenerClient implements ClientModInitializer {
 		ClientReceiveMessageEvents.ALLOW_CHAT.register((message, signedMessage, sender, params, timestamp) -> handleChatAllow(message));
 		ClientReceiveMessageEvents.GAME.register((message, overlay) -> handleHypixelMessage(message));
 		ClientReceiveMessageEvents.CHAT.register((message, signedMessage, sender, params, timestamp) -> handleHypixelMessage(message));
-		ClientSendMessageEvents.ALLOW_CHAT.register(outgoingMessageGuard::allowChat);
-		ClientSendMessageEvents.ALLOW_COMMAND.register(outgoingMessageGuard::allowCommand);
+		ClientSendMessageEvents.ALLOW_CHAT.register(this::handleOutgoingChat);
+		ClientSendMessageEvents.ALLOW_COMMAND.register(this::handleOutgoingCommand);
 	}
 
 	private void handleHypixelMessage(Component message) {
@@ -204,6 +205,36 @@ public class ScamScreenerClient implements ClientModInitializer {
 		for (TriggerContext context : TriggerContext.values()) {
 			blacklistAlertService.checkTriggerAndWarn(plain, context);
 		}
+	}
+
+	private boolean handleOutgoingChat(String message) {
+		if (!outgoingMessageGuard.allowChat(message)) {
+			return false;
+		}
+		trainingDataService.recordOutgoingChatLine(localPlayerName(), message, "public");
+		return true;
+	}
+
+	private boolean handleOutgoingCommand(String command) {
+		if (!outgoingMessageGuard.allowCommand(command)) {
+			return false;
+		}
+		OutgoingChatCommandParser.ParsedOutgoingChat parsed = OutgoingChatCommandParser.parse(command);
+		if (parsed != null) {
+			trainingDataService.recordOutgoingChatLine(localPlayerName(), parsed.message(), parsed.channel());
+		}
+		return true;
+	}
+
+	private static String localPlayerName() {
+		Minecraft client = Minecraft.getInstance();
+		if (client != null && client.player != null) {
+			var profile = client.player.getGameProfile();
+			if (profile != null && profile.name() != null && !profile.name().isBlank()) {
+				return profile.name().trim();
+			}
+		}
+		return "unknown";
 	}
 
 	private boolean handleChatAllow(Component message) {

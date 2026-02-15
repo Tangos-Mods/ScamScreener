@@ -3,6 +3,16 @@ $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $modelPath = Join-Path $repoRoot "scripts/scam-screener-local-ai-model.json"
 $versionPath = Join-Path $repoRoot "scripts/model-version.json"
+$readmePath = Join-Path $repoRoot "README.md"
+
+function Write-Utf8NoBom {
+	param(
+		[string]$Path,
+		[string]$Value
+	)
+	$encoding = New-Object System.Text.UTF8Encoding($false)
+	[System.IO.File]::WriteAllText($Path, $Value, $encoding)
+}
 
 if (-not (Test-Path $modelPath)) {
 	throw "Model file not found: $modelPath"
@@ -57,7 +67,7 @@ if ($null -ne $model.PSObject.Properties["modelVersion"]) {
 	$model.PSObject.Properties.Remove("modelVersion")
 }
 $modelJson = $model | ConvertTo-Json -Depth 64
-Set-Content -Path $modelPath -Value $modelJson -Encoding UTF8
+Write-Utf8NoBom -Path $modelPath -Value $modelJson
 
 $modelBytes = [System.IO.File]::ReadAllBytes($modelPath)
 $hasBom = $modelBytes.Length -ge 3 -and $modelBytes[0] -eq 0xEF -and $modelBytes[1] -eq 0xBB -and $modelBytes[2] -eq 0xBF
@@ -85,7 +95,19 @@ $data = [ordered]@{
 }
 
 $json = $data | ConvertTo-Json -Depth 4
-Set-Content -Path $versionPath -Value $json -Encoding UTF8
+Write-Utf8NoBom -Path $versionPath -Value $json
+
+if (Test-Path $readmePath) {
+	$readme = Get-Content $readmePath -Raw
+	$updatedReadme = [System.Text.RegularExpressions.Regex]::Replace(
+		$readme,
+		"https://img\\.shields\\.io/badge/AI%20Model-v[0-9A-Za-z._-]+-ff5555",
+		"https://img.shields.io/badge/AI%20Model-v$releaseVersion-ff5555"
+	)
+	if ($updatedReadme -ne $readme) {
+		Write-Utf8NoBom -Path $readmePath -Value $updatedReadme
+	}
+}
 
 Write-Host "Updated model-version.json"
 Write-Host "version=$($data.version)"

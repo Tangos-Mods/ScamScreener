@@ -1,0 +1,98 @@
+Terms of Service (TOS)
+Last Updated: [Insert Date]
+
+By using this Mod and its optional data upload / training features, you agree to the following terms:
+
+
+
+1. Data Upload & Processing Consent
+
+By enabling or using the training and data upload functionality, you explicitly consent to the collection, upload, storage, and processing of chat message data for the purpose of improving, training, and evaluating the Mod’s scam detection systems and AI models.
+
+Uploaded chat data is used solely for behavioral analysis related to scam detection and prevention.
+
+
+
+2. Anonymization of Training Data
+
+All training datasets are anonymized.
+
+Training files do NOT contain personally identifying information about the sender of any message.
+
+Specifically, training datasets exclude:
+
+- Player Names
+- Player UUIDs
+- Account Identifiers
+- Any direct personal identifiers
+
+The training data contains only:
+
+- Chat message content
+- Behavioral scam indicators
+- Linguistic or statistical features derived from the messages
+
+No dataset used for model training can be used to identify an individual player.
+
+
+
+3. Upload Metadata & Debug Information
+
+Separate from the anonymized training datasets, the Mod transmits technical metadata about the uploader for debugging, validation, and system integrity purposes.
+
+This metadata is NOT embedded into the training message datasets themselves.
+
+Uploaded metadata may include:
+
+- Player Name
+- Player UUID
+- Mod Version
+- AI Model Version
+- Local Upload Timestamp
+
+This information may be visible to developers, maintainers, or — where applicable — publicly accessible within debugging or research environments.
+
+
+
+4. Purpose Limitation
+
+All collected data is used exclusively for:
+
+- Scam behavior research
+- AI / detection model training
+- System debugging
+- Feature improvement
+
+Data will not be sold or used for unrelated commercial profiling purposes.
+
+
+
+5. User Responsibility
+
+By enabling uploads, you confirm that:
+
+- You have the right to submit the data being uploaded.
+- You understand that chat content may originate from public multiplayer environments.
+- You accept that anonymized behavioral data may be retained indefinitely for research and training.
+
+
+
+6. Opt-Out
+
+If the Mod provides upload or training toggles, you may disable these features at any time.
+
+Disabling will stop future uploads but does not retroactively remove already submitted datasets.
+
+
+
+7. Disclaimer
+
+The Mod operates on probabilistic scam detection models.
+
+Warnings, flags, or classifications are automated assessments and may be inaccurate.
+
+No liability is assumed for false positives, false negatives, or user actions taken based on Mod output.
+
+
+
+By using the upload or AI training features, you acknowledge that you have read and agreed to these Terms of Service.

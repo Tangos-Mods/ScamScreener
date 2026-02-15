@@ -113,10 +113,10 @@ public final class ScamScreenerCommands {
 				migrateTrainingHandler,
 				modelUpdateHandler,
 				updateCheckHandler,
-				trainHandler,
 				resetAiHandler,
 				reply
 			))
+			.then(ClientCommandManager.literal("upload").executes(context -> trainHandler.getAsInt()))
 			.then(RuleCommand.build(reply))
 			.then(AlertLevelCommand.build(reply))
 			.then(AutoLeaveCommand.build(autoLeaveEnabledSupplier, setAutoLeaveEnabledHandler, reply))

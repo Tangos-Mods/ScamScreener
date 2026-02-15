@@ -1,5 +1,5 @@
 ﻿{
-    "version":  14,
+    "version":  15,
     "intercept":  -1.3579284239315013,
     "denseFeatureWeights":  {
                                 "kw_payment":  -0.49489899053817127,

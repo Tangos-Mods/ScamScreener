@@ -266,31 +266,6 @@ public final class Messages extends MessageBuilder {
 			.append(Component.literal("AI up-to-date message on server join disabled.").withStyle(ChatFormatting.GRAY));
 	}
 
-
-	public static MutableComponent trainingCompleted(int sampleCount, int positiveCount, String archivedFilename) {
-		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
-			.append(Component.literal("Trained local AI model with ").withStyle(ChatFormatting.GRAY))
-			.append(Component.literal(String.valueOf(sampleCount)).withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD))
-			.append(Component.literal(" samples (").withStyle(ChatFormatting.GRAY))
-			.append(Component.literal(String.valueOf(positiveCount)).withStyle(ChatFormatting.DARK_RED, ChatFormatting.BOLD))
-			.append(Component.literal(" scam). Archived data to ").withStyle(ChatFormatting.GRAY))
-			.append(Component.literal(archivedFilename == null ? "unknown" : archivedFilename).withStyle(ChatFormatting.YELLOW))
-			.append(Component.literal(".").withStyle(ChatFormatting.GRAY));
-	}
-
-	public static MutableComponent trainingUnigramsIgnored(int count) {
-		int safe = Math.max(0, count);
-		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
-			.append(Component.literal("Ignored ").withStyle(ChatFormatting.GRAY))
-			.append(Component.literal(String.valueOf(safe)).withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD))
-			.append(Component.literal(" unigram training messages.").withStyle(ChatFormatting.GRAY));
-	}
-
-	public static MutableComponent trainingAlreadyRunning() {
-		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
-			.append(Component.literal("Training is already running.").withStyle(ChatFormatting.GRAY));
-	}
-
 	public static MutableComponent trainingUploadWebhookStarted(String path) {
 		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
 			.append(Component.literal("Uploading...").withStyle(ChatFormatting.GRAY));
@@ -357,7 +332,7 @@ public final class Messages extends MessageBuilder {
 			.append(Component.literal("\n- /scamscreener unmute <pattern>").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener autoleave [on|off]").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener ai capture <player> <scam|legit> [count]").withStyle(ChatFormatting.GRAY))
-			.append(Component.literal("\n- /scamscreener ai train").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal("\n- /scamscreener upload").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener ai reset").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener ai autocapture [off|low|medium|high|critical]").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener rules <list|disable|enable> [rule]").withStyle(ChatFormatting.GRAY))
@@ -529,7 +504,7 @@ public final class Messages extends MessageBuilder {
 			.append(Component.literal("\n- /scamscreener ai migrate").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener ai update notify [on|off]").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener ai model <download|accept|merge|ignore> <id>").withStyle(ChatFormatting.GRAY))
-			.append(Component.literal("\n- /scamscreener ai train").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal("\n- /scamscreener upload").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener ai reset").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener ai autocapture [off|low|medium|high|critical]").withStyle(ChatFormatting.GRAY));
 	}

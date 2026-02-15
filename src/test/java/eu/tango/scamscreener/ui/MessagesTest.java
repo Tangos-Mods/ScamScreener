@@ -16,6 +16,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 class MessagesTest {
 	@Test
@@ -75,6 +76,17 @@ class MessagesTest {
 
 		assertTrue(started.getString().contains("Uploading..."));
 		assertTrue(success.getString().contains("Training data uploaded sucessfully."));
+	}
+
+	@Test
+	void helpMessagesListUploadCommandInsteadOfAiTrain() {
+		String commandHelp = Messages.commandHelp().getString();
+		String aiHelp = Messages.aiCommandHelp().getString();
+
+		assertTrue(commandHelp.contains("/scamscreener upload"));
+		assertFalse(commandHelp.contains("/scamscreener ai train"));
+		assertTrue(aiHelp.contains("/scamscreener upload"));
+		assertFalse(aiHelp.contains("/scamscreener ai train"));
 	}
 
 	@Test

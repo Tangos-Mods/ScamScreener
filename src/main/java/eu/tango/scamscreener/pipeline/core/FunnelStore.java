@@ -80,8 +80,13 @@ public final class FunnelStore {
 			Step.offer(),
 			Step.of(IntentTag.PAYMENT_UPFRONT)
 		));
+		SequenceMatch offerPaymentRedirect = findSequence(records, List.of(
+			Step.offer(),
+			Step.of(IntentTag.PAYMENT_UPFRONT),
+			Step.of(IntentTag.PLATFORM_REDIRECT)
+		));
 
-		if (full == null && repRedirect == null && redirectInstruction == null && offerPayment == null) {
+		if (full == null && repRedirect == null && redirectInstruction == null && offerPayment == null && offerPaymentRedirect == null) {
 			return FunnelEvaluation.empty();
 		}
 
@@ -105,6 +110,9 @@ public final class FunnelStore {
 			} else if (redirectInstruction != null) {
 				steps = redirectInstruction.stepNames();
 				contributingIndexes.addAll(redirectInstruction.indexes());
+			} else if (offerPaymentRedirect != null) {
+				steps = offerPaymentRedirect.stepNames();
+				contributingIndexes.addAll(offerPaymentRedirect.indexes());
 			} else {
 				steps = offerPayment.stepNames();
 				contributingIndexes.addAll(offerPayment.indexes());
