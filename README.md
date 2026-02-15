@@ -2,14 +2,14 @@
 
 [![Build](https://github.com/Tangos-Mods/ScamScreener/actions/workflows/build.yml/badge.svg)](https://github.com/Tangos-Mods/ScamScreener/actions/workflows/build.yml) [![Modrinth Downloads](https://img.shields.io/modrinth/dt/scamscreener?logo=modrinth&label=Modrinth%20downloads)](https://modrinth.com/mod/scamscreener) [![Version](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Tangos-Mods/ScamScreener/main/.github/badges/version.json)](gradle.properties) [![AI Model](https://img.shields.io/badge/AI%20Model-v15-5555ff)](scripts/model-version.json)
 
-Client-side Fabric mod for **Minecraft 1.21.10** that analyzes Hypixel SkyBlock chat for scam risk.
+Client-side Fabric mod for **Minecraft 1.21.10 / 1.21.11** that analyzes Hypixel SkyBlock chat for scam risk.
 
 ScamScreener combines:
 
 - manual blacklist alerts
 - rule-based detection (regex + behavior signals)
 - Levenshtein similarity matching (rule phrases + training samples)
-- local trainable AI scoring (no required cloud AI service)
+- local AI scoring (no required cloud AI service) with updateable model and community training-data upload flow
 - message muting with custom patterns
 - outgoing safety guard for email addresses and Discord invite links
 
@@ -55,14 +55,15 @@ When thresholds are reached:
 - explainable rule list with hover details (`Why triggered`)
 - 3x short warning tone (configurable)
 - optional auto-capture into training data (by minimum alert level)
-- quick action tags inside warnings (`legit`, `scam`, `blacklist`)
+- quick action tags inside warnings (`manage`, `info`)
+- optional follow-up education message for external-platform redirect risk (with one-click disable action)
 
-### 3) Local AI training and model lifecycle
+### 3) Training data capture and upload lifecycle
 
 - Training samples are stored in CSV.
-- `/scamscreener ai train` trains and saves a local model JSON.
+- `/scamscreener upload` archives the active training CSV and uploads it via webhook (after ToS consent).
 - Existing training/model files are archived under `old/`.
-- Supports sample capture by player, by message id (`ai flag`), and bulk legit capture.
+- Supports sample capture by player, by message id (`ai flag`), bulk legit capture, and alert review (`manage` screen).
 - Includes training data migration (`/scamscreener ai migrate`) for older CSV headers.
 
 ### 4) AI update workflow (optional online check)
@@ -104,7 +105,7 @@ Screens available:
 
 ## Requirements
 
-- Minecraft `1.21.10`
+- Minecraft `1.21.10` or `1.21.11`
 - Fabric Loader `>= 0.18.4`
 - Fabric API matching your MC version
 - Java `21+`
@@ -130,9 +131,12 @@ Artifact output: `build/libs/`
 - `/scamscreener add <player|uuid> [score] [reason]`
 - `/scamscreener remove <player|uuid>`
 - `/scamscreener list`
+- `/scamscreener upload`
 - `/scamscreener rules <list|disable|enable> [rule]`
 - `/scamscreener alertlevel [low|medium|high|critical]`
 - `/scamscreener autoleave [on|off]` (no args = status)
+- `/scamscreener review <manage|info> <alertId>`
+- `/scamscreener edu disable <messageId>`
 - `/scamscreener settings`
 - `/scamscreener debug`
 - `/scamscreener debug <true|false> [updater|trade|mute|chatcolor]`
@@ -150,7 +154,6 @@ Artifact output: `build/libs/`
 - `/scamscreener ai update force`
 - `/scamscreener ai update notify [on|off]` (no args = status)
 - `/scamscreener ai model <download|accept|merge|ignore> <id>`
-- `/scamscreener ai train`
 - `/scamscreener ai reset`
 - `/scamscreener ai autocapture [off|low|medium|high|critical]`
 
@@ -181,6 +184,7 @@ Important files:
 - `scam-screener-training-data.csv`
 - `scam-screener-mute.json`
 - `scam-screener-debug.json`
+- `scamscreener-edu.json`
 
 Archive folders:
 
@@ -190,9 +194,10 @@ Archive folders:
 ## Training quick guide
 
 1. Collect labeled samples with `ai capture` and/or `ai flag`.
-2. Run `ai train`.
-3. Model is updated, training CSV is archived, config is reloaded.
-4. Observe warning quality and false positives over time.
+2. (Optional) Review alert messages in-game via `[manage]` and save selected scam/legit lines.
+3. Run `/scamscreener upload`.
+4. Training CSV is archived and uploaded via webhook after ToS acceptance.
+5. Observe warning quality and false positives over time.
 
 Tips:
 
@@ -206,6 +211,7 @@ Tips:
 - Training and model files stay in `config/scamscreener/`.
 - Optional network calls are used for:
   - Mojang profile lookup (name to UUID resolution)
+  - training-data webhook upload (`/scamscreener upload`)
   - AI model update check/download (GitHub raw URL)
 
 ## Limitations

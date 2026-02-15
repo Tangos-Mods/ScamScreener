@@ -78,6 +78,22 @@ Base directory: `src/test/java/eu/tango/scamscreener/`
   - Feeds timestamped `MessageEvent`s through `FunnelSignalStage` with stateful `FunnelStore`.
   - Asserts emitted signal count, sequence evidence text, and bonus weights for partial/full chains.
 
+### `commands/ScamScreenerCommandsStructureTest.java`
+- **What is tested:**
+  - Root command tree registration shape for `/scamscreener`.
+  - Regression that old `train` command path is not present.
+- **How it is tested:**
+  - Builds command tree through `ScamScreenerCommands` and Brigadier dispatcher.
+  - Asserts expected nodes exist (`upload`, `ai`, `reset`, `metrics`) and removed nodes do not (`train`).
+
+### `config/ScamRulesConfigTest.java`
+- **What is tested:**
+  - Alert-threshold default and one-time migration behavior.
+- **How it is tested:**
+  - Verifies default `minAlertRiskLevel` is `MEDIUM`.
+  - Verifies migration force path (`alertThresholdMediumMigrationDone=false`) sets `MEDIUM` once.
+  - Verifies player preference persists after migration flag is done.
+
 ### `security/SafetyBypassStoreTest.java`
 - **What is tested:**
   - Pattern-based blocking and retrieval of pending entries.
@@ -131,3 +147,7 @@ Base directory: `src/test/java/eu/tango/scamscreener/`
 - **How it is tested:**
   - Positive case using a randomly generated UUID (including whitespace trimming).
   - Negative cases (`null`, empty, invalid) expecting `null`.
+
+## Coverage Notes
+
+- The alert-review GUI flow (`manage/info` screens), tri-state line toggling, and education disable UX are currently validated via manual runtime checks; no dedicated UI automation tests exist for these screens yet.

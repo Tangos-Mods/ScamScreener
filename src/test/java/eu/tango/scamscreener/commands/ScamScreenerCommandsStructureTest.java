@@ -14,7 +14,6 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ScamScreenerCommandsStructureTest {
 	@Test
@@ -23,9 +22,7 @@ class ScamScreenerCommandsStructureTest {
 			null,
 			name -> new ResolvedTarget(UUID.randomUUID(), name),
 			new MutePatternManager(),
-			(playerName, label, count) -> 1,
 			(messageId, label) -> 1,
-			count -> 1,
 			() -> 1,
 			(action, id) -> 1,
 			force -> 1,
@@ -40,6 +37,10 @@ class ScamScreenerCommandsStructureTest {
 			() -> 1,
 			() -> 1,
 			() -> "",
+			alertId -> 1,
+			alertId -> 1,
+			playerName -> 1,
+			messageId -> 1,
 			uuid -> {},
 			() -> {},
 			component -> {}
@@ -64,6 +65,12 @@ class ScamScreenerCommandsStructureTest {
 		assertNull(ai.getChild("train"));
 		assertNotNull(ai.getChild("reset"));
 		assertNotNull(ai.getChild("metrics"));
-		assertTrue(ai.getChildren().stream().anyMatch(node -> "capture".equals(node.getName())));
+		assertNotNull(ai.getChild("flag"));
+		assertNull(ai.getChild("capture"));
+		assertNull(ai.getChild("capturebulk"));
+
+		CommandNode<FabricClientCommandSource> review = root.getChild("review");
+		assertNotNull(review);
+		assertNotNull(review.getChild("player"));
 	}
 }

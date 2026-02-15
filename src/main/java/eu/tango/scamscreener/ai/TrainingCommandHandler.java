@@ -25,6 +25,7 @@ import java.util.List;
 
 public final class TrainingCommandHandler {
 	private static final Logger LOGGER = LoggerFactory.getLogger(TrainingCommandHandler.class);
+	private static final int SCAM_LABEL = 1;
 	private static final int LEGIT_LABEL = 0;
 	private static final String UPLOAD_TOS_RESOURCE_PATH = "/assets/scam-screener/text/upload-tos.txt";
 	private static final String UPLOAD_TOS_FALLBACK = "By uploading training data you confirm you have rights to share it, "
@@ -155,6 +156,58 @@ public final class TrainingCommandHandler {
 		return 1;
 	}
 
+	public int saveReviewedMessages(List<ReviewedMessage> selections, boolean uploadAfterSave) {
+		if (selections == null || selections.isEmpty()) {
+			MessageDispatcher.reply(Messages.reviewSelectionRequired());
+			return 0;
+		}
+
+		List<String> scamMessages = new java.util.ArrayList<>();
+		List<String> legitMessages = new java.util.ArrayList<>();
+		for (ReviewedMessage selection : selections) {
+			if (selection == null || selection.message() == null || selection.message().isBlank()) {
+				continue;
+			}
+			if (selection.label() == SCAM_LABEL) {
+				scamMessages.add(selection.message());
+				continue;
+			}
+			if (selection.label() == LEGIT_LABEL) {
+				legitMessages.add(selection.message());
+			}
+		}
+
+		if (scamMessages.isEmpty() && legitMessages.isEmpty()) {
+			MessageDispatcher.reply(Messages.reviewSelectionRequired());
+			return 0;
+		}
+
+		try {
+			if (!legitMessages.isEmpty()) {
+				trainingDataService.appendRows(legitMessages, LEGIT_LABEL);
+			}
+			if (!scamMessages.isEmpty()) {
+				trainingDataService.appendRows(scamMessages, SCAM_LABEL);
+			}
+			for (String message : legitMessages) {
+				funnelMetricsService.recordUserMark(message, LEGIT_LABEL);
+			}
+			for (String message : scamMessages) {
+				funnelMetricsService.recordUserMark(message, SCAM_LABEL);
+			}
+			MessageDispatcher.reply(Messages.reviewMessagesSaved(scamMessages.size(), legitMessages.size()));
+		} catch (IOException e) {
+			LOGGER.warn("Failed to save reviewed training samples", e);
+			MessageDispatcher.reply(Messages.trainingSamplesSaveFailed(trainingErrorDetail(e, trainingDataService.trainingDataPath())));
+			return 0;
+		}
+
+		if (uploadAfterSave) {
+			trainLocalAiModel();
+		}
+		return 1;
+	}
+
 	public int resetLocalAiModel() {
 		LocalAiModelConfig.save(new LocalAiModelConfig());
 		ScamRules.reloadConfig();
@@ -258,6 +311,12 @@ public final class TrainingCommandHandler {
 			cursor = cursor.getParent();
 		}
 		return archivedPath.getParent();
+	}
+
+	public record ReviewedMessage(String message, int label) {
+		public ReviewedMessage {
+			message = message == null ? "" : message.trim();
+		}
 	}
 
 }

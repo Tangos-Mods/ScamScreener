@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
-final class BlacklistSettingsScreen extends GUI {
+final class BlacklistSettingsScreen extends ScamScreenerGUI {
 	private static final int ENTRIES_PER_PAGE = 7;
 	private static final int SCORE_STEP = 10;
 

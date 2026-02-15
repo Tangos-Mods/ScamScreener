@@ -1,35 +1,36 @@
-# ScamScreener 1.0.1
+# ScamScreener 1.1.0
 
-ScamScreener 1.0.1 improves the training-data upload flow and keeps the command/menu behavior consistent.
+ScamScreener 1.1.0 improves in-game review workflows and expands scam education coverage.
 
-## Highlights In 1.0.1
+## Highlights
 
-- Full support for Minecraft `1.21.11` and `1.21.10`.
-- `/scamscreener ai train` was replaced by `/scamscreener upload`.
-- Upload now requires the active file `config/scamscreener/scam-screener-training-data.csv`.
-- Upload no longer falls back to `config/scamscreener/old/training-data/*.old.*`.
-- Upload is gated behind a one-time ToS consent screen.
-- Training capture now also includes outgoing chat command text (`/msg`, `/r`, party, guild, `ac`).
+### Added
 
-## What You Get As A Player
+- Added review commands: `/scamscreener review manage <alertId>`, `/scamscreener review info <alertId>`, `/scamscreener review player <playerName>`.
+- Added a dedicated Manage Alert workflow with multi-line labeling (`Ignore -> Scam -> Legit`), save/upload flow, and optional blacklist/block actions.
+- Added a dedicated Alert Rule Details screen with grouped trigger stages (`Rule`, `Behavior`, `Similarity`, `Trend`, `Funnel`, `AI`) and captured context.
+- Added expanded education follow-up messages for external redirects, suspicious links, upfront payment requests, account-data requests, fake middleman claims, urgency pressure, trust manipulation, too-good-to-be-true offers, Discord redirects, and funnel patterns.
+- Added education message control command: `/scamscreener edu disable <messageId>`.
+- Added Metrics in Menu for some information
 
-- Live scam warnings in chat with risk levels and clear trigger details.
-- Local blacklist warnings in relevant contexts (for example trade, party, and co-op).
-- Quick action buttons in warnings (`legit`, `scam`, `blacklist`, `block`).
-- Optional auto-leave from parties when a blacklist hit is detected.
-- Custom mute filter (including regex) to hide scam spam immediately.
-- Outgoing safety guard for risky content (email, Discord invites, `/coopadd`) with controlled bypass.
-- In-game settings GUI (`/scamscreener settings`) for fast configuration.
-- Local AI model with update workflow (download/accept/merge/ignore), including SHA-256 integrity checks.
+### Changed
 
-## Quick Commands
+- Changed scam warning actions to centered review tags (`[manage] [info]`) and improved warning layout alignment.
+- Changed review/info context assembly to merge recent captured lines with evaluated pipeline lines (normalized and deduplicated).
+- Changed default alert-threshold migration behavior to enforce a one-time minimum of `MEDIUM` for older unmigrated configs.
 
-- `/scamscreener settings` Open Settings Menu
-- `/scamscreener add <player> [score] [reason]` Add Player to Blacklist
-- `/scamscreener ai update` Check for Model Update
-- `/scamscreener upload` Upload your Training Data
-- `/scamscreener mute <pattern>` Mute messages with patterns
+### Removed
+
+- Removed deprecated training-capture commands `/1`, `/0`, `/scamscreener ai capture`, and `/scamscreener ai capturebulk`.
+
+### Fixes
+
+- Fixed alert info context so scored pipeline messages are consistently shown in captured-message context.
+
+## Compatibility
+
+- Minecraft `1.21.11` and `1.21.10`.
 
 ## Note
 
-ScamScreener is client-side. Core detection, scoring, and local data stay on your client.
+ScamScreener is client-side. Detection, scoring, and local review/training data stay on your client unless you explicitly upload training data.

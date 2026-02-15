@@ -19,6 +19,8 @@ import eu.tango.scamscreener.chat.parser.OutgoingChatCommandParser;
 import eu.tango.scamscreener.chat.trigger.TriggerContext;
 import eu.tango.scamscreener.discord.DiscordWebhookUploader;
 import eu.tango.scamscreener.gui.MainSettingsScreen;
+import eu.tango.scamscreener.gui.AlertInfoScreen;
+import eu.tango.scamscreener.gui.AlertManageScreen;
 import eu.tango.scamscreener.pipeline.model.DetectionOutcome;
 import eu.tango.scamscreener.pipeline.core.DetectionPipeline;
 import eu.tango.scamscreener.pipeline.model.MessageEvent;
@@ -32,6 +34,8 @@ import eu.tango.scamscreener.ui.Messages;
 import eu.tango.scamscreener.ui.DebugRegistry;
 import eu.tango.scamscreener.ui.ChatDecorator;
 import eu.tango.scamscreener.ui.DebugReporter;
+import eu.tango.scamscreener.ui.AlertReviewRegistry;
+import eu.tango.scamscreener.ui.EducationMessages;
 import eu.tango.scamscreener.ui.MessageDispatcher;
 import eu.tango.scamscreener.ui.NotificationService;
 import eu.tango.scamscreener.util.TextUtil;
@@ -45,6 +49,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import eu.tango.scamscreener.security.EmailSafety;
 import eu.tango.scamscreener.security.DiscordSafety;
 import eu.tango.scamscreener.security.OutgoingMessageGuard;
@@ -124,9 +134,7 @@ public class ScamScreenerClient implements ClientModInitializer {
 			BLACKLIST,
 			targetResolutionService::resolveTargetOrReply,
 			mutePatternManager,
-			trainingCommandHandler::captureChatAsTrainingData,
 			trainingCommandHandler::captureMessageById,
-			trainingCommandHandler::captureBulkLegit,
 			trainingCommandHandler::migrateTrainingData,
 			modelUpdateCommandHandler::handleModelUpdateCommand,
 			modelUpdateCommandHandler::handleModelUpdateCheck,
@@ -141,6 +149,10 @@ public class ScamScreenerClient implements ClientModInitializer {
 			trainingCommandHandler::showFunnelMetrics,
 			trainingCommandHandler::resetFunnelMetrics,
 			trainingDataService::lastCapturedLine,
+			this::openAlertManageScreen,
+			this::openAlertInfoScreen,
+			this::openPlayerReviewScreen,
+			this::disableEducationMessage,
 			ignored -> {},
 			openSettingsHandler,
 			MessageDispatcher::reply
@@ -332,6 +344,135 @@ public class ScamScreenerClient implements ClientModInitializer {
 		} catch (IOException e) {
 			LOGGER.debug("Failed to auto-save flagged message as training sample", e);
 		}
+	}
+
+	private int openAlertManageScreen(String alertId) {
+		AlertReviewRegistry.AlertContext context = AlertReviewRegistry.contextById(alertId);
+		if (context == null) {
+			MessageDispatcher.reply(Messages.alertReviewContextMissing());
+			return 0;
+		}
+		List<String> messages = collectReviewMessages(context);
+		Minecraft client = Minecraft.getInstance();
+		if (client == null) {
+			MessageDispatcher.reply(Messages.alertReviewOpenFailed());
+			return 0;
+		}
+		CompletableFuture.runAsync(() -> client.execute(() -> {
+			Screen parent = client.screen;
+			client.setScreen(new AlertManageScreen(
+				parent,
+				context,
+				messages,
+				request -> saveAlertReview(context, request)
+			));
+		}));
+		return 1;
+	}
+
+	private int openAlertInfoScreen(String alertId) {
+		AlertReviewRegistry.AlertContext context = AlertReviewRegistry.contextById(alertId);
+		if (context == null) {
+			MessageDispatcher.reply(Messages.alertReviewContextMissing());
+			return 0;
+		}
+		List<String> messages = collectReviewMessages(context);
+		Minecraft client = Minecraft.getInstance();
+		if (client == null) {
+			MessageDispatcher.reply(Messages.alertReviewOpenFailed());
+			return 0;
+		}
+		CompletableFuture.runAsync(() -> client.execute(() -> {
+			Screen parent = client.screen;
+			client.setScreen(new AlertInfoScreen(parent, context, messages));
+		}));
+		return 1;
+	}
+
+	private int openPlayerReviewScreen(String playerName) {
+		String safePlayerName = playerName == null ? "" : playerName.trim();
+		if (safePlayerName.isBlank()) {
+			MessageDispatcher.reply(Messages.noChatToCapture());
+			return 0;
+		}
+		String contextId = AlertReviewRegistry.register(
+			safePlayerName,
+			new ScamRules.ScamAssessment(0, ScamRules.ScamRiskLevel.LOW, Set.of(), Map.of(), null, List.of()),
+			Map.of()
+		);
+		return openAlertManageScreen(contextId);
+	}
+
+	private int saveAlertReview(AlertReviewRegistry.AlertContext context, AlertManageScreen.SaveRequest request) {
+		if (request == null || context == null) {
+			return 0;
+		}
+		List<TrainingCommandHandler.ReviewedMessage> selections = new ArrayList<>();
+		for (AlertManageScreen.ReviewedSelection selection : request.selections()) {
+			if (selection == null || selection.message() == null || selection.message().isBlank()) {
+				continue;
+			}
+			selections.add(new TrainingCommandHandler.ReviewedMessage(selection.message(), selection.label()));
+		}
+		int result = trainingCommandHandler.saveReviewedMessages(selections, request.upload());
+		if (result <= 0) {
+			return result;
+		}
+
+		String playerName = context.playerName() == null ? "" : context.playerName().trim();
+		if (playerName.isBlank() || "unknown".equalsIgnoreCase(playerName)) {
+			return result;
+		}
+
+		if (request.addToBlacklist()) {
+			int score = Math.max(0, Math.min(100, context.riskScore()));
+			String reason = AlertReviewRegistry.bestRuleCode(context);
+			if (reason == null || reason.isBlank()) {
+				MessageDispatcher.sendCommand("scamscreener add " + playerName + " " + score);
+			} else {
+				MessageDispatcher.sendCommand("scamscreener add " + playerName + " " + score + " " + reason);
+			}
+		}
+		if (request.addToBlock()) {
+			MessageDispatcher.sendCommand("block " + playerName);
+		}
+		return result;
+	}
+
+	private int disableEducationMessage(String messageId) {
+		return EducationMessages.disableMessage(messageId);
+	}
+
+	private List<String> collectReviewMessages(AlertReviewRegistry.AlertContext context) {
+		if (context == null) {
+			return List.of();
+		}
+		List<String> out = new ArrayList<>();
+		Set<String> seen = new LinkedHashSet<>();
+		String playerName = context.playerName();
+		if (playerName != null && !playerName.isBlank() && !"unknown".equalsIgnoreCase(playerName.trim())) {
+			for (TrainingDataService.CapturedChat capture : trainingDataService.recentCapturedForPlayer(playerName, TrainingDataService.MAX_CAPTURED_CHAT_LINES)) {
+				if (capture == null) {
+					continue;
+				}
+				addNormalizedUnique(out, seen, capture.rawMessage());
+			}
+		}
+		for (String message : context.evaluatedMessages()) {
+			addNormalizedUnique(out, seen, message);
+		}
+		return out;
+	}
+
+	private static void addNormalizedUnique(List<String> out, Set<String> seen, String raw) {
+		if (out == null || seen == null || raw == null) {
+			return;
+		}
+		String normalized = raw.replace('\n', ' ').replace('\r', ' ').trim();
+		if (normalized.isBlank() || !seen.add(normalized)) {
+			return;
+		}
+		out.add(normalized);
 	}
 
 

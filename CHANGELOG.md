@@ -1,6 +1,31 @@
 # Changelog
 All notable changes to this project are documented in this file.
 
+## [1.1.0] - 2026-02-15
+
+### Added
+- Added alert review commands: `/scamscreener review manage <alertId>`, `/scamscreener review info <alertId>`, and `/scamscreener review player <playerName>`.
+- Added a dedicated review workflow with `AlertManageScreen` (message labeling + save/upload + optional blacklist/block actions).
+- Added a dedicated alert details screen (`AlertInfoScreen`) with grouped trigger breakdown and captured chat context.
+- Added expanded scam education follow-up messages for covered scam types (external redirect, suspicious links, upfront payment, account-data requests, fake middleman claims, urgency pressure, trust manipulation, too-good-to-be-true offers, Discord handle redirects, funnel sequence patterns).
+- Added education follow-up command support with suggestions: `/scamscreener edu disable <messageId>`.
+
+### Changed
+- Bumped mod version from `1.0.1` to `1.1.0`.
+- Removed deprecated training-capture commands `/1`, `/0`, `/scamscreener ai capture`, and `/scamscreener ai capturebulk`.
+- Updated AI command help to point to `/scamscreener ai flag <messageId> <legit|scam>` for manual labeling.
+- Scam warning output now includes centered review action tags (`[manage] [info]`) and improved warning layout alignment.
+- Alert review info now groups triggered rules by detection stage (Rule, Behavior, Similarity, Trend, Funnel, AI).
+- Captured message collection now merges recent captured chat with scored pipeline messages (deduplicated) for review/info screens.
+- Alert-threshold migration now enforces a one-time default minimum of `MEDIUM` for existing configs that were not migrated.
+- `preview` output now prioritizes current review/education messages and excludes obsolete capture/sample preview entries.
+
+### Fixed
+- Fixed review/info UI text visibility issues caused by non-opaque text color rendering.
+- Fixed alert info context so scored messages from pipeline evaluation consistently appear in the captured-messages section.
+- Fixed `/scamscreener review player <playerName>` not opening the review screen reliably in some cases.
+- Fixed noisy review context lists by filtering empty/duplicate lines from merged message sources.
+
 ## [1.0.1] - 2026-02-15
 
 ### Added

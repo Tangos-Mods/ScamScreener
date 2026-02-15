@@ -92,6 +92,31 @@ class MessagesTest {
 	}
 
 	@Test
+	void educationWarningsContainDisableCommand() {
+		String external = "/scamscreener edu disable " + EducationMessages.EXTERNAL_PLATFORM_REDIRECT_ID;
+		String suspiciousLink = "/scamscreener edu disable " + EducationMessages.SUSPICIOUS_LINK_ID;
+		String upfrontPayment = "/scamscreener edu disable " + EducationMessages.UPFRONT_PAYMENT_ID;
+		String accountData = "/scamscreener edu disable " + EducationMessages.ACCOUNT_DATA_REQUEST_ID;
+		String fakeMiddleman = "/scamscreener edu disable " + EducationMessages.FAKE_MIDDLEMAN_CLAIM_ID;
+		String urgency = "/scamscreener edu disable " + EducationMessages.PRESSURE_AND_URGENCY_ID;
+		String trust = "/scamscreener edu disable " + EducationMessages.TRUST_MANIPULATION_ID;
+		String tooGood = "/scamscreener edu disable " + EducationMessages.TOO_GOOD_TO_BE_TRUE_ID;
+		String discord = "/scamscreener edu disable " + EducationMessages.DISCORD_HANDLE_ID;
+		String funnel = "/scamscreener edu disable " + EducationMessages.FUNNEL_SEQUENCE_PATTERN_ID;
+
+		assertTrue(hasRunCommand(Messages.educationExternalPlatformWarning(external), external));
+		assertTrue(hasRunCommand(Messages.educationSuspiciousLinkWarning(suspiciousLink), suspiciousLink));
+		assertTrue(hasRunCommand(Messages.educationUpfrontPaymentWarning(upfrontPayment), upfrontPayment));
+		assertTrue(hasRunCommand(Messages.educationAccountDataWarning(accountData), accountData));
+		assertTrue(hasRunCommand(Messages.educationFakeMiddlemanWarning(fakeMiddleman), fakeMiddleman));
+		assertTrue(hasRunCommand(Messages.educationUrgencyWarning(urgency), urgency));
+		assertTrue(hasRunCommand(Messages.educationTrustManipulationWarning(trust), trust));
+		assertTrue(hasRunCommand(Messages.educationTooGoodToBeTrueWarning(tooGood), tooGood));
+		assertTrue(hasRunCommand(Messages.educationDiscordHandleWarning(discord), discord));
+		assertTrue(hasRunCommand(Messages.educationFunnelSequenceWarning(funnel), funnel));
+	}
+
+	@Test
 	void nullInputsUseSafeFallbackText() {
 		String updated = Messages.updatedBlacklistEntry(null, -5, null).getString();
 		String autoLeave = Messages.autoLeaveExecuted(null).getString();

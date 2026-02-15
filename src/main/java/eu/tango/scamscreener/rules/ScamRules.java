@@ -496,7 +496,7 @@ public class ScamRules {
 				config.localAiTriggerProbability,
 				config.localAiFunnelMaxScore,
 				config.localAiFunnelThresholdBonus,
-				parseRiskLevelOrDefault(config.minAlertRiskLevel, ScamRiskLevel.HIGH),
+				parseRiskLevelOrDefault(config.minAlertRiskLevel, ScamRiskLevel.MEDIUM),
 				AutoCaptureAlertLevel.parseOrDefault(config.autoCaptureAlertLevel, AutoCaptureAlertLevel.HIGH),
 				config.showScamWarningMessage,
 				config.pingOnScamWarning,

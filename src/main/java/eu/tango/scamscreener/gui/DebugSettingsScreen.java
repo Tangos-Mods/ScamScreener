@@ -11,7 +11,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-final class DebugSettingsScreen extends GUI {
+final class DebugSettingsScreen extends ScamScreenerGUI {
 	private final Consumer<Boolean> setAllDebugHandler;
 	private final BiConsumer<String, Boolean> setDebugKeyHandler;
 	private final Supplier<Map<String, Boolean>> debugStateSupplier;

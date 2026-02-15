@@ -1,6 +1,7 @@
 package eu.tango.scamscreener.pipeline.stage;
 
 import eu.tango.scamscreener.rules.ScamRules;
+import eu.tango.scamscreener.ui.EducationMessages;
 import eu.tango.scamscreener.ui.Messages;
 import net.minecraft.network.chat.Component;
 
@@ -19,6 +20,10 @@ public final class OutputStage {
 		}
 		if (reply != null && ScamRules.showScamWarningMessage()) {
 			reply.accept(Messages.behaviorRiskWarning(event == null ? null : event.playerName(), result));
+			Component education = EducationMessages.followUpFor(result);
+			if (education != null) {
+				reply.accept(education);
+			}
 		}
 		if (warningSound != null && ScamRules.pingOnScamWarning()) {
 			warningSound.run();

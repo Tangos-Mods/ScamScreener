@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public final class UploadTosScreen extends GUI {
+public final class UploadTosScreen extends ScamScreenerGUI {
 	private static final Pattern ORDERED_LIST_PATTERN = Pattern.compile("^(\\d+)\\.\\s+(.+)$");
 	private static final int BOX_PADDING = 6;
 

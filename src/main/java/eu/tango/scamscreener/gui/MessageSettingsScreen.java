@@ -5,7 +5,7 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
-final class MessageSettingsScreen extends GUI {
+final class MessageSettingsScreen extends ScamScreenerGUI {
 	private Button scamWarningMessageButton;
 	private Button scamWarningPingButton;
 	private Button blacklistWarningMessageButton;

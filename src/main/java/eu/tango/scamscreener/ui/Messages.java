@@ -25,6 +25,7 @@ import net.minecraft.network.chat.Style;
 public final class Messages extends MessageBuilder {
 	private static final String PREFIX = DEFAULT_PREFIX;
 	private static final int PREFIX_LIGHT_RED = DEFAULT_PREFIX_COLOR;
+	private static final String FANDOM_WEBSITE_URL_SCAM = "https://hypixel-skyblock.fandom.com/wiki/Scams";
 
 	private Messages() {
 	}
@@ -108,7 +109,7 @@ public final class Messages extends MessageBuilder {
 
 	public static MutableComponent noChatToCapture() {
 		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
-			.append(Component.literal("No chat line captured yet. Wait for a message, then run the capture command.").withStyle(ChatFormatting.GRAY));
+			.append(Component.literal("No chat line captured yet. Wait for a message, then try again.").withStyle(ChatFormatting.GRAY));
 	}
 
 	public static MutableComponent trainingSampleSaved(String path, int label) {
@@ -333,13 +334,15 @@ public final class Messages extends MessageBuilder {
 			.append(Component.literal("\n- /scamscreener mute [pattern]").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener unmute <pattern>").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener autoleave [on|off]").withStyle(ChatFormatting.GRAY))
-			.append(Component.literal("\n- /scamscreener ai capture <player> <scam|legit> [count]").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener upload").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener ai reset").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener ai metrics [reset]").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener ai autocapture [off|low|medium|high|critical]").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener rules <list|disable|enable> [rule]").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener alertlevel [low|medium|high|critical]").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal("\n- /scamscreener review <manage|info> <alertId>").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal("\n- /scamscreener review player <playerName>").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal("\n- /scamscreener edu disable <messageId>").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener settings").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener version").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener preview").withStyle(ChatFormatting.GRAY));
@@ -502,8 +505,7 @@ public final class Messages extends MessageBuilder {
 	public static MutableComponent aiCommandHelp() {
 		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
 			.append(Component.literal("AI Commands:").withStyle(ChatFormatting.GRAY))
-			.append(Component.literal("\n- /scamscreener ai capture <player> <scam|legit> [count]").withStyle(ChatFormatting.GRAY))
-			.append(Component.literal("\n- /scamscreener ai capturebulk <count>").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal("\n- /scamscreener ai flag <messageId> <legit|scam>").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener ai migrate").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener ai update notify [on|off]").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener ai model <download|accept|merge|ignore> <id>").withStyle(ChatFormatting.GRAY))
@@ -511,6 +513,177 @@ public final class Messages extends MessageBuilder {
 			.append(Component.literal("\n- /scamscreener ai reset").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener ai metrics [reset]").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener ai autocapture [off|low|medium|high|critical]").withStyle(ChatFormatting.GRAY));
+	}
+
+	public static MutableComponent reviewCommandHelp() {
+		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
+			.append(Component.literal("Review command usage:").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal("\n- /scamscreener review manage <alertId>").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal("\n- /scamscreener review info <alertId>").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal("\n- /scamscreener review player <playerName>").withStyle(ChatFormatting.GRAY));
+	}
+
+	public static MutableComponent educationCommandHelp() {
+		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
+			.append(Component.literal("Education command usage:").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal("\n- /scamscreener edu disable <messageId>").withStyle(ChatFormatting.GRAY));
+	}
+
+	public static MutableComponent alertReviewContextMissing() {
+		return buildError(
+			PREFIX,
+			PREFIX_LIGHT_RED,
+			"Alert context was not found.",
+			"ALERT-LOOKUP-001",
+			"The alert may be expired. Wait for a new warning and click manage/info again."
+		);
+	}
+
+	public static MutableComponent alertReviewOpenFailed() {
+		return buildError(
+			PREFIX,
+			PREFIX_LIGHT_RED,
+			"Failed to open alert review screen.",
+			"ALERT-SCREEN-001",
+			"Minecraft client screen context is unavailable."
+		);
+	}
+
+	public static MutableComponent reviewSelectionRequired() {
+		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
+			.append(Component.literal("No reviewed messages selected. Mark at least one line as scam or legit.").withStyle(ChatFormatting.GRAY));
+	}
+
+	public static MutableComponent reviewMessagesSaved(int scamCount, int legitCount) {
+		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
+			.append(Component.literal("Saved reviewed messages. scam=").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal(String.valueOf(Math.max(0, scamCount))).withStyle(ChatFormatting.DARK_RED, ChatFormatting.BOLD))
+			.append(Component.literal(", legit=").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal(String.valueOf(Math.max(0, legitCount))).withStyle(ChatFormatting.GREEN, ChatFormatting.BOLD))
+			.append(Component.literal(".").withStyle(ChatFormatting.GRAY));
+	}
+
+	private static MutableComponent educationWarning(String disableCommand, String... guidanceParts) {
+		MutableComponent line = prefixedMessage(PREFIX, PREFIX_LIGHT_RED);
+		if (guidanceParts != null) {
+			for (String part : guidanceParts) {
+				if (part == null || part.isBlank()) {
+					continue;
+				}
+				line.append(Component.literal(part).withStyle(ChatFormatting.GRAY));
+			}
+		}
+		line.append(Component.literal("More info and help can be found ").withStyle(ChatFormatting.GRAY))
+			.append(clickableUrl("here", FANDOM_WEBSITE_URL_SCAM, "Open Fandom Website to learn more about Scams"))
+			.append(Component.literal(". ").withStyle(ChatFormatting.GRAY));
+		line.append(actionTag("disable info message", ChatFormatting.DARK_GRAY, "Disable this message.", disableCommand));
+		return line;
+	}
+
+	public static MutableComponent educationExternalPlatformWarning(String disableCommand) {
+		return educationWarning(
+			disableCommand,
+			"The user is trying to move you over to an external platform. ",
+			"Scammers often do this, so proceed with caution. ",
+			"If you're unsure whether it's a scam, treat it as one until proven otherwise. "
+		);
+	}
+
+	public static MutableComponent educationSuspiciousLinkWarning(String disableCommand) {
+		return educationWarning(
+			disableCommand,
+			"The message contains a suspicious link. ",
+			"Never log into websites opened directly from chat links. ",
+			"Open trusted sites manually and double-check the exact domain first. "
+		);
+	}
+
+	public static MutableComponent educationUpfrontPaymentWarning(String disableCommand) {
+		return educationWarning(
+			disableCommand,
+			"The user asks for payment before proof or delivery. ",
+			"This is a common scam setup in trading chats. ",
+			"Only trade with verified middlemen and never pay first without strong proof. "
+		);
+	}
+
+	public static MutableComponent educationAccountDataWarning(String disableCommand) {
+		return educationWarning(
+			disableCommand,
+			"The user asks for account or personal login data. ",
+			"Never share your Microsoft login, email codes, or recovery information. ",
+			"Legitimate players and staff do not need your credentials. "
+		);
+	}
+
+	public static MutableComponent educationFakeMiddlemanWarning(String disableCommand) {
+		return educationWarning(
+			disableCommand,
+			"The user claims a trusted middleman without reliable proof. ",
+			"Scammers often fake middleman identities with screenshots or name lookalikes. ",
+			"Verify middlemen only through official server channels before trading. "
+		);
+	}
+
+	public static MutableComponent educationUrgencyWarning(String disableCommand) {
+		return educationWarning(
+			disableCommand,
+			"The user is creating pressure and urgency. ",
+			"Scammers rush decisions to prevent verification. ",
+			"Slow down, verify details, and walk away if they keep pushing. "
+		);
+	}
+
+	public static MutableComponent educationTrustManipulationWarning(String disableCommand) {
+		return educationWarning(
+			disableCommand,
+			"The user is trying to force trust quickly. ",
+			"Claims like 'trusted', 'friend of admin', or 'many vouches' can be faked. ",
+			"Always verify reputation independently before sending anything. "
+		);
+	}
+
+	public static MutableComponent educationTooGoodToBeTrueWarning(String disableCommand) {
+		return educationWarning(
+			disableCommand,
+			"The offer looks too good to be true. ",
+			"Unreal discounts, huge profit promises, or free rare items are common bait. ",
+			"If the deal makes no sense economically, treat it as high risk. "
+		);
+	}
+
+	public static MutableComponent educationDiscordHandleWarning(String disableCommand) {
+		return educationWarning(
+			disableCommand,
+			"The chat contains a Discord handle in suspicious context. ",
+			"Scammers often move victims to DMs where logs and moderation are weaker. ",
+			"Verify identity via official communities before continuing outside Minecraft. "
+		);
+	}
+
+	public static MutableComponent educationFunnelSequenceWarning(String disableCommand) {
+		return educationWarning(
+			disableCommand,
+			"The conversation matches a staged scam funnel pattern. ",
+			"These chats usually start harmless, then build trust, then ask for risky actions. ",
+			"Stop at the first request for payment, account access, or off-platform contact. "
+		);
+	}
+
+	public static MutableComponent educationMessageDisabled(String messageId) {
+		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
+			.append(Component.literal("Education message disabled: ").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal(messageId == null ? "unknown" : messageId).withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD));
+	}
+
+	public static MutableComponent educationMessageUnknown(String messageId) {
+		return buildError(
+			PREFIX,
+			PREFIX_LIGHT_RED,
+			"Unknown education message id.",
+			"EDU-ID-001",
+			messageId
+		);
 	}
 
 	public static MutableComponent addCommandHelp() {
@@ -528,7 +701,7 @@ public final class Messages extends MessageBuilder {
 	public static MutableComponent aiCaptureCommandHelp() {
 		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
 			.append(Component.literal("Usage: ").withStyle(ChatFormatting.GRAY))
-			.append(Component.literal("/scamscreener ai capture <player> <scam|legit> [count]").withStyle(ChatFormatting.GRAY));
+			.append(Component.literal("/scamscreener ai flag <messageId> <legit|scam>").withStyle(ChatFormatting.GRAY));
 	}
 
 	public static MutableComponent ruleCommandHelp() {
@@ -659,13 +832,13 @@ public final class Messages extends MessageBuilder {
 	public static MutableComponent currentAlertRiskLevel(ScamRules.ScamRiskLevel level) {
 		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
 			.append(Component.literal("Current alert threshold: ").withStyle(ChatFormatting.GRAY))
-			.append(Component.literal(level == null ? "HIGH" : level.name()).withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD));
+			.append(Component.literal(level == null ? "MEDIUM" : level.name()).withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD));
 	}
 
 	public static MutableComponent updatedAlertRiskLevel(ScamRules.ScamRiskLevel level) {
 		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
 			.append(Component.literal("Alert threshold updated to ").withStyle(ChatFormatting.GRAY))
-			.append(Component.literal(level == null ? "HIGH" : level.name()).withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD))
+			.append(Component.literal(level == null ? "MEDIUM" : level.name()).withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD))
 			.append(Component.literal(".").withStyle(ChatFormatting.GRAY));
 	}
 
@@ -696,50 +869,24 @@ public final class Messages extends MessageBuilder {
 	}
 
 	public static MutableComponent behaviorRiskWarning(String playerName, ScamRules.ScamAssessment assessment, Map<ScamRules.ScamRule, Double> ruleWeights) {
-		String levelText = assessment.riskLevel().name();
+		ScamRules.ScamAssessment safeAssessment = assessment == null
+			? new ScamRules.ScamAssessment(0, ScamRules.ScamRiskLevel.LOW, Set.of(), Map.of(), null, List.of())
+			: assessment;
+		String levelText = safeAssessment.riskLevel().name() + " RISK MESSAGE";
 		String playerText = playerName == null ? "unknown" : playerName;
-		String scoreText = String.valueOf(assessment.riskScore());
+		String scoreText = String.valueOf(safeAssessment.riskScore());
 		String playerScoreLine = playerText + " | " + scoreText;
-		int scoreColor = scoreGradientColor(assessment.riskScore());
+		int scoreColor = scoreGradientColor(safeAssessment.riskScore());
+		String alertContextId = AlertReviewRegistry.register(playerText, safeAssessment, ruleWeights);
 		MutableComponent message = Component.empty()
 			.append(Component.literal(WARNING_BORDER).withStyle(ChatFormatting.DARK_RED))
-			.append(Component.literal("\n" + centered("RISKY MESSAGE")).withStyle(style -> style.withColor(levelColor(assessment.riskLevel())).withBold(true)))
-			.append(Component.literal("\n" + centered(levelText)).withStyle(style -> style.withColor(levelColor(assessment.riskLevel())).withBold(true)))
+			.append(Component.literal("\n" + centeredBold(levelText)).withStyle(style -> style.withColor(levelColor(safeAssessment.riskLevel())).withBold(true)))
 			.append(Component.literal("\n" + leftCenterPadding(playerScoreLine)))
 			.append(Component.literal(playerText).withStyle(ChatFormatting.AQUA))
 			.append(Component.literal(" | ").withStyle(ChatFormatting.DARK_GRAY))
 			.append(Component.literal(scoreText).withStyle(style -> style.withColor(scoreColor)))
-			.append(Component.literal("\n"));
-
-		if (assessment.triggeredRules().isEmpty()) {
-			message.append(Component.literal(centered("none")).withStyle(ChatFormatting.GRAY));
-			return message.append(Component.literal("\n" + WARNING_BORDER).withStyle(ChatFormatting.DARK_RED));
-		}
-
-		boolean first = true;
-		for (ScamRules.ScamRule rule : assessment.triggeredRules().stream().sorted(Comparator.naturalOrder()).collect(Collectors.toList())) {
-			if (!first) {
-				message.append(Component.literal(", ").withStyle(ChatFormatting.DARK_GRAY));
-			}
-			first = false;
-			message.append(readableRule(rule, assessment.detailFor(rule), assessment.allEvaluatedMessages()));
-		}
-
-		String actionMessageId = registerActionMessageId(assessment.allEvaluatedMessages());
-		message.append(Component.literal("\n")).append(actionLine(playerText, actionMessageId, assessment, ruleWeights));
-
-		List<String> evaluatedMessages = assessment.allEvaluatedMessages();
-		List<String> highlightTerms = extractQuotedMatches(assessment);
-		if (!evaluatedMessages.isEmpty()) {
-			int limit = Math.min(MAX_HOVER_MESSAGES, evaluatedMessages.size());
-			for (int i = 0; i < limit; i++) {
-				String raw = evaluatedMessages.get(i);
-				if (raw == null || raw.isBlank()) {
-					continue;
-				}
-			}
-		}
-
+			.append(Component.literal("\n"))
+			.append(actionLine(alertContextId));
 		return message.append(Component.literal("\n" + WARNING_BORDER).withStyle(ChatFormatting.DARK_RED));
 	}
 
@@ -754,7 +901,7 @@ public final class Messages extends MessageBuilder {
 
 		MutableComponent message = Component.empty()
 			.append(Component.literal(WARNING_BORDER).withStyle(ChatFormatting.DARK_RED))
-			.append(Component.literal("\n" + centered("BLACKLIST WARNING")).withStyle(style -> style.withColor(ChatFormatting.DARK_RED).withBold(true)))
+			.append(Component.literal("\n" + centeredBold("BLACKLIST WARNING")).withStyle(style -> style.withColor(ChatFormatting.DARK_RED).withBold(true)))
 			.append(Component.literal("\n" + leftCenterPadding(playerScoreLine)))
 			.append(Component.literal(safePlayer).withStyle(ChatFormatting.AQUA))
 			.append(Component.literal(" | ").withStyle(ChatFormatting.DARK_GRAY))

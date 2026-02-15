@@ -9,7 +9,7 @@ import net.minecraft.network.chat.Component;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
-final class AiUpdateSettingsScreen extends GUI {
+final class AiUpdateSettingsScreen extends ScamScreenerGUI {
 	private final Runnable triggerAiUpdateHandler;
 	private final Runnable triggerForceAiUpdateHandler;
 	private final Supplier<ModelUpdateService.PendingUpdateSnapshot> aiUpdateSnapshotSupplier;

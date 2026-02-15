@@ -11,6 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedHashSet;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Set;
 
 public final class ScamRulesConfig {
@@ -33,8 +34,9 @@ public final class ScamRulesConfig {
 	public static final double DEFAULT_LOCAL_AI_TRIGGER_PROBABILITY = 0.620;
 	public static final int DEFAULT_LOCAL_AI_FUNNEL_MAX_SCORE = 30;
 	public static final double DEFAULT_LOCAL_AI_FUNNEL_THRESHOLD_BONUS = 0.05;
-	public static final String DEFAULT_MIN_ALERT_RISK_LEVEL = "HIGH";
+	public static final String DEFAULT_MIN_ALERT_RISK_LEVEL = "MEDIUM";
 	public static final String DEFAULT_AUTO_CAPTURE_ALERT_LEVEL = "HIGH";
+	public static final boolean DEFAULT_ALERT_THRESHOLD_MEDIUM_MIGRATION_DONE = false;
 	public static final boolean DEFAULT_AUTO_LEAVE_ON_BLACKLIST = false;
 	public static final boolean DEFAULT_SHOW_SCAM_WARNING_MESSAGE = true;
 	public static final boolean DEFAULT_PING_ON_SCAM_WARNING = true;
@@ -70,8 +72,6 @@ public final class ScamRulesConfig {
 	public static final int DEFAULT_FUNNEL_PARTIAL_SEQUENCE_WEIGHT = 14;
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-	private static final Path FILE_PATH = ScamScreenerPaths.inModConfigDir("scam-screener-rules.json");
-	private static final Path LEGACY_FILE_PATH = ScamScreenerPaths.inRootConfigDir("scam-screener-rules.json");
 
 	public String linkPattern = DEFAULT_LINK_PATTERN;
 	public String urgencyPattern = DEFAULT_URGENCY_PATTERN;
@@ -90,6 +90,7 @@ public final class ScamRulesConfig {
 	public Integer localAiFunnelMaxScore = DEFAULT_LOCAL_AI_FUNNEL_MAX_SCORE;
 	public Double localAiFunnelThresholdBonus = DEFAULT_LOCAL_AI_FUNNEL_THRESHOLD_BONUS;
 	public String minAlertRiskLevel = DEFAULT_MIN_ALERT_RISK_LEVEL;
+	public Boolean alertThresholdMediumMigrationDone = DEFAULT_ALERT_THRESHOLD_MEDIUM_MIGRATION_DONE;
 	public String autoCaptureAlertLevel = DEFAULT_AUTO_CAPTURE_ALERT_LEVEL;
 	public boolean autoLeaveOnBlacklist = DEFAULT_AUTO_LEAVE_ON_BLACKLIST;
 	public boolean showScamWarningMessage = DEFAULT_SHOW_SCAM_WARNING_MESSAGE;
@@ -125,8 +126,9 @@ public final class ScamRulesConfig {
 	public Set<String> disabledRules = new LinkedHashSet<>();
 
 	public static ScamRulesConfig loadOrCreate() {
-		if (!Files.exists(FILE_PATH)) {
-			ScamRulesConfig migrated = loadFromPath(LEGACY_FILE_PATH);
+		Path rulesPath = filePath();
+		if (!Files.exists(rulesPath)) {
+			ScamRulesConfig migrated = loadFromPath(legacyFilePath());
 			if (migrated != null) {
 				ScamRulesConfig normalized = migrated.withDefaults();
 				save(normalized);
@@ -134,15 +136,25 @@ public final class ScamRulesConfig {
 			}
 
 			ScamRulesConfig defaults = new ScamRulesConfig();
+			defaults.alertThresholdMediumMigrationDone = true;
 			save(defaults);
 			return defaults;
 		}
 
-		ScamRulesConfig loaded = loadFromPath(FILE_PATH);
+		ScamRulesConfig loaded = loadFromPath(rulesPath);
 		if (loaded == null) {
-			return new ScamRulesConfig();
+			ScamRulesConfig fallback = new ScamRulesConfig();
+			fallback.alertThresholdMediumMigrationDone = true;
+			return fallback;
 		}
-		return loaded.withDefaults();
+		String previousMinAlertRiskLevel = loaded.minAlertRiskLevel;
+		Boolean previousAlertThresholdMigrationState = loaded.alertThresholdMediumMigrationDone;
+		ScamRulesConfig normalized = loaded.withDefaults();
+		if (!Objects.equals(previousMinAlertRiskLevel, normalized.minAlertRiskLevel)
+			|| !Objects.equals(previousAlertThresholdMigrationState, normalized.alertThresholdMediumMigrationDone)) {
+			save(normalized);
+		}
+		return normalized;
 	}
 
 	private static ScamRulesConfig loadFromPath(Path path) {
@@ -154,13 +166,22 @@ public final class ScamRulesConfig {
 	}
 
 	public static void save(ScamRulesConfig config) {
+		Path rulesPath = filePath();
 		try {
-			Files.createDirectories(FILE_PATH.getParent());
-			try (Writer writer = Files.newBufferedWriter(FILE_PATH, StandardCharsets.UTF_8)) {
+			Files.createDirectories(rulesPath.getParent());
+			try (Writer writer = Files.newBufferedWriter(rulesPath, StandardCharsets.UTF_8)) {
 				GSON.toJson(config, writer);
 			}
 		} catch (IOException ignored) {
 		}
+	}
+
+	private static Path filePath() {
+		return ScamScreenerPaths.inModConfigDir("scam-screener-rules.json");
+	}
+
+	private static Path legacyFilePath() {
+		return ScamScreenerPaths.inRootConfigDir("scam-screener-rules.json");
 	}
 
 	private ScamRulesConfig withDefaults() {
@@ -250,6 +271,10 @@ public final class ScamRulesConfig {
 		funnelContextTtlMillis = clampLong(funnelContextTtlMillis, 60_000L, 7_200_000L, DEFAULT_FUNNEL_CONTEXT_TTL_MILLIS);
 		funnelFullSequenceWeight = clampInt(funnelFullSequenceWeight, 1, 100, DEFAULT_FUNNEL_FULL_SEQUENCE_WEIGHT);
 		funnelPartialSequenceWeight = clampInt(funnelPartialSequenceWeight, 1, 100, DEFAULT_FUNNEL_PARTIAL_SEQUENCE_WEIGHT);
+		if (!Boolean.TRUE.equals(alertThresholdMediumMigrationDone)) {
+			minAlertRiskLevel = DEFAULT_MIN_ALERT_RISK_LEVEL;
+			alertThresholdMediumMigrationDone = true;
+		}
 		if (isBlank(minAlertRiskLevel)) {
 			minAlertRiskLevel = DEFAULT_MIN_ALERT_RISK_LEVEL;
 		}

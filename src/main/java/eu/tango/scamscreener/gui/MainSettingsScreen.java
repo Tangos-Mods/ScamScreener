@@ -17,7 +17,7 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public final class MainSettingsScreen extends GUI {
+public final class MainSettingsScreen extends ScamScreenerGUI {
 	private static final ScamRules.ScamRiskLevel[] ALERT_LEVELS = ScamRules.ScamRiskLevel.values();
 	private static final String[] AUTO_CAPTURE_LEVELS = {"OFF", "LOW", "MEDIUM", "HIGH", "CRITICAL"};
 

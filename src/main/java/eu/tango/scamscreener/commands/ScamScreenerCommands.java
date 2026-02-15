@@ -21,9 +21,7 @@ public final class ScamScreenerCommands {
 	private final BlacklistManager blacklist;
 	private final Function<String, ResolvedTarget> targetResolver;
 	private final MutePatternManager mutePatternManager;
-	private final CaptureByPlayerHandler captureByPlayerHandler;
 	private final CaptureByMessageHandler captureByMessageHandler;
-	private final CaptureBulkHandler captureBulkHandler;
 	private final MigrateTrainingHandler migrateTrainingHandler;
 	private final ModelUpdateHandler modelUpdateHandler;
 	private final UpdateCheckHandler updateCheckHandler;
@@ -38,6 +36,10 @@ public final class ScamScreenerCommands {
 	private final IntSupplier funnelMetricsStatusHandler;
 	private final IntSupplier funnelMetricsResetHandler;
 	private final Supplier<String> lastCapturedChatSupplier;
+	private final AlertReviewManageHandler alertReviewManageHandler;
+	private final AlertReviewInfoHandler alertReviewInfoHandler;
+	private final AlertReviewPlayerHandler alertReviewPlayerHandler;
+	private final EducationDisableHandler educationDisableHandler;
 	private final Consumer<UUID> onBlacklistRemoved;
 	private final Runnable openSettingsHandler;
 	private final Consumer<Component> reply;
@@ -46,9 +48,7 @@ public final class ScamScreenerCommands {
 		BlacklistManager blacklist,
 		Function<String, ResolvedTarget> targetResolver,
 		MutePatternManager mutePatternManager,
-		CaptureByPlayerHandler captureByPlayerHandler,
 		CaptureByMessageHandler captureByMessageHandler,
-		CaptureBulkHandler captureBulkHandler,
 		MigrateTrainingHandler migrateTrainingHandler,
 		ModelUpdateHandler modelUpdateHandler,
 		UpdateCheckHandler updateCheckHandler,
@@ -63,6 +63,10 @@ public final class ScamScreenerCommands {
 		IntSupplier funnelMetricsStatusHandler,
 		IntSupplier funnelMetricsResetHandler,
 		Supplier<String> lastCapturedChatSupplier,
+		AlertReviewManageHandler alertReviewManageHandler,
+		AlertReviewInfoHandler alertReviewInfoHandler,
+		AlertReviewPlayerHandler alertReviewPlayerHandler,
+		EducationDisableHandler educationDisableHandler,
 		Consumer<UUID> onBlacklistRemoved,
 		Runnable openSettingsHandler,
 		Consumer<Component> reply
@@ -70,9 +74,7 @@ public final class ScamScreenerCommands {
 		this.blacklist = blacklist;
 		this.targetResolver = targetResolver;
 		this.mutePatternManager = mutePatternManager;
-		this.captureByPlayerHandler = captureByPlayerHandler;
 		this.captureByMessageHandler = captureByMessageHandler;
-		this.captureBulkHandler = captureBulkHandler;
 		this.migrateTrainingHandler = migrateTrainingHandler;
 		this.modelUpdateHandler = modelUpdateHandler;
 		this.updateCheckHandler = updateCheckHandler;
@@ -87,6 +89,10 @@ public final class ScamScreenerCommands {
 		this.funnelMetricsStatusHandler = funnelMetricsStatusHandler;
 		this.funnelMetricsResetHandler = funnelMetricsResetHandler;
 		this.lastCapturedChatSupplier = lastCapturedChatSupplier;
+		this.alertReviewManageHandler = alertReviewManageHandler;
+		this.alertReviewInfoHandler = alertReviewInfoHandler;
+		this.alertReviewPlayerHandler = alertReviewPlayerHandler;
+		this.educationDisableHandler = educationDisableHandler;
 		this.onBlacklistRemoved = onBlacklistRemoved;
 		this.openSettingsHandler = openSettingsHandler;
 		this.reply = reply;
@@ -95,8 +101,6 @@ public final class ScamScreenerCommands {
 	public void register() {
 		ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
 			dispatcher.register(buildRoot("scamscreener"));
-			dispatcher.register(AiCommand.buildCaptureAlias("1", 1, captureByPlayerHandler));
-			dispatcher.register(AiCommand.buildCaptureAlias("0", 0, captureByPlayerHandler));
 		});
 	}
 
@@ -113,9 +117,7 @@ public final class ScamScreenerCommands {
 			.then(UnmuteCommand.build(mutePatternManager, reply))
 			.then(EmailBypassCommand.build(emailBypassHandler, reply))
 			.then(AiCommand.build(
-				captureByPlayerHandler,
 				captureByMessageHandler,
-				captureBulkHandler,
 				migrateTrainingHandler,
 				modelUpdateHandler,
 				updateCheckHandler,
@@ -125,6 +127,8 @@ public final class ScamScreenerCommands {
 				reply
 			))
 			.then(ClientCommandManager.literal("upload").executes(context -> trainHandler.getAsInt()))
+			.then(ReviewCommand.build(alertReviewManageHandler, alertReviewInfoHandler, alertReviewPlayerHandler, reply))
+			.then(EduCommand.build(educationDisableHandler, reply))
 			.then(RuleCommand.build(reply))
 			.then(AlertLevelCommand.build(reply))
 			.then(AutoLeaveCommand.build(autoLeaveEnabledSupplier, setAutoLeaveEnabledHandler, reply))
@@ -135,18 +139,8 @@ public final class ScamScreenerCommands {
 	}
 
 	@FunctionalInterface
-	public interface CaptureByPlayerHandler {
-		int capture(String playerName, int label, int count);
-	}
-
-	@FunctionalInterface
 	public interface CaptureByMessageHandler {
 		int capture(String messageId, int label);
-	}
-
-	@FunctionalInterface
-	public interface CaptureBulkHandler {
-		int capture(int count);
 	}
 
 	@FunctionalInterface
@@ -167,5 +161,25 @@ public final class ScamScreenerCommands {
 	@FunctionalInterface
 	public interface EmailBypassHandler {
 		int bypass(String id);
+	}
+
+	@FunctionalInterface
+	public interface AlertReviewManageHandler {
+		int open(String alertId);
+	}
+
+	@FunctionalInterface
+	public interface AlertReviewInfoHandler {
+		int open(String alertId);
+	}
+
+	@FunctionalInterface
+	public interface AlertReviewPlayerHandler {
+		int open(String playerName);
+	}
+
+	@FunctionalInterface
+	public interface EducationDisableHandler {
+		int disable(String messageId);
 	}
 }

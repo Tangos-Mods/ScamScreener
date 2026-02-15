@@ -5,7 +5,7 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
-public abstract class GUI extends Screen {
+public abstract class ScamScreenerGUI extends Screen {
 	protected static final int ROW_HEIGHT = 24;
 	protected static final int TITLE_Y = 14;
 	protected static final int CONTENT_START_Y = 36;
@@ -17,7 +17,7 @@ public abstract class GUI extends Screen {
 	protected final Screen parent;
 	private int uiTickCounter;
 
-	protected GUI(Component title, Screen parent) {
+	protected ScamScreenerGUI(Component title, Screen parent) {
 		super(title);
 		this.parent = parent;
 	}
@@ -34,7 +34,7 @@ public abstract class GUI extends Screen {
 		// Avoid vanilla blur background here because some client stacks already apply blur once per frame.
 		// Calling renderBackground again can crash with "Can only blur once per frame".
 		guiGraphics.fill(0, 0, this.width, this.height, 0x90000000);
-		guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, TITLE_Y, 0xFFFFFF);
+		guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, TITLE_Y, opaqueColor(0xFFFFFF));
 		super.render(guiGraphics, mouseX, mouseY, partialTick);
 	}
 
@@ -139,6 +139,10 @@ public abstract class GUI extends Screen {
 
 	protected static Component onOffLine(String label, boolean enabled) {
 		return Component.literal(label).append(onOffComponent(enabled));
+	}
+
+	protected static int opaqueColor(int color) {
+		return (color & 0xFF000000) == 0 ? (color | 0xFF000000) : color;
 	}
 
 	protected record ColumnLayout(int width, int x, int startY) {

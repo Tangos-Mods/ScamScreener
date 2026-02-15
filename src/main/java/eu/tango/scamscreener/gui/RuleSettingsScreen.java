@@ -8,7 +8,7 @@ import net.minecraft.network.chat.Component;
 import java.util.EnumMap;
 import java.util.Map;
 
-final class RuleSettingsScreen extends GUI {
+final class RuleSettingsScreen extends ScamScreenerGUI {
 	private final Map<ScamRules.ScamRule, Button> ruleButtons = new EnumMap<>(ScamRules.ScamRule.class);
 
 	RuleSettingsScreen(Screen parent) {

@@ -13,7 +13,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 import java.util.function.Supplier;
 
-final class MetricsSettingsScreen extends GUI {
+final class MetricsSettingsScreen extends ScamScreenerGUI {
 	private static final FunnelMetricsService.Snapshot EMPTY_SNAPSHOT =
 		new FunnelMetricsService.Snapshot(0, 0, 0, 0, 0, 0, 0.0, 0.0, 0.0, 5.0);
 

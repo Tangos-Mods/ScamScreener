@@ -146,11 +146,26 @@ public abstract class MessageBuilder {
 		return padding + text;
 	}
 
+	protected static String centeredBold(String text) {
+		if (text == null) {
+			return "";
+		}
+		String padding = leadingPadding(text, true);
+		if (padding.isEmpty()) {
+			return text;
+		}
+		return padding + text;
+	}
+
 	protected static String leftCenterPadding(String text) {
 		return leadingPadding(text);
 	}
 
 	protected static String leadingPadding(String text) {
+		return leadingPadding(text, false);
+	}
+
+	protected static String leadingPadding(String text, boolean bold) {
 		if (text == null || text.isEmpty()) {
 			return "";
 		}
@@ -159,12 +174,16 @@ public abstract class MessageBuilder {
 		if (client != null && client.font != null) {
 			int targetWidth = client.font.width(WARNING_BORDER);
 			int textWidth = client.font.width(text);
+			if (bold) {
+				textWidth += estimateBoldExtraPixels(text);
+			}
 			if (textWidth >= targetWidth) {
 				return "";
 			}
 			int spaceWidth = Math.max(1, client.font.width(" "));
 			int leftPixels = (targetWidth - textWidth) / 2;
-			return " ".repeat(Math.max(0, leftPixels / spaceWidth));
+			int spaceCount = Math.max(0, (leftPixels + (spaceWidth / 2)) / spaceWidth);
+			return " ".repeat(spaceCount);
 		}
 
 		if (text.length() >= WARNING_WIDTH) {
@@ -172,6 +191,16 @@ public abstract class MessageBuilder {
 		}
 		int leftPadding = (WARNING_WIDTH - text.length()) / 2;
 		return " ".repeat(Math.max(0, leftPadding));
+	}
+
+	private static int estimateBoldExtraPixels(String text) {
+		int extra = 0;
+		for (int i = 0; i < text.length(); i++) {
+			if (!Character.isWhitespace(text.charAt(i))) {
+				extra++;
+			}
+		}
+		return extra;
 	}
 
 	protected static int scoreGradientColor(int score) {
@@ -189,8 +218,11 @@ public abstract class MessageBuilder {
 		};
 	}
 
-	protected static MutableComponent readableRule(ScamRules.ScamRule rule, String exactDetail, List<String> evaluatedMessages) {
-		String name = switch (rule) {
+	public static String readableRuleName(ScamRules.ScamRule rule) {
+		if (rule == null) {
+			return "Unknown Rule";
+		}
+		return switch (rule) {
 			case SUSPICIOUS_LINK -> "Suspicious Link";
 			case PRESSURE_AND_URGENCY -> "Pressure/Urgency";
 			case UPFRONT_PAYMENT -> "Upfront Payment";
@@ -207,6 +239,10 @@ public abstract class MessageBuilder {
 			case LOCAL_AI_RISK_SIGNAL -> "Local AI Risk Signal";
 			case LOCAL_AI_FUNNEL_SIGNAL -> "Local AI Funnel Signal";
 		};
+	}
+
+	protected static MutableComponent readableRule(ScamRules.ScamRule rule, String exactDetail, List<String> evaluatedMessages) {
+		String name = readableRuleName(rule);
 
 		String detail = exactDetail == null || exactDetail.isBlank()
 			? "No detailed trigger context available."
@@ -369,126 +405,25 @@ public abstract class MessageBuilder {
 	private record Match(int start, int end) {
 	}
 
-	protected static MutableComponent actionLine(String playerName, String messageId, ScamRules.ScamAssessment assessment, Map<ScamRules.ScamRule, Double> ruleWeights) {
-		MutableComponent line = Component.literal("Actions: ").withStyle(ChatFormatting.GRAY);
-		String target = playerName == null ? "" : playerName.trim();
-		boolean canAct = !target.isBlank() && !"unknown".equalsIgnoreCase(target);
-		boolean canFlagMessage = messageId != null && !messageId.isBlank();
+	protected static MutableComponent actionLine(String alertContextId) {
+		boolean hasContext = alertContextId != null && !alertContextId.isBlank();
+		MutableComponent line = Component.literal(leadingPadding("[manage] [info]"));
 
 		line.append(actionTag(
-			"legit",
-			ChatFormatting.GREEN,
-			"mark as legit message",
-			canFlagMessage ? "/scamscreener ai flag " + messageId + " legit" : null
+			"manage",
+			ChatFormatting.GOLD,
+			"Open review window for training-label selection and upload options.",
+			hasContext ? "/scamscreener review manage " + alertContextId : null
 		));
 		line.append(Component.literal(" "));
 		line.append(actionTag(
-			"scam",
-			ChatFormatting.RED,
-			"mark as scam message",
-			canFlagMessage ? "/scamscreener ai flag " + messageId + " scam" : null
-		));
-		line.append(Component.literal(" "));
-		line.append(actionTag(
-			"blacklist",
-			ChatFormatting.DARK_RED,
-			blacklistHoverText(assessment, ruleWeights),
-			canAct ? buildBlacklistCommand(target, assessment, ruleWeights) : null
-		));
-		line.append(Component.literal(" "));
-		line.append(actionTag(
-			"block",
-			ChatFormatting.DARK_RED,
-			"Add Player to Hypixel blocklist\n/block <player>",
-			canAct ? "/block " + target : null
+			"info",
+			ChatFormatting.YELLOW,
+			"Open rule detail window for this alert.",
+			hasContext ? "/scamscreener review info " + alertContextId : null
 		));
 
 		return line;
-	}
-
-	protected static String buildBlacklistCommand(String target, ScamRules.ScamAssessment assessment, Map<ScamRules.ScamRule, Double> ruleWeights) {
-		if (target == null || target.isBlank()) {
-			return null;
-		}
-		String reason = bestRuleCode(assessment, ruleWeights);
-		int score = assessment == null ? 50 : assessment.riskScore();
-		int clampedScore = Math.max(0, Math.min(100, score));
-		if (reason == null || reason.isBlank()) {
-			return "/scamscreener add " + target + " " + clampedScore;
-		}
-		return "/scamscreener add " + target + " " + clampedScore + " \"" + escapeCommandReason(reason) + "\"";
-	}
-
-	protected static String escapeCommandReason(String reason) {
-		if (reason == null) {
-			return "";
-		}
-		return reason.replace("\"", "\\\"");
-	}
-
-	protected static String bestRuleCode(ScamRules.ScamAssessment assessment, Map<ScamRules.ScamRule, Double> ruleWeights) {
-		ScamRules.ScamRule best = null;
-		double bestScore = Double.NEGATIVE_INFINITY;
-		if (ruleWeights != null && !ruleWeights.isEmpty()) {
-			for (Map.Entry<ScamRules.ScamRule, Double> entry : ruleWeights.entrySet()) {
-				if (entry.getKey() == null || entry.getValue() == null) {
-					continue;
-				}
-				double score = entry.getValue();
-				if (best == null || score > bestScore) {
-					best = entry.getKey();
-					bestScore = score;
-				}
-			}
-		}
-		if (best == null && assessment != null && assessment.triggeredRules() != null && !assessment.triggeredRules().isEmpty()) {
-			best = assessment.triggeredRules().stream().sorted(Comparator.naturalOrder()).findFirst().orElse(null);
-		}
-		return best == null ? null : best.name();
-	}
-
-	protected static String blacklistHoverText(ScamRules.ScamAssessment assessment, Map<ScamRules.ScamRule, Double> ruleWeights) {
-		if (assessment == null || assessment.triggeredRules() == null || assessment.triggeredRules().isEmpty()) {
-			return "add player to blacklist";
-		}
-		StringBuilder out = new StringBuilder();
-		String best = bestRuleCode(assessment, ruleWeights);
-		if (best != null) {
-			out.append("Reason: ").append(best);
-		}
-		int count = 0;
-		for (ScamRules.ScamRule rule : assessment.triggeredRules().stream().sorted(Comparator.naturalOrder()).collect(Collectors.toList())) {
-			if (rule == null) {
-				continue;
-			}
-			String detail = assessment.detailFor(rule);
-			if (detail == null || detail.isBlank()) {
-				detail = "n/a";
-			}
-			if (count == 0 && out.length() > 0) {
-				out.append("\n");
-			}
-			out.append(rule.name()).append(": ").append(detail);
-			count++;
-		}
-		return out.length() == 0 ? "add player to blacklist" : out.toString();
-	}
-
-	protected static String registerActionMessageId(List<String> evaluatedMessages) {
-		if (evaluatedMessages == null || evaluatedMessages.isEmpty()) {
-			return null;
-		}
-		for (String raw : evaluatedMessages) {
-			if (raw == null || raw.isBlank()) {
-				continue;
-			}
-			String normalized = raw.replace('\n', ' ').replace('\r', ' ').trim();
-			if (normalized.isBlank()) {
-				continue;
-			}
-			return MessageFlagging.registerMessage(normalized);
-		}
-		return null;
 	}
 
 	private static String safePrefix(String prefix) {

@@ -1,6 +1,7 @@
 package eu.tango.scamscreener.ui;
 
 import eu.tango.scamscreener.blacklist.BlacklistManager;
+import eu.tango.scamscreener.ai.FunnelMetricsService;
 import eu.tango.scamscreener.pipeline.model.DetectionLevel;
 import eu.tango.scamscreener.pipeline.model.DetectionResult;
 import eu.tango.scamscreener.pipeline.model.Signal;
@@ -17,6 +18,7 @@ import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Supplier;
 
@@ -24,6 +26,29 @@ public final class UiPreview {
 	private static final List<Class<?>> PREVIEW_CLASSES = List.of(
 		Messages.class,
 		DebugMessages.class
+	);
+	private static final Set<String> EXCLUDED_MESSAGE_METHODS = Set.of(
+		"aiCaptureCommandHelp",
+		"trainingSampleSaved",
+		"trainingSamplesSaved"
+	);
+	private static final List<String> PRIORITY_METHOD_ORDER = List.of(
+		"commandHelp",
+		"reviewCommandHelp",
+		"educationCommandHelp",
+		"aiCommandHelp",
+		"behaviorRiskWarning",
+		"blacklistWarning",
+		"educationExternalPlatformWarning",
+		"educationSuspiciousLinkWarning",
+		"educationUpfrontPaymentWarning",
+		"educationAccountDataWarning",
+		"educationFakeMiddlemanWarning",
+		"educationUrgencyWarning",
+		"educationTrustManipulationWarning",
+		"educationTooGoodToBeTrueWarning",
+		"educationDiscordHandleWarning",
+		"educationFunnelSequenceWarning"
 	);
 
 	private UiPreview() {
@@ -45,12 +70,16 @@ public final class UiPreview {
 				if (!Component.class.isAssignableFrom(method.getReturnType())) {
 					continue;
 				}
+				if (method.getDeclaringClass() == Messages.class && EXCLUDED_MESSAGE_METHODS.contains(method.getName())) {
+					continue;
+				}
 				methods.add(method);
 			}
 		}
 
 		methods.sort(Comparator
 			.comparingInt((Method method) -> classOrder(method.getDeclaringClass()))
+			.thenComparingInt(method -> methodPriority(method.getName()))
 			.thenComparing(Method::getName)
 			.thenComparingInt(Method::getParameterCount));
 
@@ -78,6 +107,14 @@ public final class UiPreview {
 			}
 		}
 		return PREVIEW_CLASSES.size();
+	}
+
+	private static int methodPriority(String methodName) {
+		if (methodName == null || methodName.isBlank()) {
+			return PRIORITY_METHOD_ORDER.size();
+		}
+		int idx = PRIORITY_METHOD_ORDER.indexOf(methodName);
+		return idx < 0 ? PRIORITY_METHOD_ORDER.size() : idx;
 	}
 
 	private static Object[] buildArgs(Class<?>[] paramTypes, PreviewContext ctx) {
@@ -137,6 +174,9 @@ public final class UiPreview {
 		}
 		if (type == DetectionResult.class) {
 			return ctx.demoResult;
+		}
+		if (type == FunnelMetricsService.Snapshot.class) {
+			return new FunnelMetricsService.Snapshot(120, 18, 4, 9, 2, 7, 0.15, 0.22, 40.0, 5.0);
 		}
 		if (type == ScamRules.ScamAssessment.class) {
 			return ctx.demoAssessment;

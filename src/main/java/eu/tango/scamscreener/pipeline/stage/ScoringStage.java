@@ -56,6 +56,7 @@ public final class ScoringStage {
 		Map<ScamRules.ScamRule, String> ruleDetails = new LinkedHashMap<>();
 		Set<ScamRules.ScamRule> triggeredRules = new LinkedHashSet<>();
 		List<String> evaluatedMessages = new ArrayList<>();
+		Set<String> seenMessages = new LinkedHashSet<>();
 
 		for (Signal signal : safeSignals) {
 			if (signal.ruleId() != null) {
@@ -65,16 +66,32 @@ public final class ScoringStage {
 				}
 			}
 			if (!signal.relatedMessages().isEmpty()) {
-				evaluatedMessages.addAll(signal.relatedMessages());
+				for (String related : signal.relatedMessages()) {
+					addNormalizedUnique(evaluatedMessages, seenMessages, related);
+				}
 			}
 		}
 
-		if (evaluatedMessages.isEmpty() && event != null && event.rawMessage() != null && !event.rawMessage().isBlank()) {
-			evaluatedMessages.add(event.rawMessage());
+		if (event != null) {
+			addNormalizedUnique(evaluatedMessages, seenMessages, event.rawMessage());
+			if (evaluatedMessages.isEmpty()) {
+				addNormalizedUnique(evaluatedMessages, seenMessages, event.normalizedMessage());
+			}
 		}
 
 		boolean shouldCapture = shouldAutoCapture(level, total, triggeredRules);
 		return new DetectionResult(total, level, safeSignals, ruleDetails, shouldCapture, evaluatedMessages);
+	}
+
+	private static void addNormalizedUnique(List<String> out, Set<String> seen, String raw) {
+		if (out == null || seen == null || raw == null) {
+			return;
+		}
+		String normalized = raw.replace('\n', ' ').replace('\r', ' ').trim();
+		if (normalized.isBlank() || !seen.add(normalized)) {
+			return;
+		}
+		out.add(normalized);
 	}
 
 	/**
