@@ -21,7 +21,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public final class TrainingCommandHandler {
 	private static final Logger LOGGER = LoggerFactory.getLogger(TrainingCommandHandler.class);
@@ -208,6 +211,62 @@ public final class TrainingCommandHandler {
 		return 1;
 	}
 
+	public List<TrainingCsvReviewRow> loadTrainingCsvForReview() throws IOException {
+		Path trainingPath = trainingDataService.trainingDataPath();
+		if (!Files.isRegularFile(trainingPath)) {
+			return List.of();
+		}
+
+		trainingDataService.migrateTrainingData();
+		List<String> lines = Files.readAllLines(trainingPath, StandardCharsets.UTF_8);
+		return parseTrainingCsvRows(lines);
+	}
+
+	public int saveTrainingCsvReview(List<CsvLabelUpdate> updates, boolean uploadAfterSave) {
+		if (updates == null) {
+			return 0;
+		}
+
+		Path trainingPath = trainingDataService.trainingDataPath();
+		if (!Files.isRegularFile(trainingPath)) {
+			MessageDispatcher.reply(Messages.trainingCsvReviewNoData(trainingPath.toString()));
+			return 0;
+		}
+
+		Map<Integer, Integer> requestedStates = requestedStatesByLine(updates);
+		if (requestedStates.isEmpty()) {
+			MessageDispatcher.reply(Messages.trainingCsvReviewUpdated(0));
+			if (uploadAfterSave) {
+				trainLocalAiModel();
+			}
+			return 1;
+		}
+
+		try {
+			trainingDataService.migrateTrainingData();
+			List<String> lines = Files.readAllLines(trainingPath, StandardCharsets.UTF_8);
+			if (lines.size() <= 1) {
+				MessageDispatcher.reply(Messages.trainingCsvReviewNoData(trainingPath.toString()));
+				return 0;
+			}
+
+			CsvUpdateResult updateResult = applyCsvReviewUpdates(lines, requestedStates);
+			if (updateResult.changedRows() > 0) {
+				Files.write(trainingPath, updateResult.lines(), StandardCharsets.UTF_8);
+			}
+			MessageDispatcher.reply(Messages.trainingCsvReviewUpdated(updateResult.changedRows()));
+		} catch (IOException e) {
+			LOGGER.warn("Failed to update training csv review labels", e);
+			MessageDispatcher.reply(Messages.trainingCsvReviewFailed(trainingErrorDetail(e, trainingPath)));
+			return 0;
+		}
+
+		if (uploadAfterSave) {
+			trainLocalAiModel();
+		}
+		return 1;
+	}
+
 	public int resetLocalAiModel() {
 		LocalAiModelConfig.save(new LocalAiModelConfig());
 		ScamRules.reloadConfig();
@@ -228,6 +287,245 @@ public final class TrainingCommandHandler {
 
 	private static String trainingErrorDetail(IOException error, Path trainingPath) {
 		return IoErrorMapper.trainingErrorDetail(error, trainingPath);
+	}
+
+	static List<TrainingCsvReviewRow> parseTrainingCsvRows(List<String> lines) throws IOException {
+		if (lines == null || lines.size() <= 1) {
+			return List.of();
+		}
+
+		List<String> header = parseCsvLine(lines.get(0));
+		int messageIndex = columnIndex(header, "message");
+		int labelIndex = columnIndex(header, "label");
+		if (messageIndex < 0 || labelIndex < 0) {
+			throw new IOException("Training data header must contain message,label");
+		}
+
+		List<TrainingCsvReviewRow> rows = new ArrayList<>();
+		for (int i = 1; i < lines.size(); i++) {
+			String line = lines.get(i);
+			if (line == null || line.isBlank()) {
+				continue;
+			}
+			List<String> columns = parseCsvLine(line);
+			String message = valueAt(columns, messageIndex);
+			if (message == null || message.isBlank()) {
+				continue;
+			}
+			int currentLabel = normalizeReviewLabel(parseInt(valueAt(columns, labelIndex), LEGIT_LABEL));
+			rows.add(new TrainingCsvReviewRow(String.valueOf(i + 1), message, currentLabel));
+		}
+		return rows;
+	}
+
+	static CsvUpdateResult applyCsvReviewUpdates(List<String> lines, Map<Integer, Integer> requestedStates) throws IOException {
+		if (lines == null || lines.isEmpty()) {
+			return new CsvUpdateResult(List.of(), 0);
+		}
+
+		List<String> header = parseCsvLine(lines.get(0));
+		int labelIndex = columnIndex(header, "label");
+		if (labelIndex < 0) {
+			throw new IOException("Training data header is missing label column");
+		}
+
+		List<String> updatedLines = new ArrayList<>(lines.size());
+		updatedLines.add(lines.get(0));
+		int changedRows = 0;
+		for (int index = 1; index < lines.size(); index++) {
+			String rawLine = lines.get(index);
+			Integer requestedState = requestedStates.get(index + 1);
+			if (requestedState == null) {
+				updatedLines.add(rawLine);
+				continue;
+			}
+			if (rawLine == null || rawLine.isBlank()) {
+				updatedLines.add(rawLine);
+				continue;
+			}
+			if (requestedState == -1) {
+				changedRows++;
+				continue;
+			}
+
+			List<String> columns = parseCsvLine(rawLine);
+			ensureColumnIndex(columns, labelIndex);
+			int currentLabel = normalizeReviewLabel(parseInt(columns.get(labelIndex), LEGIT_LABEL));
+			int requestedLabel = normalizeReviewLabel(requestedState);
+			if (requestedLabel < 0 || currentLabel == requestedLabel) {
+				updatedLines.add(rawLine);
+				continue;
+			}
+
+			String updatedLine = replaceCsvColumn(rawLine, labelIndex, String.valueOf(requestedLabel));
+			if (updatedLine == null) {
+				// Fallback for malformed rows: normalize the row structure and apply new label.
+				columns.set(labelIndex, String.valueOf(requestedLabel));
+				updatedLine = joinCsvLine(columns);
+			}
+			updatedLines.add(updatedLine);
+			changedRows++;
+		}
+		return new CsvUpdateResult(updatedLines, changedRows);
+	}
+
+	private static Map<Integer, Integer> requestedStatesByLine(List<CsvLabelUpdate> updates) {
+		Map<Integer, Integer> requested = new LinkedHashMap<>();
+		if (updates == null || updates.isEmpty()) {
+			return requested;
+		}
+		for (CsvLabelUpdate update : updates) {
+			if (update == null) {
+				continue;
+			}
+			int lineNumber = parseInt(update.rowId(), -1);
+			int state = update.label();
+			if (lineNumber <= 1 || (state != LEGIT_LABEL && state != SCAM_LABEL && state != -1)) {
+				continue;
+			}
+			requested.put(lineNumber, state);
+		}
+		return requested;
+	}
+
+	private static int columnIndex(List<String> header, String column) {
+		if (header == null || header.isEmpty() || column == null || column.isBlank()) {
+			return -1;
+		}
+		for (int i = 0; i < header.size(); i++) {
+			String value = header.get(i);
+			if (value == null) {
+				continue;
+			}
+			if (column.equalsIgnoreCase(value.trim())) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	private static String valueAt(List<String> columns, int index) {
+		if (columns == null || index < 0 || index >= columns.size()) {
+			return "";
+		}
+		String value = columns.get(index);
+		return value == null ? "" : value;
+	}
+
+	private static int parseInt(String value, int fallback) {
+		if (value == null) {
+			return fallback;
+		}
+		try {
+			return Integer.parseInt(value.trim());
+		} catch (Exception ignored) {
+			return fallback;
+		}
+	}
+
+	private static int normalizeReviewLabel(int label) {
+		return (label == LEGIT_LABEL || label == SCAM_LABEL) ? label : -1;
+	}
+
+	private static List<String> parseCsvLine(String line) {
+		List<String> values = new ArrayList<>();
+		StringBuilder current = new StringBuilder();
+		boolean inQuotes = false;
+		for (int i = 0; i < line.length(); i++) {
+			char c = line.charAt(i);
+			if (c == '"') {
+				if (inQuotes && i + 1 < line.length() && line.charAt(i + 1) == '"') {
+					current.append('"');
+					i++;
+				} else {
+					inQuotes = !inQuotes;
+				}
+				continue;
+			}
+			if (c == ',' && !inQuotes) {
+				values.add(current.toString());
+				current.setLength(0);
+				continue;
+			}
+			current.append(c);
+		}
+		values.add(current.toString());
+		return values;
+	}
+
+	private static void ensureColumnIndex(List<String> columns, int index) {
+		if (columns == null || index < 0) {
+			return;
+		}
+		while (columns.size() <= index) {
+			columns.add("0");
+		}
+	}
+
+	private static String joinCsvLine(List<String> columns) {
+		StringBuilder out = new StringBuilder();
+		for (int i = 0; i < columns.size(); i++) {
+			if (i > 0) {
+				out.append(',');
+			}
+			out.append(csvValue(columns.get(i)));
+		}
+		return out.toString();
+	}
+
+	private static String csvValue(String value) {
+		String safe = value == null ? "" : value;
+		boolean needsQuotes = safe.contains(",")
+			|| safe.contains("\"")
+			|| safe.contains("\n")
+			|| safe.contains("\r")
+			|| safe.startsWith(" ")
+			|| safe.endsWith(" ");
+		String normalized = safe.replace("\r", " ").replace("\n", " ");
+		if (!needsQuotes) {
+			return normalized;
+		}
+		return "\"" + normalized.replace("\"", "\"\"") + "\"";
+	}
+
+	private static String replaceCsvColumn(String line, int columnIndex, String replacement) {
+		CsvColumnRange range = findCsvColumnRange(line, columnIndex);
+		if (range == null) {
+			return null;
+		}
+		String safeReplacement = replacement == null ? "" : replacement;
+		return line.substring(0, range.start()) + safeReplacement + line.substring(range.end());
+	}
+
+	private static CsvColumnRange findCsvColumnRange(String line, int columnIndex) {
+		if (line == null || columnIndex < 0) {
+			return null;
+		}
+		int currentColumn = 0;
+		int start = 0;
+		boolean inQuotes = false;
+		for (int i = 0; i < line.length(); i++) {
+			char c = line.charAt(i);
+			if (c == '"') {
+				if (inQuotes && i + 1 < line.length() && line.charAt(i + 1) == '"') {
+					i++;
+					continue;
+				}
+				inQuotes = !inQuotes;
+				continue;
+			}
+			if (c == ',' && !inQuotes) {
+				if (currentColumn == columnIndex) {
+					return new CsvColumnRange(start, i);
+				}
+				currentColumn++;
+				start = i + 1;
+			}
+		}
+		if (currentColumn == columnIndex) {
+			return new CsvColumnRange(start, line.length());
+		}
+		return null;
 	}
 
 	private void openUploadTosPrompt() {
@@ -317,6 +615,27 @@ public final class TrainingCommandHandler {
 		public ReviewedMessage {
 			message = message == null ? "" : message.trim();
 		}
+	}
+
+	public record TrainingCsvReviewRow(String rowId, String message, int currentLabel) {
+		public TrainingCsvReviewRow {
+			rowId = rowId == null ? "" : rowId.trim();
+			message = message == null ? "" : message.trim();
+			currentLabel = normalizeReviewLabel(currentLabel);
+		}
+	}
+
+	public record CsvLabelUpdate(String rowId, int label) {
+		public CsvLabelUpdate {
+			rowId = rowId == null ? "" : rowId.trim();
+			label = normalizeReviewLabel(label);
+		}
+	}
+
+	record CsvUpdateResult(List<String> lines, int changedRows) {
+	}
+
+	private record CsvColumnRange(int start, int end) {
 	}
 
 }

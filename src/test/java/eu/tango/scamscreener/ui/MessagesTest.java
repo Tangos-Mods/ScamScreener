@@ -44,6 +44,7 @@ class MessagesTest {
 		assertTrue(Messages.trainingSaveFailed("boom").getString().contains("[TR-SAVE-001]"));
 		assertTrue(Messages.trainingUploadWebhookFailed("boom").getString().contains("[TR-UPLOAD-001]"));
 		assertTrue(Messages.trainingUploadUnavailable("boom").getString().contains("[TR-UPLOAD-002]"));
+		assertTrue(Messages.trainingCsvReviewFailed("boom").getString().contains("[TR-CSV-001]"));
 		assertTrue(Messages.mutePatternInvalid("(bad").getString().contains("[MUTE-REGEX-001]"));
 	}
 
@@ -67,6 +68,14 @@ class MessagesTest {
 
 		assertTrue(link.getString().contains("A new AI Model is available."));
 		assertTrue(hasRunCommand(link, "/scamscreener ai model download 123"));
+	}
+
+	@Test
+	void trainingDataLargeUploadReminderContainsUploadRunCommand() {
+		MutableComponent reminder = Messages.trainingDataLargeUploadReminder(500);
+
+		assertTrue(reminder.getString().contains("500"));
+		assertTrue(hasRunCommand(reminder, "/scamscreener upload"));
 	}
 
 	@Test

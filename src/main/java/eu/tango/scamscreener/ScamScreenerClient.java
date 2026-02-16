@@ -3,6 +3,7 @@ package eu.tango.scamscreener;
 import eu.tango.scamscreener.ai.LocalAiScorer;
 import eu.tango.scamscreener.ai.ModelUpdateService;
 import eu.tango.scamscreener.ai.TrainingDataService;
+import eu.tango.scamscreener.ai.TrainingUploadReminderService;
 import eu.tango.scamscreener.ai.LocalAiTrainer;
 import eu.tango.scamscreener.ai.ModelUpdateCommandHandler;
 import eu.tango.scamscreener.ai.TrainingCommandHandler;
@@ -48,10 +49,13 @@ import net.minecraft.network.chat.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.awt.Desktop;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -69,6 +73,7 @@ public class ScamScreenerClient implements ClientModInitializer {
 	private final PlayerLookup playerLookup = new PlayerLookup();
 	private final MojangProfileService mojangProfileService = new MojangProfileService();
 	private final TrainingDataService trainingDataService = new TrainingDataService();
+	private final TrainingUploadReminderService trainingUploadReminderService = new TrainingUploadReminderService(trainingDataService::trainingDataPath);
 	private final FunnelMetricsService funnelMetricsService = new FunnelMetricsService();
 	private final LocalAiTrainer localAiTrainer = new LocalAiTrainer();
 	private final DiscordWebhookUploader discordWebhookUploader = new DiscordWebhookUploader();
@@ -119,7 +124,8 @@ public class ScamScreenerClient implements ClientModInitializer {
 			mutePatternManager,
 			detectionPipeline,
 			openSettingsAction,
-			locationService
+			locationService,
+			trainingUploadReminderService
 		);
 		registerCommands();
 		registerHypixelMessageChecks();
@@ -152,6 +158,8 @@ public class ScamScreenerClient implements ClientModInitializer {
 			this::openAlertManageScreen,
 			this::openAlertInfoScreen,
 			this::openPlayerReviewScreen,
+			this::suggestReviewPlayerNames,
+			this::openRecentCapturedReviewScreen,
 			this::disableEducationMessage,
 			ignored -> {},
 			openSettingsHandler,
@@ -183,6 +191,7 @@ public class ScamScreenerClient implements ClientModInitializer {
 			modelUpdateCommandHandler::latestPendingSnapshot,
 			modelUpdateCommandHandler::handleModelUpdateCommand,
 			funnelMetricsService::snapshot,
+			this::openTrainingCsvReviewScreen,
 			() -> trainingCommandHandler.trainLocalAiModel()
 		);
 	}
@@ -401,6 +410,161 @@ public class ScamScreenerClient implements ClientModInitializer {
 			Map.of()
 		);
 		return openAlertManageScreen(contextId);
+	}
+
+	private List<String> suggestReviewPlayerNames() {
+		Set<String> seen = new LinkedHashSet<>();
+		List<String> suggestions = new ArrayList<>();
+		for (var onlinePlayer : playerLookup.onlinePlayers()) {
+			if (onlinePlayer == null || onlinePlayer.getProfile() == null) {
+				continue;
+			}
+			String name = onlinePlayer.getProfile().name();
+			if (name == null || name.isBlank()) {
+				continue;
+			}
+			String safeName = name.trim();
+			if (!trainingDataService.hasRecentCaptureForPlayer(safeName)) {
+				continue;
+			}
+			String dedupeKey = safeName.toLowerCase(Locale.ROOT);
+			if (seen.add(dedupeKey)) {
+				suggestions.add(safeName);
+			}
+		}
+		suggestions.sort(String.CASE_INSENSITIVE_ORDER);
+		return suggestions;
+	}
+
+	private int openRecentCapturedReviewScreen() {
+		List<TrainingDataService.CapturedChat> captures = trainingDataService.recentPendingCaptured(TrainingDataService.MAX_CAPTURED_CHAT_LINES);
+		if (captures.isEmpty()) {
+			MessageDispatcher.reply(Messages.noChatToCapture());
+			return 0;
+		}
+
+		Minecraft client = Minecraft.getInstance();
+		if (client == null) {
+			MessageDispatcher.reply(Messages.alertReviewOpenFailed());
+			return 0;
+		}
+
+		List<AlertManageScreen.ReviewRow> reviewRows = new ArrayList<>(captures.size());
+		for (int i = 0; i < captures.size(); i++) {
+			TrainingDataService.CapturedChat capture = captures.get(i);
+			if (capture == null || capture.rawMessage() == null || capture.rawMessage().isBlank()) {
+				continue;
+			}
+			reviewRows.add(new AlertManageScreen.ReviewRow("recent-" + i, capture.rawMessage(), -1));
+		}
+		if (reviewRows.isEmpty()) {
+			MessageDispatcher.reply(Messages.noChatToCapture());
+			return 0;
+		}
+
+		CompletableFuture.runAsync(() -> client.execute(() -> {
+			Screen parent = client.screen;
+			client.setScreen(new AlertManageScreen(
+				parent,
+				Component.literal("Review Logged Chat"),
+				reviewRows,
+				this::saveRecentCapturedReview
+			));
+		}));
+		return 1;
+	}
+
+	private void openTrainingCsvReviewScreen() {
+		List<TrainingCommandHandler.TrainingCsvReviewRow> rows;
+		try {
+			rows = trainingCommandHandler.loadTrainingCsvForReview();
+		} catch (IOException e) {
+			MessageDispatcher.reply(Messages.trainingCsvReviewFailed(e.getMessage()));
+			return;
+		}
+		if (rows.isEmpty()) {
+			MessageDispatcher.reply(Messages.trainingCsvReviewNoData(trainingDataService.trainingDataPath().toString()));
+			return;
+		}
+
+		Minecraft client = Minecraft.getInstance();
+		if (client == null) {
+			MessageDispatcher.reply(Messages.trainingCsvReviewFailed("Minecraft client screen context is unavailable."));
+			return;
+		}
+
+		List<AlertManageScreen.ReviewRow> reviewRows = new ArrayList<>(rows.size());
+		for (TrainingCommandHandler.TrainingCsvReviewRow row : rows) {
+			if (row == null) {
+				continue;
+			}
+			reviewRows.add(new AlertManageScreen.ReviewRow(row.rowId(), row.message(), row.currentLabel()));
+		}
+		if (reviewRows.isEmpty()) {
+			MessageDispatcher.reply(Messages.trainingCsvReviewNoData(trainingDataService.trainingDataPath().toString()));
+			return;
+		}
+
+		CompletableFuture.runAsync(() -> client.execute(() -> {
+			Screen parent = client.screen;
+			client.setScreen(new AlertManageScreen(
+				parent,
+				Component.literal("Review Training CSV"),
+				reviewRows,
+				this::saveTrainingCsvReview,
+				this::openTrainingCsvFile
+			));
+		}));
+	}
+
+	private void openTrainingCsvFile() {
+		var trainingPath = trainingDataService.trainingDataPath();
+		if (!Files.isRegularFile(trainingPath)) {
+			MessageDispatcher.reply(Messages.trainingCsvReviewNoData(trainingPath.toString()));
+			return;
+		}
+		if (!Desktop.isDesktopSupported()) {
+			MessageDispatcher.reply(Messages.trainingCsvReviewFailed("Open file is not supported on this system."));
+			return;
+		}
+		try {
+			Desktop desktop = Desktop.getDesktop();
+			if (!desktop.isSupported(Desktop.Action.OPEN)) {
+				MessageDispatcher.reply(Messages.trainingCsvReviewFailed("Open file action is unavailable on this system."));
+				return;
+			}
+			desktop.open(trainingPath.toFile());
+		} catch (Exception e) {
+			MessageDispatcher.reply(Messages.trainingCsvReviewFailed("Failed to open training csv file."));
+		}
+	}
+
+	private int saveTrainingCsvReview(AlertManageScreen.SaveRequest request) {
+		if (request == null) {
+			return 0;
+		}
+		List<TrainingCommandHandler.CsvLabelUpdate> updates = new ArrayList<>();
+		for (AlertManageScreen.ReviewedSelection selection : request.selections()) {
+			if (selection == null) {
+				continue;
+			}
+			updates.add(new TrainingCommandHandler.CsvLabelUpdate(selection.rowId(), selection.label()));
+		}
+		return trainingCommandHandler.saveTrainingCsvReview(updates, request.upload());
+	}
+
+	private int saveRecentCapturedReview(AlertManageScreen.SaveRequest request) {
+		if (request == null) {
+			return 0;
+		}
+		List<TrainingCommandHandler.ReviewedMessage> selections = new ArrayList<>();
+		for (AlertManageScreen.ReviewedSelection selection : request.selections()) {
+			if (selection == null || selection.message() == null || selection.message().isBlank()) {
+				continue;
+			}
+			selections.add(new TrainingCommandHandler.ReviewedMessage(selection.message(), selection.label()));
+		}
+		return trainingCommandHandler.saveReviewedMessages(selections, request.upload());
 	}
 
 	private int saveAlertReview(AlertReviewRegistry.AlertContext context, AlertManageScreen.SaveRequest request) {

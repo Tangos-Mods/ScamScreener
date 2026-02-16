@@ -9,6 +9,9 @@ public final class MessageDispatcher {
 
 	public static void reply(Component text) {
 		Minecraft client = Minecraft.getInstance();
+		if (client == null) {
+			return;
+		}
 		client.execute(() -> {
 			if (client.player != null) {
 				client.player.displayClientMessage(text, false);

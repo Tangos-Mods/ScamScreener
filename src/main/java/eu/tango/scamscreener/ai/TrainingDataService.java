@@ -23,6 +23,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -73,6 +74,7 @@ public final class TrainingDataService {
 	private final IntentTagger intentTagger = new IntentTagger(new DefaultRuleConfig());
 	private final AiFunnelContextTracker funnelTracker = new AiFunnelContextTracker();
 	private final Deque<CapturedChat> recentChat = new ArrayDeque<>();
+	private final Deque<CapturedChat> pendingReviewChat = new ArrayDeque<>();
 	private final Map<String, Long> lastTimestampByPlayer = new HashMap<>();
 	private final Map<String, Integer> repeatedContactByPlayer = new HashMap<>();
 	private String lastCapturedChatLine = "";
@@ -127,6 +129,15 @@ public final class TrainingDataService {
 		return new ArrayList<>(snapshot.subList(snapshot.size() - take, snapshot.size()));
 	}
 
+	public List<CapturedChat> recentPendingCaptured(int count) {
+		if (count <= 0 || pendingReviewChat.isEmpty()) {
+			return List.of();
+		}
+		List<CapturedChat> snapshot = new ArrayList<>(pendingReviewChat);
+		int take = Math.min(count, snapshot.size());
+		return new ArrayList<>(snapshot.subList(snapshot.size() - take, snapshot.size()));
+	}
+
 	public List<CapturedChat> recentCapturedForPlayer(String playerName, int count) {
 		if (playerName == null || playerName.isBlank() || count <= 0 || recentChat.isEmpty()) {
 			return List.of();
@@ -143,6 +154,19 @@ public final class TrainingDataService {
 		}
 		int take = Math.min(count, matching.size());
 		return new ArrayList<>(matching.subList(matching.size() - take, matching.size()));
+	}
+
+	public boolean hasRecentCaptureForPlayer(String playerName) {
+		if (playerName == null || playerName.isBlank() || recentChat.isEmpty()) {
+			return false;
+		}
+		String target = toSpeakerKey(playerName);
+		for (CapturedChat capture : recentChat) {
+			if (capture != null && capture.speakerKey().equals(target)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	public Path trainingDataPath() {
@@ -178,6 +202,7 @@ public final class TrainingDataService {
 		ensureLatestHeader();
 
 		StringBuilder rows = new StringBuilder();
+		List<String> savedMessages = new ArrayList<>();
 		for (CapturedChat capture : captures) {
 			if (capture == null || shouldFilterMessage(capture.rawMessage())) {
 				continue;
@@ -185,6 +210,7 @@ public final class TrainingDataService {
 			String row = buildTrainingCsvRow(capture, label, null);
 			if (row != null && !row.isBlank()) {
 				rows.append(row).append(System.lineSeparator());
+				savedMessages.add(capture.rawMessage());
 			}
 		}
 		if (rows.length() == 0) {
@@ -197,6 +223,7 @@ public final class TrainingDataService {
 			StandardCharsets.UTF_8,
 			StandardOpenOption.APPEND
 		);
+		markMessagesAsSaved(savedMessages);
 	}
 
 	public void appendDetectedEvent(MessageEvent event, DetectionResult result, int label) throws IOException {
@@ -221,6 +248,7 @@ public final class TrainingDataService {
 			StandardCharsets.UTF_8,
 			StandardOpenOption.APPEND
 		);
+		markMessagesAsSaved(List.of(capture.rawMessage()));
 	}
 
 	private static void ensureFileInitialized() throws IOException {
@@ -607,5 +635,39 @@ public final class TrainingDataService {
 		while (recentChat.size() > MAX_CAPTURED_CHAT_LINES) {
 			recentChat.removeFirst();
 		}
+		pendingReviewChat.addLast(capture);
+		while (pendingReviewChat.size() > MAX_CAPTURED_CHAT_LINES) {
+			pendingReviewChat.removeFirst();
+		}
+	}
+
+	private void markMessagesAsSaved(List<String> messages) {
+		if (messages == null || messages.isEmpty() || pendingReviewChat.isEmpty()) {
+			return;
+		}
+		for (String message : messages) {
+			String key = pendingKey(message);
+			if (key.isBlank()) {
+				continue;
+			}
+			Iterator<CapturedChat> iterator = pendingReviewChat.iterator();
+			while (iterator.hasNext()) {
+				CapturedChat capture = iterator.next();
+				if (capture == null) {
+					continue;
+				}
+				if (pendingKey(capture.rawMessage()).equals(key)) {
+					iterator.remove();
+					break;
+				}
+			}
+		}
+	}
+
+	private static String pendingKey(String message) {
+		if (message == null) {
+			return "";
+		}
+		return message.replace('\n', ' ').replace('\r', ' ').trim();
 	}
 }

@@ -40,6 +40,8 @@ class ScamScreenerCommandsStructureTest {
 			alertId -> 1,
 			alertId -> 1,
 			playerName -> 1,
+			java.util.List::of,
+			() -> 1,
 			messageId -> 1,
 			uuid -> {},
 			() -> {},
@@ -51,12 +53,17 @@ class ScamScreenerCommandsStructureTest {
 		@SuppressWarnings("unchecked")
 		LiteralArgumentBuilder<FabricClientCommandSource> builder =
 			(LiteralArgumentBuilder<FabricClientCommandSource>) buildRoot.invoke(commands, "scamscreener");
+		@SuppressWarnings("unchecked")
+		LiteralArgumentBuilder<FabricClientCommandSource> aliasBuilder =
+			(LiteralArgumentBuilder<FabricClientCommandSource>) buildRoot.invoke(commands, "ss");
 
 		CommandDispatcher<FabricClientCommandSource> dispatcher = new CommandDispatcher<>();
 		dispatcher.register(builder);
+		dispatcher.register(aliasBuilder);
 
 		CommandNode<FabricClientCommandSource> root = dispatcher.getRoot().getChild("scamscreener");
 		assertNotNull(root);
+		assertNotNull(root.getChild("help"));
 		assertNotNull(root.getChild("upload"));
 		assertNotNull(root.getChild("ai"));
 		assertNull(root.getChild("train"));
@@ -71,6 +78,14 @@ class ScamScreenerCommandsStructureTest {
 
 		CommandNode<FabricClientCommandSource> review = root.getChild("review");
 		assertNotNull(review);
+		assertNotNull(review.getChild("help"));
 		assertNotNull(review.getChild("player"));
+
+		CommandNode<FabricClientCommandSource> aliasRoot = dispatcher.getRoot().getChild("ss");
+		assertNotNull(aliasRoot);
+		assertNotNull(aliasRoot.getChild("help"));
+		assertNotNull(aliasRoot.getChild("upload"));
+		assertNotNull(aliasRoot.getChild("ai"));
+		assertNull(aliasRoot.getChild("train"));
 	}
 }

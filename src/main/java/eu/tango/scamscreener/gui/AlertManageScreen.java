@@ -21,9 +21,11 @@ public final class AlertManageScreen extends ScamScreenerGUI {
 	private static final int ACTION_BUTTON_GAP = 12;
 
 	private final AlertReviewRegistry.AlertContext alertContext;
-	private final List<String> sourceMessages;
+	private final List<ReviewRow> sourceRows;
+	private final boolean showPlayerActions;
 	private final List<SelectionState> states = new ArrayList<>();
 	private final SubmitHandler submitHandler;
+	private final Runnable openFileHandler;
 
 	private int listX;
 	private int listY;
@@ -41,12 +43,61 @@ public final class AlertManageScreen extends ScamScreenerGUI {
 		List<String> sourceMessages,
 		SubmitHandler submitHandler
 	) {
-		super(Component.literal("Manage Alert"), parent);
+		this(
+			parent,
+			Component.literal("Manage Alert"),
+			alertContext,
+			toLegacyRows(sourceMessages),
+			true,
+			submitHandler,
+			null
+		);
+	}
+
+	public AlertManageScreen(
+		Screen parent,
+		Component title,
+		List<ReviewRow> sourceRows,
+		SubmitHandler submitHandler
+	) {
+		this(parent, title, sourceRows, submitHandler, null);
+	}
+
+	public AlertManageScreen(
+		Screen parent,
+		Component title,
+		List<ReviewRow> sourceRows,
+		SubmitHandler submitHandler,
+		Runnable openFileHandler
+	) {
+		this(
+			parent,
+			title == null ? Component.literal("Review Training CSV") : title,
+			null,
+			sourceRows,
+			false,
+			submitHandler,
+			openFileHandler
+		);
+	}
+
+	private AlertManageScreen(
+		Screen parent,
+		Component title,
+		AlertReviewRegistry.AlertContext alertContext,
+		List<ReviewRow> sourceRows,
+		boolean showPlayerActions,
+		SubmitHandler submitHandler,
+		Runnable openFileHandler
+	) {
+		super(title == null ? Component.literal("Manage Alert") : title, parent);
 		this.alertContext = alertContext;
-		this.sourceMessages = sanitizeMessages(sourceMessages);
+		this.sourceRows = sanitizeRows(sourceRows);
+		this.showPlayerActions = showPlayerActions;
 		this.submitHandler = submitHandler;
-		for (int i = 0; i < this.sourceMessages.size(); i++) {
-			states.add(SelectionState.IGNORE);
+		this.openFileHandler = openFileHandler;
+		for (int i = 0; i < this.sourceRows.size(); i++) {
+			states.add(SelectionState.fromCurrentLabel(this.sourceRows.get(i).currentLabel()));
 		}
 	}
 
@@ -55,41 +106,65 @@ public final class AlertManageScreen extends ScamScreenerGUI {
 		int contentWidth = Math.min(620, Math.max(260, this.width - 30));
 		int x = centeredX(contentWidth);
 		int actionY = this.height - FOOTER_Y_OFFSET - 24;
-		int checkboxY = actionY - CHECKBOX_HEIGHT * 2 - CHECKBOX_GAP;
 
 		listX = x;
 		listY = LIST_TOP;
 		listWidth = contentWidth;
-		listHeight = Math.max(80, checkboxY - listY - LIST_BOTTOM_PADDING);
+
+		int listBottom = actionY;
+		if (showPlayerActions) {
+			int checkboxY = actionY - CHECKBOX_HEIGHT * 2 - CHECKBOX_GAP;
+			listBottom = checkboxY;
+			blacklistCheckbox = new SimpleCheckbox(
+				x,
+				checkboxY,
+				contentWidth,
+				CHECKBOX_HEIGHT,
+				Component.literal("Add player to ScamScreener blacklist"),
+				false
+			);
+			blockCheckbox = new SimpleCheckbox(
+				x,
+				checkboxY + CHECKBOX_HEIGHT + CHECKBOX_GAP,
+				contentWidth,
+				CHECKBOX_HEIGHT,
+				Component.literal("Add player to Hypixel /block list"),
+				false
+			);
+		} else {
+			blacklistCheckbox = null;
+			blockCheckbox = null;
+		}
+
+		listHeight = Math.max(80, listBottom - listY - LIST_BOTTOM_PADDING);
 		maxVisibleRows = Math.max(1, listHeight / LIST_ROW_HEIGHT);
 
-		blacklistCheckbox = new SimpleCheckbox(
-			x,
-			checkboxY,
-			contentWidth,
-			CHECKBOX_HEIGHT,
-			Component.literal("Add player to ScamScreener blacklist"),
-			false
-		);
-		blockCheckbox = new SimpleCheckbox(
-			x,
-			checkboxY + CHECKBOX_HEIGHT + CHECKBOX_GAP,
-			contentWidth,
-			CHECKBOX_HEIGHT,
-			Component.literal("Add player to Hypixel /block list"),
-			false
-		);
-
-		int third = localSplitWidth(contentWidth, 3, ACTION_BUTTON_GAP);
-		this.addRenderableWidget(Button.builder(Component.literal("Cancel"), button -> this.onClose())
-			.bounds(localColumnX(x, third, 0), actionY, third, 20)
-			.build());
-		this.addRenderableWidget(Button.builder(Component.literal("Save"), button -> submit(false))
-			.bounds(localColumnX(x, third, 1), actionY, third, 20)
-			.build());
-		this.addRenderableWidget(Button.builder(Component.literal("Save & Upload"), button -> submit(true))
-			.bounds(localColumnX(x, third, 2), actionY, third, 20)
-			.build());
+		if (openFileHandler != null) {
+			int quarter = localSplitWidth(contentWidth, 4, ACTION_BUTTON_GAP);
+			this.addRenderableWidget(Button.builder(Component.literal("Cancel"), button -> this.onClose())
+				.bounds(localColumnX(x, quarter, 0), actionY, quarter, 20)
+				.build());
+			this.addRenderableWidget(Button.builder(Component.literal("Open File"), button -> openFileHandler.run())
+				.bounds(localColumnX(x, quarter, 1), actionY, quarter, 20)
+				.build());
+			this.addRenderableWidget(Button.builder(Component.literal("Save"), button -> submit(false))
+				.bounds(localColumnX(x, quarter, 2), actionY, quarter, 20)
+				.build());
+			this.addRenderableWidget(Button.builder(Component.literal("Save & Upload"), button -> submit(true))
+				.bounds(localColumnX(x, quarter, 3), actionY, quarter, 20)
+				.build());
+		} else {
+			int third = localSplitWidth(contentWidth, 3, ACTION_BUTTON_GAP);
+			this.addRenderableWidget(Button.builder(Component.literal("Cancel"), button -> this.onClose())
+				.bounds(localColumnX(x, third, 0), actionY, third, 20)
+				.build());
+			this.addRenderableWidget(Button.builder(Component.literal("Save"), button -> submit(false))
+				.bounds(localColumnX(x, third, 1), actionY, third, 20)
+				.build());
+			this.addRenderableWidget(Button.builder(Component.literal("Save & Upload"), button -> submit(true))
+				.bounds(localColumnX(x, third, 2), actionY, third, 20)
+				.build());
+		}
 	}
 
 	@Override
@@ -103,8 +178,10 @@ public final class AlertManageScreen extends ScamScreenerGUI {
 		renderSelectedSummary(guiGraphics, headerY + this.font.lineHeight + 2);
 
 		renderList(guiGraphics, mouseX, mouseY);
-		blacklistCheckbox.render(guiGraphics, this.font, mouseX, mouseY);
-		blockCheckbox.render(guiGraphics, this.font, mouseX, mouseY);
+		if (showPlayerActions && blacklistCheckbox != null && blockCheckbox != null) {
+			blacklistCheckbox.render(guiGraphics, this.font, mouseX, mouseY);
+			blockCheckbox.render(guiGraphics, this.font, mouseX, mouseY);
+		}
 	}
 
 	//? if <1.21.11 {
@@ -135,10 +212,10 @@ public final class AlertManageScreen extends ScamScreenerGUI {
 				return true;
 			}
 		}
-		if (blacklistCheckbox.mouseClicked(mouseX, mouseY, button)) {
+		if (showPlayerActions && blacklistCheckbox != null && blacklistCheckbox.mouseClicked(mouseX, mouseY, button)) {
 			return true;
 		}
-		if (blockCheckbox.mouseClicked(mouseX, mouseY, button)) {
+		if (showPlayerActions && blockCheckbox != null && blockCheckbox.mouseClicked(mouseX, mouseY, button)) {
 			return true;
 		}
 		return false;
@@ -146,9 +223,9 @@ public final class AlertManageScreen extends ScamScreenerGUI {
 
 	@Override
 	public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
-		if (isInsideList(mouseX, mouseY) && sourceMessages.size() > maxVisibleRows) {
+		if (isInsideList(mouseX, mouseY) && sourceRows.size() > maxVisibleRows) {
 			int delta = scrollY > 0 ? -1 : 1;
-			int maxOffset = Math.max(0, sourceMessages.size() - maxVisibleRows);
+			int maxOffset = Math.max(0, sourceRows.size() - maxVisibleRows);
 			scrollOffsetRows = Mth.clamp(scrollOffsetRows + delta, 0, maxOffset);
 			return true;
 		}
@@ -160,18 +237,24 @@ public final class AlertManageScreen extends ScamScreenerGUI {
 			return;
 		}
 		List<ReviewedSelection> selections = new ArrayList<>();
-		for (int i = 0; i < sourceMessages.size(); i++) {
+		for (int i = 0; i < sourceRows.size(); i++) {
 			SelectionState state = states.get(i);
-			if (!state.hasLabel()) {
+			ReviewRow row = sourceRows.get(i);
+			if (showPlayerActions && !state.hasLabel()) {
 				continue;
 			}
-			selections.add(new ReviewedSelection(sourceMessages.get(i), state.label()));
+			if (!showPlayerActions && state.label() == row.currentLabel()) {
+				continue;
+			}
+			selections.add(new ReviewedSelection(row.rowId(), row.message(), state.label()));
 		}
+		boolean addToBlacklist = showPlayerActions && blacklistCheckbox != null && blacklistCheckbox.checked();
+		boolean addToBlock = showPlayerActions && blockCheckbox != null && blockCheckbox.checked();
 		int result = submitHandler.submit(new SaveRequest(
 			selections,
 			upload,
-			blacklistCheckbox.checked(),
-			blockCheckbox.checked()
+			addToBlacklist,
+			addToBlock
 		));
 		if (result > 0) {
 			this.onClose();
@@ -185,14 +268,14 @@ public final class AlertManageScreen extends ScamScreenerGUI {
 		guiGraphics.fill(listX, listY, listX + 1, listY + listHeight, 0xFF5A5A5A);
 		guiGraphics.fill(listX + listWidth - 1, listY, listX + listWidth, listY + listHeight, 0xFF5A5A5A);
 
-		if (sourceMessages.isEmpty()) {
+		if (sourceRows.isEmpty()) {
 			guiGraphics.drawCenteredString(this.font, Component.literal("No messages available"), this.width / 2, listY + listHeight / 2 - 4, opaqueColor(0xAAAAAA));
 			return;
 		}
 
-		int maxOffset = Math.max(0, sourceMessages.size() - maxVisibleRows);
+		int maxOffset = Math.max(0, sourceRows.size() - maxVisibleRows);
 		scrollOffsetRows = Mth.clamp(scrollOffsetRows, 0, maxOffset);
-		int visible = Math.min(maxVisibleRows, sourceMessages.size() - scrollOffsetRows);
+		int visible = Math.min(maxVisibleRows, sourceRows.size() - scrollOffsetRows);
 		int textX = listX + 8;
 
 		for (int i = 0; i < visible; i++) {
@@ -210,11 +293,11 @@ public final class AlertManageScreen extends ScamScreenerGUI {
 			String prefix = state.marker() + " ";
 			int color = opaqueColor(state.color());
 
-			String rawMessage = compactMessage(sourceMessages.get(absolute), 160);
-			guiGraphics.drawString(this.font, prefix + rawMessage, textX, rowY + 6, color, false);
+			ReviewRow row = sourceRows.get(absolute);
+			guiGraphics.drawString(this.font, prefix + compactMessage(row.message(), 160), textX, rowY + 6, color, false);
 		}
 
-		if (sourceMessages.size() > maxVisibleRows) {
+		if (sourceRows.size() > maxVisibleRows) {
 			renderScrollBar(guiGraphics);
 		}
 	}
@@ -226,7 +309,7 @@ public final class AlertManageScreen extends ScamScreenerGUI {
 		int trackHeight = Math.max(1, trackBottom - trackTop);
 		guiGraphics.fill(trackLeft, trackTop, trackLeft + 2, trackBottom, 0xFF3A3A3A);
 
-		int totalRows = Math.max(1, sourceMessages.size());
+		int totalRows = Math.max(1, sourceRows.size());
 		int thumbHeight = Math.max(12, (int) (trackHeight * (maxVisibleRows / (double) totalRows)));
 		int maxOffset = Math.max(1, totalRows - maxVisibleRows);
 		int thumbRange = Math.max(1, trackHeight - thumbHeight);
@@ -251,29 +334,53 @@ public final class AlertManageScreen extends ScamScreenerGUI {
 		return count;
 	}
 
-	private static List<String> sanitizeMessages(List<String> input) {
+	private static List<ReviewRow> toLegacyRows(List<String> sourceMessages) {
+		if (sourceMessages == null || sourceMessages.isEmpty()) {
+			return List.of();
+		}
+		List<ReviewRow> out = new ArrayList<>();
+		for (int i = 0; i < sourceMessages.size(); i++) {
+			String message = normalizeReviewMessage(sourceMessages.get(i));
+			if (message.isBlank()) {
+				continue;
+			}
+			out.add(new ReviewRow("alert-" + i, message, -1));
+		}
+		return out;
+	}
+
+	private static List<ReviewRow> sanitizeRows(List<ReviewRow> input) {
 		if (input == null || input.isEmpty()) {
 			return List.of();
 		}
-		List<String> out = new ArrayList<>();
-		for (String value : input) {
-			if (value == null) {
+		List<ReviewRow> out = new ArrayList<>();
+		for (int i = 0; i < input.size(); i++) {
+			ReviewRow row = input.get(i);
+			if (row == null) {
 				continue;
 			}
-			String normalized = value.replace('\n', ' ').replace('\r', ' ').trim();
-			if (normalized.isBlank()) {
+			String message = normalizeReviewMessage(row.message());
+			if (message.isBlank()) {
 				continue;
 			}
-			out.add(normalized);
+			String rowId = row.rowId() == null || row.rowId().isBlank() ? "row-" + i : row.rowId().trim();
+			out.add(new ReviewRow(rowId, message, row.currentLabel()));
 		}
 		return out;
+	}
+
+	private static String normalizeReviewMessage(String raw) {
+		if (raw == null || raw.isBlank()) {
+			return "";
+		}
+		return raw.replace('\n', ' ').replace('\r', ' ').trim();
 	}
 
 	private static String compactMessage(String raw, int maxLen) {
 		if (raw == null || raw.isBlank()) {
 			return "";
 		}
-		String normalized = raw.replace('\n', ' ').replace('\r', ' ').trim();
+		String normalized = normalizeReviewMessage(raw);
 		if (normalized.length() <= maxLen) {
 			return normalized;
 		}
@@ -287,7 +394,7 @@ public final class AlertManageScreen extends ScamScreenerGUI {
 	private void renderSelectedSummary(GuiGraphics guiGraphics, int y) {
 		int scamCount = countSelections(SelectionState.SCAM);
 		int legitCount = countSelections(SelectionState.LEGIT);
-		int ignoredCount = Math.max(0, sourceMessages.size() - scamCount - legitCount);
+		int ignoredCount = Math.max(0, sourceRows.size() - scamCount - legitCount);
 
 		String prefix = "Selected: ";
 		String scamPart = "scam " + scamCount;
@@ -371,6 +478,14 @@ public final class AlertManageScreen extends ScamScreenerGUI {
 		private String marker() {
 			return "[" + marker + "]";
 		}
+
+		private static SelectionState fromCurrentLabel(int currentLabel) {
+			return switch (currentLabel) {
+				case 1 -> SCAM;
+				case 0 -> LEGIT;
+				default -> IGNORE;
+			};
+		}
 	}
 
 	private static final class SimpleCheckbox {
@@ -436,7 +551,15 @@ public final class AlertManageScreen extends ScamScreenerGUI {
 		int submit(SaveRequest request);
 	}
 
-	public record ReviewedSelection(String message, int label) {
+	public record ReviewRow(String rowId, String message, int currentLabel) {
+		public ReviewRow {
+			rowId = rowId == null ? "" : rowId.trim();
+			message = normalizeReviewMessage(message);
+			currentLabel = (currentLabel == 0 || currentLabel == 1) ? currentLabel : -1;
+		}
+	}
+
+	public record ReviewedSelection(String rowId, String message, int label) {
 	}
 
 	public record SaveRequest(

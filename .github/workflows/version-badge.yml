@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - gradle.properties
+      - scripts/model-version.json
       - .github/scripts/update-version-badge.ps1
       - .github/workflows/version-badge.yml
   workflow_dispatch:
@@ -13,26 +14,26 @@ permissions:
   contents: write
 
 jobs:
-  sync-version-badge:
+  sync-badges:
     runs-on: ubuntu-24.04
     steps:
       - name: checkout repository
         uses: actions/checkout@v4
 
-      - name: generate badge payload from gradle.properties
+      - name: generate badge payloads
         shell: pwsh
         run: ./.github/scripts/update-version-badge.ps1
 
-      - name: commit and push badge update
+      - name: commit and push badge updates
         shell: bash
         run: |
-          if git diff --quiet -- .github/badges/version.json; then
-            echo "Version badge is already up to date."
+          if [ -z "$(git status --porcelain -- .github/badges/version.json .github/badges/ai-model.json)" ]; then
+            echo "Badges are already up to date."
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .github/badges/version.json
-          git commit -m "chore: sync version badge"
+          git add .github/badges/version.json .github/badges/ai-model.json
+          git commit -m "chore: sync badges"
           git push

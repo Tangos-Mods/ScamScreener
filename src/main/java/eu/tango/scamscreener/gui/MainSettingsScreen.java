@@ -33,6 +33,7 @@ public final class MainSettingsScreen extends ScamScreenerGUI {
 	private final Supplier<ModelUpdateService.PendingUpdateSnapshot> aiUpdateSnapshotSupplier;
 	private final BiFunction<String, String, Integer> aiUpdateActionHandler;
 	private final Supplier<FunnelMetricsService.Snapshot> metricsSnapshotSupplier;
+	private final Runnable openTrainingCsvReviewHandler;
 	private final Runnable uploadTrainingDataHandler;
 
 	private Button alertLevelButton;
@@ -55,6 +56,7 @@ public final class MainSettingsScreen extends ScamScreenerGUI {
 		Supplier<ModelUpdateService.PendingUpdateSnapshot> aiUpdateSnapshotSupplier,
 		BiFunction<String, String, Integer> aiUpdateActionHandler,
 		Supplier<FunnelMetricsService.Snapshot> metricsSnapshotSupplier,
+		Runnable openTrainingCsvReviewHandler,
 		Runnable uploadTrainingDataHandler
 	) {
 		super(Component.literal("ScamScreener Settings"), parent);
@@ -70,6 +72,7 @@ public final class MainSettingsScreen extends ScamScreenerGUI {
 		this.aiUpdateSnapshotSupplier = aiUpdateSnapshotSupplier;
 		this.aiUpdateActionHandler = aiUpdateActionHandler;
 		this.metricsSnapshotSupplier = metricsSnapshotSupplier;
+		this.openTrainingCsvReviewHandler = openTrainingCsvReviewHandler;
 		this.uploadTrainingDataHandler = uploadTrainingDataHandler;
 	}
 
@@ -148,11 +151,21 @@ public final class MainSettingsScreen extends ScamScreenerGUI {
 		}).bounds(thirdColumnX, y + ROW_HEIGHT, thirdWidth, 20).build());
 		y += ROW_HEIGHT * 2;
 
+		int halfWidth = splitWidth(buttonWidth, 2, splitSpacing);
+		int rightHalfX = x + halfWidth + splitSpacing;
+
+		Button reviewTrainingCsvButton = this.addRenderableWidget(Button.builder(Component.literal("Review Training CSV"), button -> {
+			if (openTrainingCsvReviewHandler != null) {
+				openTrainingCsvReviewHandler.run();
+			}
+		}).bounds(x, y, halfWidth, 20).build());
+		reviewTrainingCsvButton.active = openTrainingCsvReviewHandler != null;
+
 		Button uploadTrainingButton = this.addRenderableWidget(Button.builder(Component.literal("Upload Training Data"), button -> {
 			if (uploadTrainingDataHandler != null) {
 				uploadTrainingDataHandler.run();
 			}
-		}).bounds(x, y, buttonWidth, 20).build());
+		}).bounds(rightHalfX, y, halfWidth, 20).build());
 		uploadTrainingButton.active = uploadTrainingDataHandler != null;
 
 		addCloseButton(buttonWidth);

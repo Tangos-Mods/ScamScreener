@@ -1,36 +1,35 @@
-# ScamScreener 1.1.0
+# ScamScreener 1.2.0
 
-ScamScreener 1.1.0 improves in-game review workflows and expands scam education coverage.
+ScamScreener 1.2.0 mainly expands the in-game review and training-data workflow.
 
 ## Highlights
 
 ### Added
 
-- Added review commands: `/scamscreener review manage <alertId>`, `/scamscreener review info <alertId>`, `/scamscreener review player <playerName>`.
-- Added a dedicated Manage Alert workflow with multi-line labeling (`Ignore -> Scam -> Legit`), save/upload flow, and optional blacklist/block actions.
-- Added a dedicated Alert Rule Details screen with grouped trigger stages (`Rule`, `Behavior`, `Similarity`, `Trend`, `Funnel`, `AI`) and captured context.
-- Added expanded education follow-up messages for external redirects, suspicious links, upfront payment requests, account-data requests, fake middleman claims, urgency pressure, trust manipulation, too-good-to-be-true offers, Discord redirects, and funnel patterns.
-- Added education message control command: `/scamscreener edu disable <messageId>`.
-- Added Metrics in Menu for some information
+- Added `/ss` as a full alias for `/scamscreener`.
+- Added direct menu opening on `/scamscreener` and `/ss` (help now via `/scamscreener help` or `/ss help`).
+- Added `Review Training CSV` in the mod menu next to `Upload Training Data`.
+- Added full CSV review flow with `Save`, `Save & Upload`, and `Open File`.
+- Added logged-chat review via `/scamscreener review` and `/ss review` for not-yet-saved chat lines.
+- Added autocomplete for `/scamscreener review player <playerName>` and `/ss review player <playerName>` with online players that have logged chat entries.
+- Added automatic training-data size reminders from 500+ entries (initial warning, then every 5 minutes) with clickable upload action.
 
 ### Changed
 
-- Changed scam warning actions to centered review tags (`[manage] [info]`) and improved warning layout alignment.
-- Changed review/info context assembly to merge recent captured lines with evaluated pipeline lines (normalized and deduplicated).
-- Changed default alert-threshold migration behavior to enforce a one-time minimum of `MEDIUM` for older unmigrated configs.
+- Changed review row state display to native colored `[I]`, `[S]`, and `[L]` markers.
+- Changed review help routing to `/scamscreener review help` and `/ss review help`.
+- Changed CSV review editing to row-based handling so duplicate messages can be reviewed independently.
 
-### Removed
+### Fixed
 
-- Removed deprecated training-capture commands `/1`, `/0`, `/scamscreener ai capture`, and `/scamscreener ai capturebulk`.
-
-### Fixes
-
-- Fixed alert info context so scored pipeline messages are consistently shown in captured-message context.
+- Fixed CSV label save behavior so message quoting (`"..."`) is preserved.
+- Fixed CSV review ignore behavior so ignored rows are removed on save.
 
 ## Compatibility
 
-- Minecraft `1.21.11` and `1.21.10`.
+- Minecraft `1.21.10` and `1.21.11`.
+- Fabric (client-side).
 
 ## Note
 
-ScamScreener is client-side. Detection, scoring, and local review/training data stay on your client unless you explicitly upload training data.
+ScamScreener remains client-side. Detection, review, and local training data stay on your client unless you explicitly upload training data.

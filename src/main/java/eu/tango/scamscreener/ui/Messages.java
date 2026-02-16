@@ -494,6 +494,15 @@ public final class Messages extends MessageBuilder {
 			.append(Component.literal("s.").withStyle(ChatFormatting.GRAY));
 	}
 
+	public static MutableComponent trainingDataLargeUploadReminder(int entryCount) {
+		MutableComponent line = prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
+			.append(Component.literal("Training data has ").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal(String.valueOf(Math.max(0, entryCount))).withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD))
+			.append(Component.literal(" entries. Please upload it to keep the local dataset small. ").withStyle(ChatFormatting.GRAY));
+		line.append(actionTag("UPLOAD NOW", ChatFormatting.GOLD, "Run /scamscreener upload", "/scamscreener upload"));
+		return line;
+	}
+
 	public static MutableComponent versionInfo(String modVersion, int aiVersion) {
 		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
 			.append(Component.literal("Mod Version: ").withStyle(ChatFormatting.GRAY))
@@ -561,6 +570,30 @@ public final class Messages extends MessageBuilder {
 			.append(Component.literal(", legit=").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal(String.valueOf(Math.max(0, legitCount))).withStyle(ChatFormatting.GREEN, ChatFormatting.BOLD))
 			.append(Component.literal(".").withStyle(ChatFormatting.GRAY));
+	}
+
+	public static MutableComponent trainingCsvReviewNoData(String path) {
+		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
+			.append(Component.literal("No training csv rows available for review at ").withStyle(ChatFormatting.GRAY))
+			.append(clickableContainingFolderPath(path == null ? "" : path))
+			.append(Component.literal(".").withStyle(ChatFormatting.GRAY));
+	}
+
+	public static MutableComponent trainingCsvReviewUpdated(int changedRows) {
+		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
+			.append(Component.literal("Applied ").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal(String.valueOf(Math.max(0, changedRows))).withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD))
+			.append(Component.literal(" training csv changes.").withStyle(ChatFormatting.GRAY));
+	}
+
+	public static MutableComponent trainingCsvReviewFailed(String detail) {
+		return buildError(
+			PREFIX,
+			PREFIX_LIGHT_RED,
+			"Training csv review failed.",
+			"TR-CSV-001",
+			detail
+		);
 	}
 
 	private static MutableComponent educationWarning(String disableCommand, String... guidanceParts) {

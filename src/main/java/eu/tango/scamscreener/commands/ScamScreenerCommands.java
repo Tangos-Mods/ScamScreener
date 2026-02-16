@@ -39,6 +39,8 @@ public final class ScamScreenerCommands {
 	private final AlertReviewManageHandler alertReviewManageHandler;
 	private final AlertReviewInfoHandler alertReviewInfoHandler;
 	private final AlertReviewPlayerHandler alertReviewPlayerHandler;
+	private final Supplier<java.util.List<String>> alertReviewPlayerSuggestionsSupplier;
+	private final AlertReviewRecentChatHandler alertReviewRecentChatHandler;
 	private final EducationDisableHandler educationDisableHandler;
 	private final Consumer<UUID> onBlacklistRemoved;
 	private final Runnable openSettingsHandler;
@@ -66,6 +68,8 @@ public final class ScamScreenerCommands {
 		AlertReviewManageHandler alertReviewManageHandler,
 		AlertReviewInfoHandler alertReviewInfoHandler,
 		AlertReviewPlayerHandler alertReviewPlayerHandler,
+		Supplier<java.util.List<String>> alertReviewPlayerSuggestionsSupplier,
+		AlertReviewRecentChatHandler alertReviewRecentChatHandler,
 		EducationDisableHandler educationDisableHandler,
 		Consumer<UUID> onBlacklistRemoved,
 		Runnable openSettingsHandler,
@@ -92,6 +96,8 @@ public final class ScamScreenerCommands {
 		this.alertReviewManageHandler = alertReviewManageHandler;
 		this.alertReviewInfoHandler = alertReviewInfoHandler;
 		this.alertReviewPlayerHandler = alertReviewPlayerHandler;
+		this.alertReviewPlayerSuggestionsSupplier = alertReviewPlayerSuggestionsSupplier;
+		this.alertReviewRecentChatHandler = alertReviewRecentChatHandler;
 		this.educationDisableHandler = educationDisableHandler;
 		this.onBlacklistRemoved = onBlacklistRemoved;
 		this.openSettingsHandler = openSettingsHandler;
@@ -101,15 +107,14 @@ public final class ScamScreenerCommands {
 	public void register() {
 		ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
 			dispatcher.register(buildRoot("scamscreener"));
+			dispatcher.register(buildRoot("ss"));
 		});
 	}
 
 	private LiteralArgumentBuilder<FabricClientCommandSource> buildRoot(String rootName) {
 		return ClientCommandManager.literal(rootName)
-			.executes(context -> {
-				reply.accept(Messages.commandHelp());
-				return 1;
-			})
+			.executes(context -> openSettingsOrShowHelp())
+			.then(ClientCommandManager.literal("help").executes(context -> showHelp()))
 			.then(AddCommand.build(blacklist, targetResolver, reply))
 			.then(RemoveCommand.build(blacklist, targetResolver, onBlacklistRemoved, reply))
 			.then(ListCommand.build(blacklist, reply))
@@ -127,7 +132,14 @@ public final class ScamScreenerCommands {
 				reply
 			))
 			.then(ClientCommandManager.literal("upload").executes(context -> trainHandler.getAsInt()))
-			.then(ReviewCommand.build(alertReviewManageHandler, alertReviewInfoHandler, alertReviewPlayerHandler, reply))
+			.then(ReviewCommand.build(
+				alertReviewManageHandler,
+				alertReviewInfoHandler,
+				alertReviewPlayerHandler,
+				alertReviewPlayerSuggestionsSupplier,
+				alertReviewRecentChatHandler,
+				reply
+			))
 			.then(EduCommand.build(educationDisableHandler, reply))
 			.then(RuleCommand.build(reply))
 			.then(AlertLevelCommand.build(reply))
@@ -136,6 +148,19 @@ public final class ScamScreenerCommands {
 			.then(DebugCommand.build(setAllDebugHandler, setDebugKeyHandler, debugStateSupplier, reply))
 			.then(VersionCommand.build(reply))
 			.then(PreviewCommand.build(reply, lastCapturedChatSupplier));
+	}
+
+	private int openSettingsOrShowHelp() {
+		if (openSettingsHandler != null) {
+			openSettingsHandler.run();
+			return 1;
+		}
+		return showHelp();
+	}
+
+	private int showHelp() {
+		reply.accept(Messages.commandHelp());
+		return 1;
 	}
 
 	@FunctionalInterface
@@ -176,6 +201,11 @@ public final class ScamScreenerCommands {
 	@FunctionalInterface
 	public interface AlertReviewPlayerHandler {
 		int open(String playerName);
+	}
+
+	@FunctionalInterface
+	public interface AlertReviewRecentChatHandler {
+		int open();
 	}
 
 	@FunctionalInterface

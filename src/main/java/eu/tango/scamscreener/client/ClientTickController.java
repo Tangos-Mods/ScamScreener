@@ -1,5 +1,6 @@
 package eu.tango.scamscreener.client;
 
+import eu.tango.scamscreener.ai.TrainingUploadReminderService;
 import eu.tango.scamscreener.chat.mute.MutePatternManager;
 import eu.tango.scamscreener.location.LocationService;
 import eu.tango.scamscreener.pipeline.core.DetectionPipeline;
@@ -11,18 +12,21 @@ public final class ClientTickController {
 	private final DetectionPipeline detectionPipeline;
 	private final Runnable openSettingsAction;
 	private final LocationService locationService;
+	private final TrainingUploadReminderService trainingUploadReminderService;
 	private boolean checkedModelUpdate;
 	private boolean openSettingsRequested;
 
 	public ClientTickController(MutePatternManager mutePatternManager,
 		DetectionPipeline detectionPipeline,
 		Runnable openSettingsAction,
-		LocationService locationService
+		LocationService locationService,
+		TrainingUploadReminderService trainingUploadReminderService
 	) {
 		this.mutePatternManager = mutePatternManager;
 		this.detectionPipeline = detectionPipeline;
 		this.openSettingsAction = openSettingsAction;
 		this.locationService = locationService;
+		this.trainingUploadReminderService = trainingUploadReminderService;
 	}
 
 	public void requestOpenSettings() {
@@ -42,6 +46,9 @@ public final class ClientTickController {
 			if (locationService != null) {
 				locationService.reset();
 			}
+			if (trainingUploadReminderService != null) {
+				trainingUploadReminderService.reset();
+			}
 			checkedModelUpdate = false;
 			return;
 		}
@@ -54,6 +61,7 @@ public final class ClientTickController {
 		}
 
 		maybeNotifyBlockedMessages(client);
+		maybeNotifyTrainingUploadReminder(client);
 	}
 
 	private void maybeNotifyBlockedMessages(Minecraft client) {
@@ -67,5 +75,16 @@ public final class ClientTickController {
 			return;
 		}
 		client.player.displayClientMessage(Messages.blockedMessagesSummary(blocked, mutePatternManager.notifyIntervalSeconds()), false);
+	}
+
+	private void maybeNotifyTrainingUploadReminder(Minecraft client) {
+		if (trainingUploadReminderService == null || client.player == null) {
+			return;
+		}
+		TrainingUploadReminderService.ReminderDecision decision = trainingUploadReminderService.check(System.currentTimeMillis());
+		if (!decision.shouldNotify()) {
+			return;
+		}
+		client.player.displayClientMessage(Messages.trainingDataLargeUploadReminder(decision.entryCount()), false);
 	}
 }

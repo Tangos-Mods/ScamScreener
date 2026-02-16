@@ -1,6 +1,27 @@
 # Changelog
 All notable changes to this project are documented in this file.
 
+## [1.2.0] - 2026-02-16
+
+### Added
+- Added the `/ss` command alias for the full ScamScreener command tree.
+- Added direct menu opening on `/scamscreener` and `/ss`; help is now available via `/scamscreener help` and `/ss help`.
+- Added `Review Training CSV` next to `Upload Training Data` in the mod menu, including a full-row CSV review flow (Save / Save & Upload).
+- Added an `Open File` action in the CSV review screen to open the active training CSV directly.
+- Added periodic large-dataset reminders when training data reaches at least 500 entries (initial hint + every 5 minutes) with a clickable upload action.
+- Added `/scamscreener review` and `/ss review` flow for reviewing logged, not-yet-saved chat messages without blacklist/block actions.
+- Added autocomplete for `/scamscreener review player <playerName>` and `/ss review player <playerName>`, filtered to online players with logged chat entries.
+
+### Changed
+- Bumped mod version from `1.1.0` to `1.2.0`.
+- Moved the old review help output behind `/scamscreener review help` and `/ss review help`.
+- Updated review row state rendering to use native `[I] / [S] / [L]` markers and color states directly.
+- CSV review save now targets row-based updates so duplicate message texts are handled independently.
+
+### Fixed
+- Fixed CSV label updates to preserve CSV quoting/escaping behavior when saving reviewed labels.
+- Fixed CSV review ignore handling so rows set to ignored are removed on save.
+
 ## [1.1.0] - 2026-02-15
 
 ### Added
