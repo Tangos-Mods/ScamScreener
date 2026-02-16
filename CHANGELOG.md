@@ -1,6 +1,20 @@
 # Changelog
 All notable changes to this project are documented in this file.
 
+## [1.2.1] - 2026-02-16
+
+### Added
+- Added a dedicated player tutorial in `docs/TUTORIAL.md` with a full English usage guide.
+- Added automatic AI model badge payload generation in the badge sync workflow (`.github/badges/ai-model.json`).
+
+### Changed
+- Bumped mod version from `1.2.0` to `1.2.1`.
+- Unified version badge and AI badge updates in one workflow run so GitHub Actions creates a single badge-sync commit.
+- Updated README AI badge to endpoint-based rendering from `.github/badges/ai-model.json`.
+
+### Fixed
+- Fixed `Open File` in Training CSV review to open the CSV with the system default app (with OS fallback when Java Desktop OPEN is unavailable).
+
 ## [1.2.0] - 2026-02-16
 
 ### Added

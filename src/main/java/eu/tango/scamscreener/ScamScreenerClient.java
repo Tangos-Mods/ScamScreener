@@ -52,6 +52,7 @@ import org.slf4j.LoggerFactory;
 import java.awt.Desktop;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -523,19 +524,47 @@ public class ScamScreenerClient implements ClientModInitializer {
 			MessageDispatcher.reply(Messages.trainingCsvReviewNoData(trainingPath.toString()));
 			return;
 		}
-		if (!Desktop.isDesktopSupported()) {
-			MessageDispatcher.reply(Messages.trainingCsvReviewFailed("Open file is not supported on this system."));
-			return;
+		if (!openFileWithSystemDefaultApp(trainingPath)) {
+			MessageDispatcher.reply(Messages.trainingCsvReviewFailed("Failed to open training csv file with system default app."));
 		}
+	}
+
+	private static boolean openFileWithSystemDefaultApp(Path filePath) {
+		if (filePath == null) {
+			return false;
+		}
+
 		try {
-			Desktop desktop = Desktop.getDesktop();
-			if (!desktop.isSupported(Desktop.Action.OPEN)) {
-				MessageDispatcher.reply(Messages.trainingCsvReviewFailed("Open file action is unavailable on this system."));
-				return;
+			if (Desktop.isDesktopSupported()) {
+				Desktop desktop = Desktop.getDesktop();
+				if (desktop.isSupported(Desktop.Action.OPEN)) {
+					desktop.open(filePath.toFile());
+					return true;
+				}
 			}
-			desktop.open(trainingPath.toFile());
-		} catch (Exception e) {
-			MessageDispatcher.reply(Messages.trainingCsvReviewFailed("Failed to open training csv file."));
+		} catch (Exception ignored) {
+		}
+
+		return openFileWithOsFallback(filePath);
+	}
+
+	private static boolean openFileWithOsFallback(Path filePath) {
+		String absolutePath = filePath.toAbsolutePath().toString();
+		String os = System.getProperty("os.name", "").toLowerCase(Locale.ROOT);
+		try {
+			if (os.contains("win")) {
+				String escapedPath = absolutePath.replace("\"", "\"\"");
+				new ProcessBuilder("cmd", "/c", "start \"\" \"" + escapedPath + "\"").start();
+				return true;
+			}
+			if (os.contains("mac")) {
+				new ProcessBuilder("open", absolutePath).start();
+				return true;
+			}
+			new ProcessBuilder("xdg-open", absolutePath).start();
+			return true;
+		} catch (Exception ignored) {
+			return false;
 		}
 	}
 

@@ -1,6 +1,6 @@
-# ScamScreener 1.2.0
+# ScamScreener 1.2.1
 
-ScamScreener 1.2.0 mainly expands the in-game review and training-data workflow.
+ScamScreener 1.2.1 mainly expands the in-game review and training-data workflow.
 
 ## Highlights
 
