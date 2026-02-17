@@ -5,6 +5,7 @@ import eu.tango.scamscreener.discord.DiscordWebhookUploader;
 import eu.tango.scamscreener.ui.MessageDispatcher;
 import eu.tango.scamscreener.ui.Messages;
 import eu.tango.scamscreener.ui.MessageFlagging;
+import eu.tango.scamscreener.util.AsyncDispatcher;
 import eu.tango.scamscreener.util.IoErrorMapper;
 import eu.tango.scamscreener.config.LocalAiModelConfig;
 import eu.tango.scamscreener.gui.UploadTosScreen;
@@ -20,7 +21,6 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.concurrent.CompletableFuture;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -217,8 +217,7 @@ public final class TrainingCommandHandler {
 			return List.of();
 		}
 
-		trainingDataService.migrateTrainingData();
-		List<String> lines = Files.readAllLines(trainingPath, StandardCharsets.UTF_8);
+		List<String> lines = trainingDataService.readTrainingCsvLines();
 		return parseTrainingCsvRows(lines);
 	}
 
@@ -537,7 +536,7 @@ public final class TrainingCommandHandler {
 
 		String tosText = loadUploadTosText();
 		// Open on a queued client task so command-chat close cannot immediately overwrite the ToS screen.
-		CompletableFuture.runAsync(() -> client.execute(() -> {
+		AsyncDispatcher.runBackground(() -> AsyncDispatcher.onClient(client, () -> {
 			Screen parent = client.screen instanceof ChatScreen ? null : client.screen;
 			UploadTosScreen tosScreen = new UploadTosScreen(
 				parent,
@@ -585,7 +584,7 @@ public final class TrainingCommandHandler {
 
 	private void uploadArchivedTrainingDataAsync(Path uploadPath) {
 		DiscordWebhookUploader.UploaderContext uploaderContext = DiscordWebhookUploader.captureCurrentUploader();
-		Thread thread = new Thread(() -> {
+		AsyncDispatcher.runIo(() -> {
 			DiscordWebhookUploader.UploadResult result = discordWebhookUploader.uploadTrainingFile(uploadPath, uploaderContext);
 			if (result.success()) {
 				MessageDispatcher.reply(Messages.trainingUploadWebhookSucceeded(uploadPath.toString(), result.detail()));
@@ -594,9 +593,7 @@ public final class TrainingCommandHandler {
 			LOGGER.warn("Failed to upload training data to Discord webhook: {}", result.detail());
 			// Code: TR-UPLOAD-001
 			MessageDispatcher.reply(Messages.trainingUploadWebhookFailed(result.detail()));
-		}, "scamscreener-discord-upload");
-		thread.setDaemon(true);
-		thread.start();
+		});
 	}
 
 	private static Path resolveOldFolder(Path archivedPath) {

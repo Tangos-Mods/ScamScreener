@@ -1,6 +1,7 @@
 package eu.tango.scamscreener.ai;
 
 import eu.tango.scamscreener.chat.parser.ChatLineParser;
+import eu.tango.scamscreener.config.ScamRulesConfig;
 import eu.tango.scamscreener.config.ScamScreenerPaths;
 import eu.tango.scamscreener.pipeline.core.DefaultRuleConfig;
 import eu.tango.scamscreener.pipeline.core.IntentTagger;
@@ -31,7 +32,7 @@ import java.util.Map;
 import java.util.Set;
 
 public final class TrainingDataService {
-	public static final int MAX_CAPTURED_CHAT_LINES = 100;
+	public static final int DEFAULT_CAPTURED_CHAT_CACHE_SIZE = ScamRulesConfig.DEFAULT_CAPTURED_CHAT_CACHE_SIZE;
 
 	private static final List<String> TRAINING_COLUMNS = List.of(
 		"message",
@@ -77,7 +78,22 @@ public final class TrainingDataService {
 	private final Deque<CapturedChat> pendingReviewChat = new ArrayDeque<>();
 	private final Map<String, Long> lastTimestampByPlayer = new HashMap<>();
 	private final Map<String, Integer> repeatedContactByPlayer = new HashMap<>();
+	private final Object captureLock = new Object();
+	private final Object trainingFileLock = new Object();
+	private final int maxCapturedChatLines;
 	private String lastCapturedChatLine = "";
+
+	public TrainingDataService() {
+		this(DEFAULT_CAPTURED_CHAT_CACHE_SIZE);
+	}
+
+	public TrainingDataService(int maxCapturedChatLines) {
+		this.maxCapturedChatLines = maxCapturedChatLines <= 0 ? DEFAULT_CAPTURED_CHAT_CACHE_SIZE : maxCapturedChatLines;
+	}
+
+	public int maxCapturedChatLines() {
+		return maxCapturedChatLines;
+	}
 
 	public void recordChatLine(String plain) {
 		if (plain == null || plain.isBlank()) {
@@ -99,7 +115,9 @@ public final class TrainingDataService {
 	}
 
 	public String lastCapturedLine() {
-		return lastCapturedChatLine == null ? "" : lastCapturedChatLine.trim();
+		synchronized (captureLock) {
+			return lastCapturedChatLine == null ? "" : lastCapturedChatLine.trim();
+		}
 	}
 
 	public List<String> recentLines(int count) {
@@ -121,52 +139,60 @@ public final class TrainingDataService {
 	}
 
 	public List<CapturedChat> recentCaptured(int count) {
-		if (count <= 0 || recentChat.isEmpty()) {
-			return List.of();
+		synchronized (captureLock) {
+			if (count <= 0 || recentChat.isEmpty()) {
+				return List.of();
+			}
+			List<CapturedChat> snapshot = new ArrayList<>(recentChat);
+			int take = Math.min(count, snapshot.size());
+			return new ArrayList<>(snapshot.subList(snapshot.size() - take, snapshot.size()));
 		}
-		List<CapturedChat> snapshot = new ArrayList<>(recentChat);
-		int take = Math.min(count, snapshot.size());
-		return new ArrayList<>(snapshot.subList(snapshot.size() - take, snapshot.size()));
 	}
 
 	public List<CapturedChat> recentPendingCaptured(int count) {
-		if (count <= 0 || pendingReviewChat.isEmpty()) {
-			return List.of();
+		synchronized (captureLock) {
+			if (count <= 0 || pendingReviewChat.isEmpty()) {
+				return List.of();
+			}
+			List<CapturedChat> snapshot = new ArrayList<>(pendingReviewChat);
+			int take = Math.min(count, snapshot.size());
+			return new ArrayList<>(snapshot.subList(snapshot.size() - take, snapshot.size()));
 		}
-		List<CapturedChat> snapshot = new ArrayList<>(pendingReviewChat);
-		int take = Math.min(count, snapshot.size());
-		return new ArrayList<>(snapshot.subList(snapshot.size() - take, snapshot.size()));
 	}
 
 	public List<CapturedChat> recentCapturedForPlayer(String playerName, int count) {
-		if (playerName == null || playerName.isBlank() || count <= 0 || recentChat.isEmpty()) {
-			return List.of();
-		}
-		String target = toSpeakerKey(playerName);
-		List<CapturedChat> matching = new ArrayList<>();
-		for (CapturedChat capture : recentChat) {
-			if (capture.speakerKey().equals(target)) {
-				matching.add(capture);
+		synchronized (captureLock) {
+			if (playerName == null || playerName.isBlank() || count <= 0 || recentChat.isEmpty()) {
+				return List.of();
 			}
+			String target = toSpeakerKey(playerName);
+			List<CapturedChat> matching = new ArrayList<>();
+			for (CapturedChat capture : recentChat) {
+				if (capture.speakerKey().equals(target)) {
+					matching.add(capture);
+				}
+			}
+			if (matching.isEmpty()) {
+				return List.of();
+			}
+			int take = Math.min(count, matching.size());
+			return new ArrayList<>(matching.subList(matching.size() - take, matching.size()));
 		}
-		if (matching.isEmpty()) {
-			return List.of();
-		}
-		int take = Math.min(count, matching.size());
-		return new ArrayList<>(matching.subList(matching.size() - take, matching.size()));
 	}
 
 	public boolean hasRecentCaptureForPlayer(String playerName) {
-		if (playerName == null || playerName.isBlank() || recentChat.isEmpty()) {
+		synchronized (captureLock) {
+			if (playerName == null || playerName.isBlank() || recentChat.isEmpty()) {
+				return false;
+			}
+			String target = toSpeakerKey(playerName);
+			for (CapturedChat capture : recentChat) {
+				if (capture != null && capture.speakerKey().equals(target)) {
+					return true;
+				}
+			}
 			return false;
 		}
-		String target = toSpeakerKey(playerName);
-		for (CapturedChat capture : recentChat) {
-			if (capture != null && capture.speakerKey().equals(target)) {
-				return true;
-			}
-		}
-		return false;
 	}
 
 	public Path trainingDataPath() {
@@ -198,31 +224,33 @@ public final class TrainingDataService {
 		if (captures == null || captures.isEmpty()) {
 			return;
 		}
-		ensureFileInitialized();
-		ensureLatestHeader();
-
-		StringBuilder rows = new StringBuilder();
 		List<String> savedMessages = new ArrayList<>();
-		for (CapturedChat capture : captures) {
-			if (capture == null || shouldFilterMessage(capture.rawMessage())) {
-				continue;
-			}
-			String row = buildTrainingCsvRow(capture, label, null);
-			if (row != null && !row.isBlank()) {
-				rows.append(row).append(System.lineSeparator());
-				savedMessages.add(capture.rawMessage());
-			}
-		}
-		if (rows.length() == 0) {
-			return;
-		}
+		synchronized (trainingFileLock) {
+			ensureFileInitialized();
+			ensureLatestHeader();
 
-		Files.writeString(
-			TRAINING_DATA_PATH,
-			rows.toString(),
-			StandardCharsets.UTF_8,
-			StandardOpenOption.APPEND
-		);
+			StringBuilder rows = new StringBuilder();
+			for (CapturedChat capture : captures) {
+				if (capture == null || shouldFilterMessage(capture.rawMessage())) {
+					continue;
+				}
+				String row = buildTrainingCsvRow(capture, label, null);
+				if (row != null && !row.isBlank()) {
+					rows.append(row).append(System.lineSeparator());
+					savedMessages.add(capture.rawMessage());
+				}
+			}
+			if (rows.length() == 0) {
+				return;
+			}
+
+			Files.writeString(
+				TRAINING_DATA_PATH,
+				rows.toString(),
+				StandardCharsets.UTF_8,
+				StandardOpenOption.APPEND
+			);
+		}
 		markMessagesAsSaved(savedMessages);
 	}
 
@@ -230,24 +258,26 @@ public final class TrainingDataService {
 		if (event == null || event.rawMessage() == null || event.rawMessage().isBlank()) {
 			return;
 		}
-		ensureFileInitialized();
-		ensureLatestHeader();
 		CapturedChat capture = new CapturedChat(
 			event.playerName(),
 			event.rawMessage(),
 			event.channel() == null ? "unknown" : event.channel(),
 			event.timestampMs() > 0 ? event.timestampMs() : System.currentTimeMillis()
 		);
-		String row = buildTrainingCsvRow(capture, label, result);
-		if (row == null || row.isBlank()) {
-			return;
+		synchronized (trainingFileLock) {
+			ensureFileInitialized();
+			ensureLatestHeader();
+			String row = buildTrainingCsvRow(capture, label, result);
+			if (row == null || row.isBlank()) {
+				return;
+			}
+			Files.writeString(
+				TRAINING_DATA_PATH,
+				row + System.lineSeparator(),
+				StandardCharsets.UTF_8,
+				StandardOpenOption.APPEND
+			);
 		}
-		Files.writeString(
-			TRAINING_DATA_PATH,
-			row + System.lineSeparator(),
-			StandardCharsets.UTF_8,
-			StandardOpenOption.APPEND
-		);
 		markMessagesAsSaved(List.of(capture.rawMessage()));
 	}
 
@@ -316,8 +346,20 @@ public final class TrainingDataService {
 	}
 
 	public int migrateTrainingData() throws IOException {
-		ensureFileInitialized();
-		return ensureLatestHeader();
+		synchronized (trainingFileLock) {
+			ensureFileInitialized();
+			return ensureLatestHeader();
+		}
+	}
+
+	public List<String> readTrainingCsvLines() throws IOException {
+		synchronized (trainingFileLock) {
+			if (!Files.isRegularFile(TRAINING_DATA_PATH)) {
+				return List.of();
+			}
+			ensureLatestHeader();
+			return Files.readAllLines(TRAINING_DATA_PATH, StandardCharsets.UTF_8);
+		}
 	}
 
 	private String buildTrainingCsvRow(CapturedChat capture, int label, DetectionResult detection) {
@@ -386,20 +428,24 @@ public final class TrainingDataService {
 	}
 
 	private long computeDelta(String speakerKey, long timestamp) {
-		Long previous = lastTimestampByPlayer.put(speakerKey, timestamp);
-		if (previous == null || previous <= 0L || timestamp <= previous) {
-			return 0L;
+		synchronized (captureLock) {
+			Long previous = lastTimestampByPlayer.put(speakerKey, timestamp);
+			if (previous == null || previous <= 0L || timestamp <= previous) {
+				return 0L;
+			}
+			return timestamp - previous;
 		}
-		return timestamp - previous;
 	}
 
 	private int updateRepeatedContact(String speakerKey) {
-		int next = repeatedContactByPlayer.getOrDefault(speakerKey, 0) + 1;
-		if (next > 9) {
-			next = 9;
+		synchronized (captureLock) {
+			int next = repeatedContactByPlayer.getOrDefault(speakerKey, 0) + 1;
+			if (next > 9) {
+				next = 9;
+			}
+			repeatedContactByPlayer.put(speakerKey, next);
+			return next;
 		}
-		repeatedContactByPlayer.put(speakerKey, next);
-		return next;
 	}
 
 	private static Map<String, String> defaultColumnValues(String message, int label, String channel, long deltaMs) {
@@ -630,35 +676,39 @@ public final class TrainingDataService {
 		if (capture == null || capture.rawMessage() == null || capture.rawMessage().isBlank()) {
 			return;
 		}
-		lastCapturedChatLine = capture.rawMessage().trim();
-		recentChat.addLast(capture);
-		while (recentChat.size() > MAX_CAPTURED_CHAT_LINES) {
-			recentChat.removeFirst();
-		}
-		pendingReviewChat.addLast(capture);
-		while (pendingReviewChat.size() > MAX_CAPTURED_CHAT_LINES) {
-			pendingReviewChat.removeFirst();
+		synchronized (captureLock) {
+			lastCapturedChatLine = capture.rawMessage().trim();
+			recentChat.addLast(capture);
+			while (recentChat.size() > maxCapturedChatLines) {
+				recentChat.removeFirst();
+			}
+			pendingReviewChat.addLast(capture);
+			while (pendingReviewChat.size() > maxCapturedChatLines) {
+				pendingReviewChat.removeFirst();
+			}
 		}
 	}
 
 	private void markMessagesAsSaved(List<String> messages) {
-		if (messages == null || messages.isEmpty() || pendingReviewChat.isEmpty()) {
-			return;
-		}
-		for (String message : messages) {
-			String key = pendingKey(message);
-			if (key.isBlank()) {
-				continue;
+		synchronized (captureLock) {
+			if (messages == null || messages.isEmpty() || pendingReviewChat.isEmpty()) {
+				return;
 			}
-			Iterator<CapturedChat> iterator = pendingReviewChat.iterator();
-			while (iterator.hasNext()) {
-				CapturedChat capture = iterator.next();
-				if (capture == null) {
+			for (String message : messages) {
+				String key = pendingKey(message);
+				if (key.isBlank()) {
 					continue;
 				}
-				if (pendingKey(capture.rawMessage()).equals(key)) {
-					iterator.remove();
-					break;
+				Iterator<CapturedChat> iterator = pendingReviewChat.iterator();
+				while (iterator.hasNext()) {
+					CapturedChat capture = iterator.next();
+					if (capture == null) {
+						continue;
+					}
+					if (pendingKey(capture.rawMessage()).equals(key)) {
+						iterator.remove();
+						break;
+					}
 				}
 			}
 		}

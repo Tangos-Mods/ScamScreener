@@ -39,8 +39,10 @@ import eu.tango.scamscreener.ui.AlertReviewRegistry;
 import eu.tango.scamscreener.ui.EducationMessages;
 import eu.tango.scamscreener.ui.MessageDispatcher;
 import eu.tango.scamscreener.ui.NotificationService;
+import eu.tango.scamscreener.util.AsyncDispatcher;
 import eu.tango.scamscreener.util.TextUtil;
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.fabricmc.fabric.api.client.message.v1.ClientSendMessageEvents;
@@ -59,7 +61,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import eu.tango.scamscreener.security.EmailSafety;
 import eu.tango.scamscreener.security.DiscordSafety;
 import eu.tango.scamscreener.security.OutgoingMessageGuard;
@@ -73,7 +74,7 @@ public class ScamScreenerClient implements ClientModInitializer {
 	private static ScamScreenerClient INSTANCE;
 	private final PlayerLookup playerLookup = new PlayerLookup();
 	private final MojangProfileService mojangProfileService = new MojangProfileService();
-	private final TrainingDataService trainingDataService = new TrainingDataService();
+	private final TrainingDataService trainingDataService = new TrainingDataService(ScamRulesConfig.loadOrCreate().capturedChatCacheSize);
 	private final TrainingUploadReminderService trainingUploadReminderService = new TrainingUploadReminderService(trainingDataService::trainingDataPath);
 	private final FunnelMetricsService funnelMetricsService = new FunnelMetricsService();
 	private final LocalAiTrainer localAiTrainer = new LocalAiTrainer();
@@ -104,6 +105,7 @@ public class ScamScreenerClient implements ClientModInitializer {
 	@Override
 	public void onInitializeClient() {
 		INSTANCE = this;
+		AsyncDispatcher.init();
 		BLACKLIST.load();
 		ScamRules.reloadConfig();
 		autoLeaveOnBlacklist = ScamRulesConfig.loadOrCreate().autoLeaveOnBlacklist;
@@ -130,6 +132,7 @@ public class ScamScreenerClient implements ClientModInitializer {
 		);
 		registerCommands();
 		registerHypixelMessageChecks();
+		ClientLifecycleEvents.CLIENT_STOPPING.register(client -> AsyncDispatcher.shutdown());
 		ClientTickEvents.END_CLIENT_TICK.register(client ->
 			tickController.onClientTick(client, () -> modelUpdateService.checkForUpdateAsync(MessageDispatcher::reply)));
 	}
@@ -281,7 +284,7 @@ public class ScamScreenerClient implements ClientModInitializer {
 		Component decorated = ChatDecorator.decoratePlayerLine(message, parsed, blacklisted);
 		Minecraft client = Minecraft.getInstance();
 		if (client != null) {
-			client.execute(() -> {
+			AsyncDispatcher.onClient(client, () -> {
 				if (client.player != null) {
 					client.player.displayClientMessage(decorated, false);
 				}
@@ -362,21 +365,27 @@ public class ScamScreenerClient implements ClientModInitializer {
 			MessageDispatcher.reply(Messages.alertReviewContextMissing());
 			return 0;
 		}
-		List<String> messages = collectReviewMessages(context);
 		Minecraft client = Minecraft.getInstance();
 		if (client == null) {
 			MessageDispatcher.reply(Messages.alertReviewOpenFailed());
 			return 0;
 		}
-		CompletableFuture.runAsync(() -> client.execute(() -> {
-			Screen parent = client.screen;
-			client.setScreen(new AlertManageScreen(
-				parent,
-				context,
-				messages,
-				request -> saveAlertReview(context, request)
-			));
-		}));
+		AsyncDispatcher
+			.supplyBackground(() -> collectReviewMessages(context))
+			.thenAccept(messages -> AsyncDispatcher.onClient(client, () -> {
+				Screen parent = client.screen;
+				client.setScreen(new AlertManageScreen(
+					parent,
+					context,
+					messages,
+					request -> saveAlertReview(context, request)
+				));
+			}))
+			.exceptionally(error -> {
+				LOGGER.warn("Failed to open alert manage review screen", error);
+				AsyncDispatcher.onClient(client, () -> MessageDispatcher.reply(Messages.alertReviewOpenFailed()));
+				return null;
+			});
 		return 1;
 	}
 
@@ -386,16 +395,22 @@ public class ScamScreenerClient implements ClientModInitializer {
 			MessageDispatcher.reply(Messages.alertReviewContextMissing());
 			return 0;
 		}
-		List<String> messages = collectReviewMessages(context);
 		Minecraft client = Minecraft.getInstance();
 		if (client == null) {
 			MessageDispatcher.reply(Messages.alertReviewOpenFailed());
 			return 0;
 		}
-		CompletableFuture.runAsync(() -> client.execute(() -> {
-			Screen parent = client.screen;
-			client.setScreen(new AlertInfoScreen(parent, context, messages));
-		}));
+		AsyncDispatcher
+			.supplyBackground(() -> collectReviewMessages(context))
+			.thenAccept(messages -> AsyncDispatcher.onClient(client, () -> {
+				Screen parent = client.screen;
+				client.setScreen(new AlertInfoScreen(parent, context, messages));
+			}))
+			.exceptionally(error -> {
+				LOGGER.warn("Failed to open alert info review screen", error);
+				AsyncDispatcher.onClient(client, () -> MessageDispatcher.reply(Messages.alertReviewOpenFailed()));
+				return null;
+			});
 		return 1;
 	}
 
@@ -438,84 +453,67 @@ public class ScamScreenerClient implements ClientModInitializer {
 	}
 
 	private int openRecentCapturedReviewScreen() {
-		List<TrainingDataService.CapturedChat> captures = trainingDataService.recentPendingCaptured(TrainingDataService.MAX_CAPTURED_CHAT_LINES);
-		if (captures.isEmpty()) {
-			MessageDispatcher.reply(Messages.noChatToCapture());
-			return 0;
-		}
-
 		Minecraft client = Minecraft.getInstance();
 		if (client == null) {
 			MessageDispatcher.reply(Messages.alertReviewOpenFailed());
 			return 0;
 		}
 
-		List<AlertManageScreen.ReviewRow> reviewRows = new ArrayList<>(captures.size());
-		for (int i = 0; i < captures.size(); i++) {
-			TrainingDataService.CapturedChat capture = captures.get(i);
-			if (capture == null || capture.rawMessage() == null || capture.rawMessage().isBlank()) {
-				continue;
-			}
-			reviewRows.add(new AlertManageScreen.ReviewRow("recent-" + i, capture.rawMessage(), -1));
-		}
-		if (reviewRows.isEmpty()) {
-			MessageDispatcher.reply(Messages.noChatToCapture());
-			return 0;
-		}
-
-		CompletableFuture.runAsync(() -> client.execute(() -> {
-			Screen parent = client.screen;
-			client.setScreen(new AlertManageScreen(
-				parent,
-				Component.literal("Review Logged Chat"),
-				reviewRows,
-				this::saveRecentCapturedReview
-			));
-		}));
+		AsyncDispatcher
+			.supplyBackground(this::buildRecentCapturedReviewRows)
+			.thenAccept(reviewRows -> AsyncDispatcher.onClient(client, () -> {
+				if (reviewRows.isEmpty()) {
+					MessageDispatcher.reply(Messages.noChatToCapture());
+					return;
+				}
+				Screen parent = client.screen;
+				client.setScreen(new AlertManageScreen(
+					parent,
+					Component.literal("Review Logged Chat"),
+					reviewRows,
+					this::saveRecentCapturedReview
+				));
+			}))
+			.exceptionally(error -> {
+				LOGGER.warn("Failed to open recent captured review screen", error);
+				AsyncDispatcher.onClient(client, () -> MessageDispatcher.reply(Messages.alertReviewOpenFailed()));
+				return null;
+			});
 		return 1;
 	}
 
 	private void openTrainingCsvReviewScreen() {
-		List<TrainingCommandHandler.TrainingCsvReviewRow> rows;
-		try {
-			rows = trainingCommandHandler.loadTrainingCsvForReview();
-		} catch (IOException e) {
-			MessageDispatcher.reply(Messages.trainingCsvReviewFailed(e.getMessage()));
-			return;
-		}
-		if (rows.isEmpty()) {
-			MessageDispatcher.reply(Messages.trainingCsvReviewNoData(trainingDataService.trainingDataPath().toString()));
-			return;
-		}
-
 		Minecraft client = Minecraft.getInstance();
 		if (client == null) {
 			MessageDispatcher.reply(Messages.trainingCsvReviewFailed("Minecraft client screen context is unavailable."));
 			return;
 		}
 
-		List<AlertManageScreen.ReviewRow> reviewRows = new ArrayList<>(rows.size());
-		for (TrainingCommandHandler.TrainingCsvReviewRow row : rows) {
-			if (row == null) {
-				continue;
-			}
-			reviewRows.add(new AlertManageScreen.ReviewRow(row.rowId(), row.message(), row.currentLabel()));
-		}
-		if (reviewRows.isEmpty()) {
-			MessageDispatcher.reply(Messages.trainingCsvReviewNoData(trainingDataService.trainingDataPath().toString()));
-			return;
-		}
-
-		CompletableFuture.runAsync(() -> client.execute(() -> {
-			Screen parent = client.screen;
-			client.setScreen(new AlertManageScreen(
-				parent,
-				Component.literal("Review Training CSV"),
-				reviewRows,
-				this::saveTrainingCsvReview,
-				this::openTrainingCsvFile
-			));
-		}));
+		AsyncDispatcher
+			.supplyBackground(this::loadTrainingCsvReviewRows)
+			.thenAccept(result -> AsyncDispatcher.onClient(client, () -> {
+				if (result.failureDetail() != null) {
+					MessageDispatcher.reply(Messages.trainingCsvReviewFailed(result.failureDetail()));
+					return;
+				}
+				if (result.rows().isEmpty()) {
+					MessageDispatcher.reply(Messages.trainingCsvReviewNoData(trainingDataService.trainingDataPath().toString()));
+					return;
+				}
+				Screen parent = client.screen;
+				client.setScreen(new AlertManageScreen(
+					parent,
+					Component.literal("Review Training CSV"),
+					result.rows(),
+					this::saveTrainingCsvReview,
+					this::openTrainingCsvFile
+				));
+			}))
+			.exceptionally(error -> {
+				LOGGER.warn("Failed to load training csv review rows", error);
+				AsyncDispatcher.onClient(client, () -> MessageDispatcher.reply(Messages.trainingCsvReviewFailed(safeErrorMessage(error))));
+				return null;
+			});
 	}
 
 	private void openTrainingCsvFile() {
@@ -644,7 +642,7 @@ public class ScamScreenerClient implements ClientModInitializer {
 		Set<String> seen = new LinkedHashSet<>();
 		String playerName = context.playerName();
 		if (playerName != null && !playerName.isBlank() && !"unknown".equalsIgnoreCase(playerName.trim())) {
-			for (TrainingDataService.CapturedChat capture : trainingDataService.recentCapturedForPlayer(playerName, TrainingDataService.MAX_CAPTURED_CHAT_LINES)) {
+			for (TrainingDataService.CapturedChat capture : trainingDataService.recentCapturedForPlayer(playerName, trainingDataService.maxCapturedChatLines())) {
 				if (capture == null) {
 					continue;
 				}
@@ -666,6 +664,61 @@ public class ScamScreenerClient implements ClientModInitializer {
 			return;
 		}
 		out.add(normalized);
+	}
+
+	private List<AlertManageScreen.ReviewRow> buildRecentCapturedReviewRows() {
+		List<TrainingDataService.CapturedChat> captures = trainingDataService.recentPendingCaptured(trainingDataService.maxCapturedChatLines());
+		if (captures.isEmpty()) {
+			return List.of();
+		}
+
+		List<AlertManageScreen.ReviewRow> reviewRows = new ArrayList<>(captures.size());
+		for (int i = 0; i < captures.size(); i++) {
+			TrainingDataService.CapturedChat capture = captures.get(i);
+			if (capture == null || capture.rawMessage() == null || capture.rawMessage().isBlank()) {
+				continue;
+			}
+			reviewRows.add(new AlertManageScreen.ReviewRow("recent-" + i, capture.rawMessage(), -1));
+		}
+		return reviewRows;
+	}
+
+	private TrainingCsvReviewLoadResult loadTrainingCsvReviewRows() {
+		List<TrainingCommandHandler.TrainingCsvReviewRow> rows;
+		try {
+			rows = trainingCommandHandler.loadTrainingCsvForReview();
+		} catch (IOException e) {
+			return TrainingCsvReviewLoadResult.failed(safeErrorMessage(e));
+		}
+		if (rows.isEmpty()) {
+			return TrainingCsvReviewLoadResult.success(List.of());
+		}
+
+		List<AlertManageScreen.ReviewRow> reviewRows = new ArrayList<>(rows.size());
+		for (TrainingCommandHandler.TrainingCsvReviewRow row : rows) {
+			if (row == null) {
+				continue;
+			}
+			reviewRows.add(new AlertManageScreen.ReviewRow(row.rowId(), row.message(), row.currentLabel()));
+		}
+		return TrainingCsvReviewLoadResult.success(reviewRows);
+	}
+
+	private static String safeErrorMessage(Throwable error) {
+		if (error == null || error.getMessage() == null || error.getMessage().isBlank()) {
+			return "Unknown error.";
+		}
+		return error.getMessage();
+	}
+
+	private record TrainingCsvReviewLoadResult(List<AlertManageScreen.ReviewRow> rows, String failureDetail) {
+		private static TrainingCsvReviewLoadResult success(List<AlertManageScreen.ReviewRow> rows) {
+			return new TrainingCsvReviewLoadResult(rows == null ? List.of() : rows, null);
+		}
+
+		private static TrainingCsvReviewLoadResult failed(String failureDetail) {
+			return new TrainingCsvReviewLoadResult(List.of(), failureDetail == null || failureDetail.isBlank() ? "Unknown error." : failureDetail);
+		}
 	}
 
 

@@ -1,6 +1,20 @@
 # Changelog
 All notable changes to this project are documented in this file.
 
+## [1.2.2] - 2026-02-17
+
+### Added
+- Added a centralized async utility `AsyncDispatcher` with managed lifecycle hooks, dedicated background/io/scheduled pools, and client-thread handoff helpers.
+- Added configuration key `capturedChatCacheSize` in `scam-screener-rules.json` to control the in-memory captured-message cache size (default `1000`).
+- Added `AsyncDispatcherTest` coverage for idempotent init/shutdown, background result handling, io task execution, and scheduling.
+
+### Changed
+- Unified async execution paths in review loading, upload ToS screen opening, training upload background work, model update check/download, and warning-tone scheduling to use `AsyncDispatcher`.
+- Review cache usage now reads the configured `capturedChatCacheSize` value instead of a hardcoded limit.
+
+### Fixed
+- Reduced risk of client tick/render blocking during review-related loading by consistently moving heavy preparation and CSV review loading into managed background execution.
+
 ## [1.2.1] - 2026-02-16
 
 ### Added

@@ -40,6 +40,23 @@ class ScamRulesConfigTest {
 		assertTrue(Boolean.TRUE.equals(config.alertThresholdMediumMigrationDone));
 	}
 
+	@Test
+	void defaultCapturedChatCacheSizeIsSet() {
+		ScamRulesConfig config = new ScamRulesConfig();
+
+		assertEquals(ScamRulesConfig.DEFAULT_CAPTURED_CHAT_CACHE_SIZE, config.capturedChatCacheSize);
+	}
+
+	@Test
+	void withDefaultsResetsInvalidCapturedChatCacheSizeToDefault() throws Exception {
+		ScamRulesConfig config = new ScamRulesConfig();
+		config.capturedChatCacheSize = -1;
+
+		invokeWithDefaults(config);
+
+		assertEquals(ScamRulesConfig.DEFAULT_CAPTURED_CHAT_CACHE_SIZE, config.capturedChatCacheSize);
+	}
+
 	private static void invokeWithDefaults(ScamRulesConfig config) throws Exception {
 		Method method = ScamRulesConfig.class.getDeclaredMethod("withDefaults");
 		method.setAccessible(true);

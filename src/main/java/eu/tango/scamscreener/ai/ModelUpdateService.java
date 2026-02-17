@@ -6,6 +6,7 @@ import eu.tango.scamscreener.config.LocalAiModelConfig;
 import eu.tango.scamscreener.rules.ScamRules;
 import eu.tango.scamscreener.ui.Messages;
 import eu.tango.scamscreener.ui.DebugMessages;
+import eu.tango.scamscreener.util.AsyncDispatcher;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
@@ -47,19 +48,12 @@ public final class ModelUpdateService {
 
 	public void checkForUpdateAsync(Consumer<Component> reply) {
 		debug(reply, "check started");
-		Thread thread = new Thread(
-			() -> checkForUpdate(reply, false, false, ScamRules.notifyAiUpToDateOnJoin()),
-			"scamscreener-model-check"
-		);
-		thread.setDaemon(true);
-		thread.start();
+		AsyncDispatcher.runIo(() -> checkForUpdate(reply, false, false, ScamRules.notifyAiUpToDateOnJoin()));
 	}
 
 	public void checkForUpdateAndDownloadAsync(Consumer<Component> reply, boolean force) {
 		debug(reply, "check started (command)");
-		Thread thread = new Thread(() -> checkForUpdate(reply, force, true, true), "scamscreener-model-check");
-		thread.setDaemon(true);
-		thread.start();
+		AsyncDispatcher.runIo(() -> checkForUpdate(reply, force, true, true));
 	}
 
 	public void setDebugEnabled(boolean enabled) {
@@ -91,9 +85,7 @@ public final class ModelUpdateService {
 			return 0;
 		}
 		debug(reply, "download requested id=" + id);
-		Thread thread = new Thread(() -> downloadModel(id, pendingModel, reply), "scamscreener-model-download");
-		thread.setDaemon(true);
-		thread.start();
+		AsyncDispatcher.runIo(() -> downloadModel(id, pendingModel, reply));
 		return 1;
 	}
 

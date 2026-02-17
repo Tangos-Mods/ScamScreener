@@ -1,35 +1,14 @@
-# ScamScreener 1.2.1
+# ScamScreener 1.2.2
 
-ScamScreener 1.2.1 mainly expands the in-game review and training-data workflow.
+This update focuses on smoother in-game review workflows and better async stability, especially for loading review data and running background tasks without stuttering the client tick.
 
-## Highlights
+## Added
 
-### Added
+- Added a new rules config option: `capturedChatCacheSize` in `scam-screener-rules.json` (default `1000`) to control how many captured chat lines stay in memory for review.
 
-- Added `/ss` as a full alias for `/scamscreener`.
-- Added direct menu opening on `/scamscreener` and `/ss` (help now via `/scamscreener help` or `/ss help`).
-- Added `Review Training CSV` in the mod menu next to `Upload Training Data`.
-- Added full CSV review flow with `Save`, `Save & Upload`, and `Open File`.
-- Added logged-chat review via `/scamscreener review` and `/ss review` for not-yet-saved chat lines.
-- Added autocomplete for `/scamscreener review player <playerName>` and `/ss review player <playerName>` with online players that have logged chat entries.
-- Added automatic training-data size reminders from 500+ entries (initial warning, then every 5 minutes) with clickable upload action.
+## Changed
 
-### Changed
+- Moved review data loading (`/ss review`, player review, alert review, CSV review) to managed background execution before opening screens.
+- Unified background task handling for training upload, model update check/download, and warning sound scheduling through one async dispatcher.
+- Review list size now follows the configured `capturedChatCacheSize` instead of a hardcoded limit.
 
-- Changed review row state display to native colored `[I]`, `[S]`, and `[L]` markers.
-- Changed review help routing to `/scamscreener review help` and `/ss review help`.
-- Changed CSV review editing to row-based handling so duplicate messages can be reviewed independently.
-
-### Fixed
-
-- Fixed CSV label save behavior so message quoting (`"..."`) is preserved.
-- Fixed CSV review ignore behavior so ignored rows are removed on save.
-
-## Compatibility
-
-- Minecraft `1.21.10` and `1.21.11`.
-- Fabric (client-side).
-
-## Note
-
-ScamScreener remains client-side. Detection, review, and local training data stay on your client unless you explicitly upload training data.
