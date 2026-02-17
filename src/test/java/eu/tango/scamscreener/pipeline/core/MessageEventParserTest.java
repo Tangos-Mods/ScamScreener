@@ -28,6 +28,15 @@ class MessageEventParserTest {
 	}
 
 	@Test
+	void parseDetectsCoopChannelAsTeamContext() {
+		MessageEvent event = MessageEventParser.parse("Co-op > Player123: hello", 100L);
+
+		assertNotNull(event);
+		assertEquals(MessageContext.TEAM, event.context());
+		assertEquals("team", event.channel());
+	}
+
+	@Test
 	void parseDetectsPmChannel() {
 		MessageEvent event = MessageEventParser.parse("from Player123: hello", 100L);
 
@@ -39,6 +48,15 @@ class MessageEventParserTest {
 	@Test
 	void parseDetectsPublicChannel() {
 		MessageEvent event = MessageEventParser.parse("Player123: hello", 100L);
+
+		assertNotNull(event);
+		assertEquals(MessageContext.GENERAL, event.context());
+		assertEquals("public", event.channel());
+	}
+
+	@Test
+	void parseDetectsAllChannelAsPublic() {
+		MessageEvent event = MessageEventParser.parse("All > Player123: hello", 100L);
 
 		assertNotNull(event);
 		assertEquals(MessageContext.GENERAL, event.context());

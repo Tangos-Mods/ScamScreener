@@ -44,7 +44,11 @@ public final class MessageEventParser {
 		if (cleaned.startsWith("party >")) {
 			return new ChannelContext(MessageContext.PARTY, "party");
 		}
-		if (cleaned.startsWith("guild >") || cleaned.startsWith("officer >") || cleaned.startsWith("team >")) {
+		if (cleaned.startsWith("guild >")
+			|| cleaned.startsWith("officer >")
+			|| cleaned.startsWith("team >")
+			|| cleaned.startsWith("co-op >")
+			|| cleaned.startsWith("coop >")) {
 			return new ChannelContext(MessageContext.TEAM, "team");
 		}
 		if (cleaned.startsWith("from ") || cleaned.startsWith("to ")

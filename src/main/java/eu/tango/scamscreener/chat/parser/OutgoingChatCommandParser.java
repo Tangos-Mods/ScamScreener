@@ -41,6 +41,9 @@ public final class OutgoingChatCommandParser {
 		if ("guild".equals(head) && hasSecond(tokens, "chat")) {
 			return build(tokens, 2, "team");
 		}
+		if ("cc".equals(head) || "coopchat".equals(head) || "co-opchat".equals(head)) {
+			return build(tokens, 1, "team");
+		}
 		if ("ac".equals(head)) {
 			return build(tokens, 1, "public");
 		}

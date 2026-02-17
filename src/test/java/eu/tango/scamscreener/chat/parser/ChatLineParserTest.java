@@ -18,8 +18,35 @@ class ChatLineParserTest {
 	}
 
 	@Test
+	void parsePlayerLineParsesDecoratedPublicChat() {
+		ChatLineParser.ParsedPlayerLine parsed = ChatLineParser.parsePlayerLine("[MVP+] ✫ SkyTrader: selling carries");
+
+		assertNotNull(parsed);
+		assertEquals("SkyTrader", parsed.playerName());
+		assertEquals("selling carries", parsed.message());
+	}
+
+	@Test
 	void parsePlayerLineParsesWhisperFormat() {
 		ChatLineParser.ParsedPlayerLine parsed = ChatLineParser.parsePlayerLine("from [VIP] Trader123: hi there");
+
+		assertNotNull(parsed);
+		assertEquals("Trader123", parsed.playerName());
+		assertEquals("hi there", parsed.message());
+	}
+
+	@Test
+	void parsePlayerLineParsesCoopChannelFormat() {
+		ChatLineParser.ParsedPlayerLine parsed = ChatLineParser.parsePlayerLine("Co-op > [MVP+] Trader123: hi there");
+
+		assertNotNull(parsed);
+		assertEquals("Trader123", parsed.playerName());
+		assertEquals("hi there", parsed.message());
+	}
+
+	@Test
+	void parsePlayerLineParsesAllChannelFormat() {
+		ChatLineParser.ParsedPlayerLine parsed = ChatLineParser.parsePlayerLine("All > [MVP+] Trader123: hi there");
 
 		assertNotNull(parsed);
 		assertEquals("Trader123", parsed.playerName());

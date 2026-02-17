@@ -35,6 +35,15 @@ class OutgoingChatCommandParserTest {
 	}
 
 	@Test
+	void parseParsesCoopChatCommand() {
+		OutgoingChatCommandParser.ParsedOutgoingChat parsed = OutgoingChatCommandParser.parse("/cc meet on island");
+
+		assertNotNull(parsed);
+		assertEquals("team", parsed.channel());
+		assertEquals("meet on island", parsed.message());
+	}
+
+	@Test
 	void parseParsesReplyCommand() {
 		OutgoingChatCommandParser.ParsedOutgoingChat parsed = OutgoingChatCommandParser.parse("/r sounds good");
 
