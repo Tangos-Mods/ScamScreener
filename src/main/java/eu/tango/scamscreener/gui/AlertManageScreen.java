@@ -10,9 +10,13 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Supplier;
 
 public final class AlertManageScreen extends ScamScreenerGUI {
+	private static final int AUTO_REFRESH_INTERVAL_TICKS = 20;
 	private static final int LIST_ROW_HEIGHT = 20;
 	private static final int CHECKBOX_HEIGHT = 20;
 	private static final int LIST_TOP = 48;
@@ -26,6 +30,7 @@ public final class AlertManageScreen extends ScamScreenerGUI {
 	private final List<SelectionState> states = new ArrayList<>();
 	private final SubmitHandler submitHandler;
 	private final Runnable openFileHandler;
+	private final Supplier<List<ReviewRow>> refreshRowsSupplier;
 
 	private int listX;
 	private int listY;
@@ -50,6 +55,7 @@ public final class AlertManageScreen extends ScamScreenerGUI {
 			toLegacyRows(sourceMessages),
 			true,
 			submitHandler,
+			null,
 			null
 		);
 	}
@@ -60,7 +66,17 @@ public final class AlertManageScreen extends ScamScreenerGUI {
 		List<ReviewRow> sourceRows,
 		SubmitHandler submitHandler
 	) {
-		this(parent, title, sourceRows, submitHandler, null);
+		this(parent, title, sourceRows, submitHandler, null, null);
+	}
+
+	public AlertManageScreen(
+		Screen parent,
+		Component title,
+		List<ReviewRow> sourceRows,
+		SubmitHandler submitHandler,
+		Supplier<List<ReviewRow>> refreshRowsSupplier
+	) {
+		this(parent, title, sourceRows, submitHandler, null, refreshRowsSupplier);
 	}
 
 	public AlertManageScreen(
@@ -70,6 +86,17 @@ public final class AlertManageScreen extends ScamScreenerGUI {
 		SubmitHandler submitHandler,
 		Runnable openFileHandler
 	) {
+		this(parent, title, sourceRows, submitHandler, openFileHandler, null);
+	}
+
+	public AlertManageScreen(
+		Screen parent,
+		Component title,
+		List<ReviewRow> sourceRows,
+		SubmitHandler submitHandler,
+		Runnable openFileHandler,
+		Supplier<List<ReviewRow>> refreshRowsSupplier
+	) {
 		this(
 			parent,
 			title == null ? Component.literal("Review Training CSV") : title,
@@ -77,7 +104,8 @@ public final class AlertManageScreen extends ScamScreenerGUI {
 			sourceRows,
 			false,
 			submitHandler,
-			openFileHandler
+			openFileHandler,
+			refreshRowsSupplier
 		);
 	}
 
@@ -88,16 +116,30 @@ public final class AlertManageScreen extends ScamScreenerGUI {
 		List<ReviewRow> sourceRows,
 		boolean showPlayerActions,
 		SubmitHandler submitHandler,
-		Runnable openFileHandler
+		Runnable openFileHandler,
+		Supplier<List<ReviewRow>> refreshRowsSupplier
 	) {
 		super(title == null ? Component.literal("Manage Alert") : title, parent);
 		this.alertContext = alertContext;
-		this.sourceRows = sanitizeRows(sourceRows);
+		this.sourceRows = new ArrayList<>(sanitizeRows(sourceRows));
 		this.showPlayerActions = showPlayerActions;
 		this.submitHandler = submitHandler;
 		this.openFileHandler = openFileHandler;
+		this.refreshRowsSupplier = refreshRowsSupplier;
 		for (int i = 0; i < this.sourceRows.size(); i++) {
 			states.add(SelectionState.fromCurrentLabel(this.sourceRows.get(i).currentLabel()));
+		}
+	}
+
+	@Override
+	public void tick() {
+		super.tick();
+		if (refreshRowsSupplier == null || !isPeriodicTick(AUTO_REFRESH_INTERVAL_TICKS)) {
+			return;
+		}
+		try {
+			refreshRows(refreshRowsSupplier.get());
+		} catch (Exception ignored) {
 		}
 	}
 
@@ -259,6 +301,42 @@ public final class AlertManageScreen extends ScamScreenerGUI {
 		if (result > 0) {
 			this.onClose();
 		}
+	}
+
+	private void refreshRows(List<ReviewRow> updatedRows) {
+		List<ReviewRow> sanitized = sanitizeRows(updatedRows);
+		Map<String, SelectionState> byRowId = new HashMap<>();
+		Map<String, SelectionState> byMessage = new HashMap<>();
+		for (int i = 0; i < sourceRows.size() && i < states.size(); i++) {
+			ReviewRow row = sourceRows.get(i);
+			SelectionState state = states.get(i);
+			if (row == null || state == null) {
+				continue;
+			}
+			if (row.rowId() != null && !row.rowId().isBlank()) {
+				byRowId.put(row.rowId(), state);
+			}
+			if (row.message() != null && !row.message().isBlank()) {
+				byMessage.putIfAbsent(row.message(), state);
+			}
+		}
+
+		sourceRows.clear();
+		sourceRows.addAll(sanitized);
+		states.clear();
+		for (ReviewRow row : sourceRows) {
+			SelectionState existing = null;
+			if (row != null && row.rowId() != null && !row.rowId().isBlank()) {
+				existing = byRowId.get(row.rowId());
+			}
+			if (existing == null && row != null && row.message() != null && !row.message().isBlank()) {
+				existing = byMessage.get(row.message());
+			}
+			states.add(existing == null ? SelectionState.fromCurrentLabel(row.currentLabel()) : existing);
+		}
+
+		int maxOffset = Math.max(0, sourceRows.size() - maxVisibleRows);
+		scrollOffsetRows = Mth.clamp(scrollOffsetRows, 0, maxOffset);
 	}
 
 	private void renderList(GuiGraphics guiGraphics, int mouseX, int mouseY) {

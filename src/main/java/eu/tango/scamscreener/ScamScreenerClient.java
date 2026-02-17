@@ -471,7 +471,8 @@ public class ScamScreenerClient implements ClientModInitializer {
 					parent,
 					Component.literal("Review Logged Chat"),
 					reviewRows,
-					this::saveRecentCapturedReview
+					this::saveRecentCapturedReview,
+					this::buildRecentCapturedReviewRows
 				));
 			}))
 			.exceptionally(error -> {
@@ -678,7 +679,13 @@ public class ScamScreenerClient implements ClientModInitializer {
 			if (capture == null || capture.rawMessage() == null || capture.rawMessage().isBlank()) {
 				continue;
 			}
-			reviewRows.add(new AlertManageScreen.ReviewRow("recent-" + i, capture.rawMessage(), -1));
+			String rowId = "recent-"
+				+ capture.timestampMs()
+				+ "-"
+				+ capture.speakerKey()
+				+ "-"
+				+ Integer.toHexString(capture.rawMessage().hashCode());
+			reviewRows.add(new AlertManageScreen.ReviewRow(rowId, capture.rawMessage(), -1));
 		}
 		return reviewRows;
 	}

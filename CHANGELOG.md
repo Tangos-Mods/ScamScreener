@@ -7,13 +7,20 @@ All notable changes to this project are documented in this file.
 - Added a centralized async utility `AsyncDispatcher` with managed lifecycle hooks, dedicated background/io/scheduled pools, and client-thread handoff helpers.
 - Added configuration key `capturedChatCacheSize` in `scam-screener-rules.json` to control the in-memory captured-message cache size (default `1000`).
 - Added `AsyncDispatcherTest` coverage for idempotent init/shutdown, background result handling, io task execution, and scheduling.
+- Added centralized ignored chat message handling in `IgnoredChatMessages` so system-message rules (like `[NPC]`) are maintained in one extendable place.
+- Added live auto-refresh for `Review Logged Chat` while the screen is open (about once per second), so new captured lines appear without reopening the screen.
+- Added parser/test coverage for additional chat formats (`Co-op >`, `All >`, decorated public chat lines, and `/cc` coop chat command parsing).
 
 ### Changed
 - Unified async execution paths in review loading, upload ToS screen opening, training upload background work, model update check/download, and warning-tone scheduling to use `AsyncDispatcher`.
 - Review cache usage now reads the configured `capturedChatCacheSize` value instead of a hardcoded limit.
+- Expanded player chat parsing to accept more real in-game public/team chat variants, including decorative symbols before player names.
+- `Review Logged Chat` row IDs are now stable (timestamp/speaker/message hash) to preserve row state better during refresh.
 
 ### Fixed
 - Reduced risk of client tick/render blocking during review-related loading by consistently moving heavy preparation and CSV review loading into managed background execution.
+- Fixed cases where valid player chat lines in public/team contexts were not parsed and therefore did not appear in review capture flow.
+- Fixed `Review Logged Chat` behavior where users had to close/reopen the screen to see newly captured lines.
 
 ## [1.2.1] - 2026-02-16
 
