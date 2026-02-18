@@ -1,6 +1,6 @@
 {
-  "message": "1.2.2",
-  "color": "blue",
+  "label": "version",
   "schemaVersion": 1,
-  "label": "version"
+  "color": "blue",
+  "message": "1.2.3"
 }

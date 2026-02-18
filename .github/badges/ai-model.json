@@ -1,6 +1,6 @@
 {
-  "message": "v18",
-  "color": "5555ff",
+  "label": "AI Model",
   "schemaVersion": 1,
-  "label": "AI Model"
+  "color": "5555ff",
+  "message": "v18"
 }
