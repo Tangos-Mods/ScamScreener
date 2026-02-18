@@ -78,6 +78,7 @@ public final class TrainingDataService {
 	private final Deque<CapturedChat> pendingReviewChat = new ArrayDeque<>();
 	private final Map<String, Long> lastTimestampByPlayer = new HashMap<>();
 	private final Map<String, Integer> repeatedContactByPlayer = new HashMap<>();
+	private final ChatEchoDeduplicator outgoingEchoDeduplicator = new ChatEchoDeduplicator(30_000L);
 	private final Object captureLock = new Object();
 	private final Object trainingFileLock = new Object();
 	private final int maxCapturedChatLines;
@@ -96,22 +97,39 @@ public final class TrainingDataService {
 	}
 
 	public void recordChatLine(String plain) {
+		recordChatLine(plain, 0);
+	}
+
+	public void recordChatLine(String plain, int modScore) {
 		if (plain == null || plain.isBlank()) {
 			return;
 		}
-		MessageEvent parsed = MessageEventParser.parse(plain, System.currentTimeMillis());
+		long now = System.currentTimeMillis();
+		MessageEvent parsed = MessageEventParser.parse(plain, now);
 		if (parsed == null) {
 			return;
 		}
+		recordChatEvent(parsed, modScore);
+	}
 
-		pushCapture(new CapturedChat(parsed.playerName(), parsed.rawMessage(), parsed.channel(), parsed.timestampMs()));
+	public void recordChatEvent(MessageEvent event, int modScore) {
+		if (event == null || event.rawMessage() == null || event.rawMessage().isBlank()) {
+			return;
+		}
+		if (outgoingEchoDeduplicator.consumeIncomingEcho(event.playerName(), event.rawMessage(), event.channel(), event.timestampMs())) {
+			return;
+		}
+
+		pushCapture(new CapturedChat(event.playerName(), event.rawMessage(), event.channel(), event.timestampMs(), clampReviewScore(modScore)));
 	}
 
 	public void recordOutgoingChatLine(String playerName, String message, String channel) {
 		if (message == null || message.isBlank()) {
 			return;
 		}
-		pushCapture(new CapturedChat(playerName, message.trim(), channel, System.currentTimeMillis()));
+		CapturedChat capture = new CapturedChat(playerName, message.trim(), channel, System.currentTimeMillis());
+		pushCapture(capture);
+		outgoingEchoDeduplicator.rememberOutgoing(capture.speakerKey(), capture.rawMessage(), capture.channel(), capture.timestampMs());
 	}
 
 	public String lastCapturedLine() {
@@ -664,11 +682,16 @@ public final class TrainingDataService {
 		}
 	}
 
-	public record CapturedChat(String speakerKey, String rawMessage, String channel, long timestampMs) {
+	public record CapturedChat(String speakerKey, String rawMessage, String channel, long timestampMs, int modScore) {
+		public CapturedChat(String speakerKey, String rawMessage, String channel, long timestampMs) {
+			this(speakerKey, rawMessage, channel, timestampMs, 0);
+		}
+
 		public CapturedChat {
 			speakerKey = toSpeakerKey(speakerKey);
 			rawMessage = rawMessage == null ? "" : rawMessage;
 			channel = channel == null || channel.isBlank() ? "unknown" : channel.trim().toLowerCase(Locale.ROOT);
+			modScore = clampReviewScore(modScore);
 		}
 	}
 
@@ -719,5 +742,9 @@ public final class TrainingDataService {
 			return "";
 		}
 		return message.replace('\n', ' ').replace('\r', ' ').trim();
+	}
+
+	private static int clampReviewScore(int score) {
+		return Math.max(0, Math.min(100, score));
 	}
 }

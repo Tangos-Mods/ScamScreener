@@ -36,6 +36,15 @@ class ChatLineParserTest {
 	}
 
 	@Test
+	void parsePlayerLineParsesLevelAndArrowDecoratedPublicChat() {
+		ChatLineParser.ParsedPlayerLine parsed = ChatLineParser.parsePlayerLine("[293] \u00BB [MVP+] KoudeR: ah");
+
+		assertNotNull(parsed);
+		assertEquals("KoudeR", parsed.playerName());
+		assertEquals("ah", parsed.message());
+	}
+
+	@Test
 	void parsePlayerLineParsesCoopChannelFormat() {
 		ChatLineParser.ParsedPlayerLine parsed = ChatLineParser.parsePlayerLine("Co-op > [MVP+] Trader123: hi there");
 
@@ -54,11 +63,38 @@ class ChatLineParserTest {
 	}
 
 	@Test
+	void parsePlayerLineParsesArbitraryDecoratorsBetweenLevelAndRank() {
+		ChatLineParser.ParsedPlayerLine parsed = ChatLineParser.parsePlayerLine("[245] :^)_abc123 [MVP+] KoudeR: alright");
+
+		assertNotNull(parsed);
+		assertEquals("KoudeR", parsed.playerName());
+		assertEquals("alright", parsed.message());
+	}
+
+	@Test
+	void parsePlayerLineParsesAllChannelWithArbitraryDecoratorsBetweenLevelAndRank() {
+		ChatLineParser.ParsedPlayerLine parsed = ChatLineParser.parsePlayerLine("All > [245] :^)_abc123 [MVP+] KoudeR: ya rip");
+
+		assertNotNull(parsed);
+		assertEquals("KoudeR", parsed.playerName());
+		assertEquals("ya rip", parsed.message());
+	}
+
+	@Test
 	void parsePlayerLineRejectsKnownSystemMessages() {
 		String line = "You have sent a trade request to Trader123.";
 
 		assertTrue(ChatLineParser.isSystemLine(line));
 		assertNull(ChatLineParser.parsePlayerLine(line));
+	}
+
+	@Test
+	void parsePlayerLineParsesAllChannelWithLevelAndArrowDecorators() {
+		ChatLineParser.ParsedPlayerLine parsed = ChatLineParser.parsePlayerLine("All > [293] \u00BB [MVP+] KoudeR: ya rip");
+
+		assertNotNull(parsed);
+		assertEquals("KoudeR", parsed.playerName());
+		assertEquals("ya rip", parsed.message());
 	}
 
 	@Test
@@ -69,3 +105,4 @@ class ChatLineParserTest {
 		assertNull(ChatLineParser.parsePlayerLine(line));
 	}
 }
+

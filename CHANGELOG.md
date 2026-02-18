@@ -1,6 +1,20 @@
 # Changelog
 All notable changes to this project are documented in this file.
 
+## [1.2.3] - 2026-02-18
+
+### Added
+- Added per-row mod risk score display in reviewer rows directly after the `[I] [S] [L]` marker (`(0)` to `(100)`).
+
+### Changed
+
+
+### Fixed
+- Fixed missed player-name parsing for decorated lines, so these messages are now captured reliably and appear in `/scamscreener review` and `/ss review`.
+- Fixed duplicate live-review entries for the local player's own chat by de-duplicating outgoing messages against immediate incoming chat echo lines.
+- Expanded player chat parsing to tolerate arbitrary in-chat decorators between tags (for example between `[245]` and `[MVP+]`) in direct, channel, and whisper chat formats.
+
+
 ## [1.2.2] - 2026-02-17
 
 ### Added

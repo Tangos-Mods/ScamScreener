@@ -368,10 +368,10 @@ public final class AlertManageScreen extends ScamScreenerGUI {
 			guiGraphics.fill(listX + 1, rowY + 1, listX + listWidth - 1, rowY + LIST_ROW_HEIGHT - 1, rowBackground);
 
 			SelectionState state = states.get(absolute);
-			String prefix = state.marker() + " ";
+			ReviewRow row = sourceRows.get(absolute);
+			String prefix = state.marker() + " (" + clampScore(row.modScore()) + ") ";
 			int color = opaqueColor(state.color());
 
-			ReviewRow row = sourceRows.get(absolute);
 			guiGraphics.drawString(this.font, prefix + compactMessage(row.message(), 160), textX, rowY + 6, color, false);
 		}
 
@@ -422,7 +422,7 @@ public final class AlertManageScreen extends ScamScreenerGUI {
 			if (message.isBlank()) {
 				continue;
 			}
-			out.add(new ReviewRow("alert-" + i, message, -1));
+			out.add(new ReviewRow("alert-" + i, message, -1, 0));
 		}
 		return out;
 	}
@@ -442,7 +442,7 @@ public final class AlertManageScreen extends ScamScreenerGUI {
 				continue;
 			}
 			String rowId = row.rowId() == null || row.rowId().isBlank() ? "row-" + i : row.rowId().trim();
-			out.add(new ReviewRow(rowId, message, row.currentLabel()));
+			out.add(new ReviewRow(rowId, message, row.currentLabel(), row.modScore()));
 		}
 		return out;
 	}
@@ -467,6 +467,10 @@ public final class AlertManageScreen extends ScamScreenerGUI {
 
 	private static String safePlayerName(String playerName) {
 		return playerName == null || playerName.isBlank() ? "unknown" : playerName.trim();
+	}
+
+	private static int clampScore(int score) {
+		return Math.max(0, Math.min(100, score));
 	}
 
 	private void renderSelectedSummary(GuiGraphics guiGraphics, int y) {
@@ -629,11 +633,16 @@ public final class AlertManageScreen extends ScamScreenerGUI {
 		int submit(SaveRequest request);
 	}
 
-	public record ReviewRow(String rowId, String message, int currentLabel) {
+	public record ReviewRow(String rowId, String message, int currentLabel, int modScore) {
+		public ReviewRow(String rowId, String message, int currentLabel) {
+			this(rowId, message, currentLabel, 0);
+		}
+
 		public ReviewRow {
 			rowId = rowId == null ? "" : rowId.trim();
 			message = normalizeReviewMessage(message);
 			currentLabel = (currentLabel == 0 || currentLabel == 1) ? currentLabel : -1;
+			modScore = clampScore(modScore);
 		}
 	}
 

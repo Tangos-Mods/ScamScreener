@@ -8,15 +8,16 @@ import java.util.regex.Pattern;
 import eu.tango.scamscreener.chat.IgnoredChatMessages;
 
 public final class ChatLineParser {
+	private static final String CHAT_PREFIX_PATTERN = "(?:(?:\\[[^\\]]+\\]|[^\\r\\n])\\s*)*";
 	private static final Pattern DIRECT_CHAT_PATTERN = Pattern.compile(
-		"^(?:[^A-Za-z0-9_\\s]*\\s*)*(?:\\[[^\\]]+\\]\\s*)*(?:[^A-Za-z0-9_\\s]+\\s*)*([A-Za-z0-9_]{3,16})\\s*:\\s*(.+)$"
+		"^" + CHAT_PREFIX_PATTERN + "(?<![A-Za-z0-9_])([A-Za-z0-9_]{3,16})\\s*:\\s*(.+)$"
 	);
 	private static final Pattern CHANNEL_CHAT_PATTERN = Pattern.compile(
-		"^(?:party|guild|officer|team|co-?op|all|public)\\s*>\\s*(?:\\[[^\\]]+\\]\\s*)*(?:[^A-Za-z0-9_\\s]+\\s*)*([A-Za-z0-9_]{3,16})\\s*:\\s*(.+)$",
+		"^(?:party|guild|officer|team|co-?op|all|public)\\s*>\\s*" + CHAT_PREFIX_PATTERN + "(?<![A-Za-z0-9_])([A-Za-z0-9_]{3,16})\\s*:\\s*(.+)$",
 		Pattern.CASE_INSENSITIVE
 	);
 	private static final Pattern WHISPER_CHAT_PATTERN = Pattern.compile(
-		"^(?:from|to|whisper from|whisper to)\\s+(?:\\[[^\\]]+\\]\\s*)*([A-Za-z0-9_]{3,16})\\s*:\\s*(.+)$",
+		"^(?:from|to|whisper from|whisper to)\\s+" + CHAT_PREFIX_PATTERN + "(?<![A-Za-z0-9_])([A-Za-z0-9_]{3,16})\\s*:\\s*(.+)$",
 		Pattern.CASE_INSENSITIVE
 	);
 	private static final Set<String> SYSTEM_LABELS = Set.of(

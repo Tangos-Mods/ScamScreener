@@ -217,17 +217,33 @@ public class ScamScreenerClient implements ClientModInitializer {
 			return;
 		}
 		String plain = message.getString().trim();
-		trainingDataService.recordChatLine(plain);
+		long now = System.currentTimeMillis();
+		MessageEvent event = MessageEventParser.parse(plain, now);
+		int reviewScore = 0;
 
 		Minecraft client = Minecraft.getInstance();
 		if (client.player == null || client.getConnection() == null) {
+			if (event != null) {
+				trainingDataService.recordChatEvent(event, reviewScore);
+			} else {
+				trainingDataService.recordChatLine(plain, reviewScore);
+			}
 			return;
 		}
 
-		MessageEvent event = MessageEventParser.parse(plain, System.currentTimeMillis());
 		if (event != null) {
-			detectionPipeline.process(event, MessageDispatcher::reply, NotificationService::playWarningTone, funnelMetricsService::recordEvaluation)
+			final int[] scoreHolder = {0};
+			detectionPipeline.process(event, MessageDispatcher::reply, NotificationService::playWarningTone, evaluation -> {
+				funnelMetricsService.recordEvaluation(evaluation);
+				scoreHolder[0] = toReviewScore(evaluation == null ? null : evaluation.result());
+			})
 				.ifPresent(this::autoAddFlaggedMessageToTrainingData);
+			reviewScore = scoreHolder[0];
+		}
+		if (event != null) {
+			trainingDataService.recordChatEvent(event, reviewScore);
+		} else {
+			trainingDataService.recordChatLine(plain, reviewScore);
 		}
 		if (BLACKLIST.isEmpty()) {
 			return;
@@ -685,9 +701,17 @@ public class ScamScreenerClient implements ClientModInitializer {
 				+ capture.speakerKey()
 				+ "-"
 				+ Integer.toHexString(capture.rawMessage().hashCode());
-			reviewRows.add(new AlertManageScreen.ReviewRow(rowId, capture.rawMessage(), -1));
+			reviewRows.add(new AlertManageScreen.ReviewRow(rowId, capture.rawMessage(), -1, capture.modScore()));
 		}
 		return reviewRows;
+	}
+
+	private static int toReviewScore(eu.tango.scamscreener.pipeline.model.DetectionResult result) {
+		if (result == null) {
+			return 0;
+		}
+		int rounded = (int) Math.round(result.totalScore());
+		return Math.max(0, Math.min(100, rounded));
 	}
 
 	private TrainingCsvReviewLoadResult loadTrainingCsvReviewRows() {
