@@ -49,14 +49,15 @@ class FunnelMetricsServiceTest {
 		Path root = Files.createTempDirectory("scamscreener-funnel-boundary-");
 		try {
 			FunnelMetricsService service = new FunnelMetricsService(root.resolve("funnel-metrics.json"));
-			double threshold = 40.0;
+			double threshold = service.snapshot().alertThreshold();
 			double score = threshold + 2.0;
 
 			service.recordEvaluation(evaluationWithRule("discord rep join vc", score, ScamRules.ScamRule.FUNNEL_SEQUENCE_PATTERN));
 
 			FunnelMetricsService.Snapshot snapshot = service.snapshot();
 			assertEquals(1L, snapshot.funnelDetections());
-			assertEquals(1L, snapshot.uncertainBoundaryCases());
+			long expectedBoundaryCases = threshold > 0.0 ? 1L : 0L;
+			assertEquals(expectedBoundaryCases, snapshot.uncertainBoundaryCases());
 		} finally {
 			deleteTree(root);
 		}

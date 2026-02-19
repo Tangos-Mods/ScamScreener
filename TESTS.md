@@ -24,14 +24,26 @@ Base directory: `src/test/java/eu/tango/scamscreener/`
     - changed content does not match,
     - missing inputs (`null`/blank) return `false`.
 
-### `discord/DiscordWebhookUploaderIntegrationTest.java`
+### `discord/UploadRelayContractTest.java`
 - **What is tested:**
-  - End-to-end Discord webhook upload with multipart file + embed fields.
-  - Embed includes uploader test data, UUID, timestamp, and hash field.
+  - Local contract behavior for relay auth and upload.
+  - Automatic bootstrap credential provisioning when no local credentials are present.
+  - Invite-code redeem response mapping into local upload credentials.
+  - Signed multipart upload format and header contract (`clientId/timestamp/nonce/signature`).
+  - Failure mapping for non-2xx relay responses.
 - **How it is tested:**
-  - Opt-in integration test (`-Dscamscreener.discord.integration.enabled=true`).
-  - Uses the configured webhook in `DiscordWebhookUploader`.
-  - Creates a temporary `.csv.old.<n>` file, uploads it with fixed test context, and asserts successful response + `sha256=` in result detail.
+  - Uses an in-process HTTP server (`HttpServer`) as relay mock.
+  - Verifies multipart fields (`metadata`, `training_file`) and HMAC signature canonicalization.
+  - Verifies successful and failing relay responses without external network dependencies.
+
+### `discord/UploadRelayIntegrationTest.java`
+- **What is tested:**
+  - Live end-to-end upload from mod client to real relay server endpoint.
+  - Real credential-based signed upload behavior with fixed uploader context.
+- **How it is tested:**
+  - Uses CI/local credentials (`SCAMSCREENER_UPLOAD_API_URL`, `SCAMSCREENER_UPLOAD_CLIENT_ID`, `SCAMSCREENER_UPLOAD_CLIENT_SECRET`).
+  - Creates a temporary `.csv.old.<n>` file, uploads it, and asserts successful response + `sha256=` in result detail.
+  - This test is mandatory in CI and fails if credentials are missing.
 
 ### `chat/parser/ChatLineParserTest.java`
 - **What is tested:**

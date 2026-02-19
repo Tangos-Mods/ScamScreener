@@ -1,6 +1,30 @@
 # Changelog
 All notable changes to this project are documented in this file.
 
+## [2.0.0] - 2026-02-19
+
+### Added
+- Added secure upload relay architecture with signed client requests (`POST /api/v1/client/redeem` and `POST /api/v1/training-uploads`).
+- Added separate upload credential config in `config/scamscreener/scam-screener-upload-relay.json`.
+- Added in-game `Upload Auth` settings screen with invite-code redeem, relay status, and credential reset.
+- Added relay upload contract and live integration tests (`UploadRelayContractTest`, `UploadRelayIntegrationTest`).
+- Added server implementation spec for Codex in `docs/TRAINING_UPLOAD_SERVER_CODEX_SPEC.md`.
+
+### Changed
+- Bumped mod version from `1.3.0` to `2.0.0`.
+- Reworked training upload flow to `Mod -> Upload Relay Server -> Discord`; direct client-to-Discord upload was removed.
+- Updated upload messages and docs wording from webhook terminology to relay terminology.
+- Updated CI and local test credential wiring to relay secrets (`SCAMSCREENER_UPLOAD_API_URL`, `SCAMSCREENER_UPLOAD_CLIENT_ID`, `SCAMSCREENER_UPLOAD_CLIENT_SECRET`) with required relay integration validation.
+- Main settings now include direct access to `Upload Auth`.
+
+### Fixed
+- Made config path resolution robust for non-Fabric test/runtime contexts by falling back to local `config/` when Fabric config dir is unavailable.
+- Stabilized funnel boundary metrics test assertions against the configured alert threshold.
+
+### Removed
+- Removed direct Discord webhook uploader implementation and webhook-based integration test.
+- Removed legacy Discord webhook env/property usage from build, workflows, and docs.
+
 ## [1.3.0] - 2026-02-18
 
 ### Added

@@ -1,4 +1,4 @@
-name: discord-upload
+name: upload-relay
 
 on:
   workflow_dispatch:
@@ -12,7 +12,9 @@ jobs:
   integration-test:
     runs-on: ubuntu-24.04
     env:
-      SCAMSCREENER_DISCORD_WEBHOOK_URL: ${{ secrets.SCAMSCREENER_DISCORD_WEBHOOK_URL }}
+      SCAMSCREENER_UPLOAD_API_URL: ${{ secrets.SCAMSCREENER_UPLOAD_API_URL }}
+      SCAMSCREENER_UPLOAD_CLIENT_ID: ${{ secrets.SCAMSCREENER_UPLOAD_CLIENT_ID }}
+      SCAMSCREENER_UPLOAD_CLIENT_SECRET: ${{ secrets.SCAMSCREENER_UPLOAD_CLIENT_SECRET }}
     steps:
       - name: checkout repository
         uses: actions/checkout@v4
@@ -32,21 +34,29 @@ jobs:
       - name: make gradle wrapper executable
         run: chmod +x ./gradlew
 
-      - name: verify webhook secret
+      - name: verify relay secrets
         run: |
-          if [ -z "${SCAMSCREENER_DISCORD_WEBHOOK_URL}" ]; then
-            echo "SCAMSCREENER_DISCORD_WEBHOOK_URL secret is not configured."
+          if [ -z "${SCAMSCREENER_UPLOAD_API_URL}" ]; then
+            echo "SCAMSCREENER_UPLOAD_API_URL secret is not configured."
+            exit 1
+          fi
+          if [ -z "${SCAMSCREENER_UPLOAD_CLIENT_ID}" ]; then
+            echo "SCAMSCREENER_UPLOAD_CLIENT_ID secret is not configured."
+            exit 1
+          fi
+          if [ -z "${SCAMSCREENER_UPLOAD_CLIENT_SECRET}" ]; then
+            echo "SCAMSCREENER_UPLOAD_CLIENT_SECRET secret is not configured."
             exit 1
           fi
 
-      - name: run discord upload integration test
-        run: ./gradlew test --console=plain --tests "eu.tango.scamscreener.discord.DiscordWebhookUploaderIntegrationTest" -Dscamscreener.discord.webhook.url="${SCAMSCREENER_DISCORD_WEBHOOK_URL}"
+      - name: run upload relay integration test
+        run: ./gradlew test --console=plain --tests "eu.tango.scamscreener.discord.UploadRelayIntegrationTest" -Dscamscreener.upload.api.url="${SCAMSCREENER_UPLOAD_API_URL}" -Dscamscreener.upload.client.id="${SCAMSCREENER_UPLOAD_CLIENT_ID}" -Dscamscreener.upload.client.secret="${SCAMSCREENER_UPLOAD_CLIENT_SECRET}"
 
       - name: upload integration test reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: discord-upload-test-reports
+          name: upload-relay-test-reports
           path: |
             versions/*/build/test-results/test/
             versions/*/build/reports/tests/test/

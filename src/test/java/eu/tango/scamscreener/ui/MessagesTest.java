@@ -42,8 +42,9 @@ class MessagesTest {
 	void errorMessagesIncludeStableErrorCodes() {
 		assertTrue(Messages.modelUpdateCheckFailed("boom").getString().contains("[MU-CHECK-001]"));
 		assertTrue(Messages.trainingSaveFailed("boom").getString().contains("[TR-SAVE-001]"));
-		assertTrue(Messages.trainingUploadWebhookFailed("boom").getString().contains("[TR-UPLOAD-001]"));
+		assertTrue(Messages.trainingUploadRelayFailed("boom").getString().contains("[TR-UPLOAD-001]"));
 		assertTrue(Messages.trainingUploadUnavailable("boom").getString().contains("[TR-UPLOAD-002]"));
+		assertTrue(Messages.uploadRelayRedeemFailed("boom").getString().contains("[TR-UPLOAD-003]"));
 		assertTrue(Messages.trainingCsvReviewFailed("boom").getString().contains("[TR-CSV-001]"));
 		assertTrue(Messages.mutePatternInvalid("(bad").getString().contains("[MUTE-REGEX-001]"));
 	}
@@ -79,12 +80,12 @@ class MessagesTest {
 	}
 
 	@Test
-	void trainingWebhookMessagesUseSimpleStatusText() {
-		MutableComponent started = Messages.trainingUploadWebhookStarted("ignored-path");
-		MutableComponent success = Messages.trainingUploadWebhookSucceeded("ignored-path", "ignored-detail");
+	void trainingRelayMessagesUseSimpleStatusText() {
+		MutableComponent started = Messages.trainingUploadRelayStarted("ignored-path");
+		MutableComponent success = Messages.trainingUploadRelaySucceeded("ignored-path", "ignored-detail");
 
-		assertTrue(started.getString().contains("Uploading..."));
-		assertTrue(success.getString().contains("Training data uploaded sucessfully."));
+		assertTrue(started.getString().contains("relay server"));
+		assertTrue(success.getString().contains("relay server"));
 	}
 
 	@Test

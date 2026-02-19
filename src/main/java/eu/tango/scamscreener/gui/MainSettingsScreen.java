@@ -39,6 +39,7 @@ public final class MainSettingsScreen extends ScamScreenerGUI {
 	private final Supplier<ModelUpdateService.PendingUpdateSnapshot> aiUpdateSnapshotSupplier;
 	private final BiFunction<String, String, Integer> aiUpdateActionHandler;
 	private final Supplier<FunnelMetricsService.Snapshot> metricsSnapshotSupplier;
+	private final Runnable openUploadRelaySettingsHandler;
 	private final Runnable openTrainingCsvReviewHandler;
 	private final Runnable uploadTrainingDataHandler;
 
@@ -65,6 +66,7 @@ public final class MainSettingsScreen extends ScamScreenerGUI {
 		Supplier<ModelUpdateService.PendingUpdateSnapshot> aiUpdateSnapshotSupplier,
 		BiFunction<String, String, Integer> aiUpdateActionHandler,
 		Supplier<FunnelMetricsService.Snapshot> metricsSnapshotSupplier,
+		Runnable openUploadRelaySettingsHandler,
 		Runnable openTrainingCsvReviewHandler,
 		Runnable uploadTrainingDataHandler
 	) {
@@ -84,6 +86,7 @@ public final class MainSettingsScreen extends ScamScreenerGUI {
 		this.aiUpdateSnapshotSupplier = aiUpdateSnapshotSupplier;
 		this.aiUpdateActionHandler = aiUpdateActionHandler;
 		this.metricsSnapshotSupplier = metricsSnapshotSupplier;
+		this.openUploadRelaySettingsHandler = openUploadRelaySettingsHandler;
 		this.openTrainingCsvReviewHandler = openTrainingCsvReviewHandler;
 		this.uploadTrainingDataHandler = uploadTrainingDataHandler;
 	}
@@ -169,6 +172,14 @@ public final class MainSettingsScreen extends ScamScreenerGUI {
 			}
 			openScreen(new WhitelistSettingsScreen(this, whitelistManager, targetResolver));
 		}).bounds(x, y, buttonWidth, 20).build());
+		y += ROW_HEIGHT;
+
+		Button uploadAuthButton = this.addRenderableWidget(Button.builder(Component.literal("Upload Auth"), button -> {
+			if (openUploadRelaySettingsHandler != null) {
+				openUploadRelaySettingsHandler.run();
+			}
+		}).bounds(x, y, buttonWidth, 20).build());
+		uploadAuthButton.active = openUploadRelaySettingsHandler != null;
 		y += ROW_HEIGHT;
 
 		int halfWidth = splitWidth(buttonWidth, 2, splitSpacing);

@@ -1,23 +1,25 @@
-# ScamScreener 1.3.0
+# ScamScreener 2.0.0
 
-This release adds a full trusted-player whitelist workflow and makes review preselection match your Auto-Capture level.
+This release moves training uploads to a secure relay flow (`Mod -> ScamScreener relay server -> Discord`) and adds in-game upload authentication, while keeping the full whitelist feature set and behavior.
 
 ## Added
 
-- Added whitelist management in-game with both commands and GUI (`/scamscreener whitelist`, `add`, `remove`, `list`, plus `/ss` aliases).
-- Added a dedicated whitelist config file: `config/scamscreener/scam-screener-whitelist.json`.
-- Added direct review shortcut commands: `/scamscreener review <playerName>` and `/ss review <playerName>`.
+- Added a new in-game `Upload Auth` screen in settings.
+- Added invite-code redeem flow for upload credentials.
+- Added upload-auth status display and credential reset action in the GUI.
 
 ## Changed
 
-- Detection now skips whitelist players early in the pipeline (right after mute filtering), before scoring and warnings.
-- Review auto-marking now follows `AI Auto-Capture` level (`OFF` disables automatic `[S]`; `LOW|MEDIUM|HIGH|CRITICAL` auto-mark only matching-or-higher risk rows).
-- Whitelist display names are now refreshed toward canonical Mojang names when lookup succeeds.
+- `/scamscreener upload` now uses the relay server upload path instead of direct Discord webhook upload.
+- Upload messaging is now relay-focused (clearer relay auth/upload status and failures).
+- Whitelist workflow remains fully available (commands + GUI + early trusted-player bypass in detection).
 
 ## Fixed
 
-- Fixed review row merge behavior so scored flagged/context rows keep their score signal reliably during review assembly.
+- Improved upload reliability by centralizing relay validation and signed request handling.
+- Improved config fallback handling in non-standard runtime/test contexts.
 
 ## Removed
 
-- None.
+- Removed direct client-side Discord webhook upload path.
+- Removed legacy webhook-based upload configuration usage.

@@ -18,10 +18,11 @@ import eu.tango.scamscreener.chat.mute.MutePatternManager;
 import eu.tango.scamscreener.chat.parser.ChatLineParser;
 import eu.tango.scamscreener.chat.parser.OutgoingChatCommandParser;
 import eu.tango.scamscreener.chat.trigger.TriggerContext;
-import eu.tango.scamscreener.discord.DiscordWebhookUploader;
+import eu.tango.scamscreener.discord.UploadRelayClient;
 import eu.tango.scamscreener.gui.MainSettingsScreen;
 import eu.tango.scamscreener.gui.AlertInfoScreen;
 import eu.tango.scamscreener.gui.AlertManageScreen;
+import eu.tango.scamscreener.gui.UploadRelaySettingsScreen;
 import eu.tango.scamscreener.gui.WhitelistSettingsScreen;
 import eu.tango.scamscreener.pipeline.core.DetectionScoring;
 import eu.tango.scamscreener.pipeline.model.DetectionOutcome;
@@ -84,7 +85,7 @@ public class ScamScreenerClient implements ClientModInitializer {
 	private final TrainingUploadReminderService trainingUploadReminderService = new TrainingUploadReminderService(trainingDataService::trainingDataPath);
 	private final FunnelMetricsService funnelMetricsService = new FunnelMetricsService();
 	private final LocalAiTrainer localAiTrainer = new LocalAiTrainer();
-	private final DiscordWebhookUploader discordWebhookUploader = new DiscordWebhookUploader();
+	private final UploadRelayClient uploadRelayClient = new UploadRelayClient();
 	private final ModelUpdateService modelUpdateService = new ModelUpdateService();
 	private final MutePatternManager mutePatternManager = new MutePatternManager();
 	private final DetectionPipeline detectionPipeline = new DetectionPipeline(
@@ -101,7 +102,7 @@ public class ScamScreenerClient implements ClientModInitializer {
 		trainingDataService,
 		funnelMetricsService,
 		localAiTrainer,
-		discordWebhookUploader
+		uploadRelayClient
 	);
 	private final OutgoingMessageGuard outgoingMessageGuard = new OutgoingMessageGuard(emailSafety, discordSafety, coopAddSafety);
 	private final ModelUpdateCommandHandler modelUpdateCommandHandler = new ModelUpdateCommandHandler(modelUpdateService);
@@ -254,9 +255,18 @@ public class ScamScreenerClient implements ClientModInitializer {
 			modelUpdateCommandHandler::latestPendingSnapshot,
 			modelUpdateCommandHandler::handleModelUpdateCommand,
 			funnelMetricsService::snapshot,
+			this::openUploadRelaySettingsScreen,
 			this::openTrainingCsvReviewScreen,
 			() -> trainingCommandHandler.trainLocalAiModel()
 		);
+	}
+
+	private void openUploadRelaySettingsScreen() {
+		Minecraft client = Minecraft.getInstance();
+		if (client == null) {
+			return;
+		}
+		AsyncDispatcher.onClient(client, () -> client.setScreen(new UploadRelaySettingsScreen(client.screen, uploadRelayClient)));
 	}
 
 	private void registerHypixelMessageChecks() {

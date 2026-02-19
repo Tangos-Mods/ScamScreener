@@ -64,7 +64,8 @@ When thresholds are reached:
 ### 3) Training data capture and upload lifecycle
 
 - Training samples are stored in CSV.
-- `/scamscreener upload` archives the active training CSV and uploads it via webhook (after ToS consent).
+- `/scamscreener upload` archives the active training CSV and uploads it via a secure relay server (after ToS consent).
+- Relay credentials are provisioned automatically on first upload, or can be redeemed manually via in-game `Upload Auth`.
 - Existing training/model files are archived under `old/`.
 - Supports sample labeling via message id (`ai flag`) and via review flows (`review`, `review player`, `review manage`).
 - Reviewer auto `[S]` preselection follows the configured AI auto-capture threshold (`OFF|LOW|MEDIUM|HIGH|CRITICAL`).
@@ -104,6 +105,7 @@ Screens available:
 - rule settings
 - debug settings
 - message settings
+- upload relay auth settings (invite code redeem + credential reset; optional when auto bootstrap is used)
 - blacklist management
 - whitelist management
 - AI update controls
@@ -189,6 +191,7 @@ Important files:
 - `scam-screener-whitelist.json`
 - `scam-screener-rules.json`
 - `scam-screener-local-ai-model.json`
+- `scam-screener-upload-relay.json`
 - `scam-screener-training-data.csv`
 - `scam-screener-mute.json`
 - `scam-screener-debug.json`
@@ -204,7 +207,7 @@ Archive folders:
 1. Collect labeled samples with `ai flag` and in-game review flows (`review`, `review player`, `review manage`).
 2. (Optional) Refine labels in the reviewer and save selected scam/legit lines.
 3. Run `/scamscreener upload`.
-4. Training CSV is archived and uploaded via webhook after ToS acceptance.
+4. Training CSV is archived and uploaded via relay server after ToS acceptance.
 5. Observe warning quality and false positives over time.
 
 Tips:
@@ -219,7 +222,7 @@ Tips:
 - Training and model files stay in `config/scamscreener/`.
 - Optional network calls are used for:
   - Mojang profile lookup (name/UUID resolution and whitelist name refresh)
-  - training-data webhook upload (`/scamscreener upload`)
+  - training-data relay upload (`/scamscreener upload`)
   - AI model update check/download (GitHub raw URL)
 
 ## Limitations

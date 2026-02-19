@@ -328,21 +328,21 @@ public final class Messages extends MessageBuilder {
 			.append(Component.literal("AI up-to-date message on server join disabled.").withStyle(ChatFormatting.GRAY));
 	}
 
-	public static MutableComponent trainingUploadWebhookStarted(String path) {
+	public static MutableComponent trainingUploadRelayStarted(String path) {
 		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
-			.append(Component.literal("Uploading...").withStyle(ChatFormatting.GRAY));
+			.append(Component.literal("Uploading training data to relay server...").withStyle(ChatFormatting.GRAY));
 	}
 
-	public static MutableComponent trainingUploadWebhookSucceeded(String path, String verificationDetail) {
+	public static MutableComponent trainingUploadRelaySucceeded(String path, String verificationDetail) {
 		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
-			.append(Component.literal("Training data uploaded sucessfully.").withStyle(ChatFormatting.GRAY));
+			.append(Component.literal("Training data uploaded successfully via relay server.").withStyle(ChatFormatting.GRAY));
 	}
 
-	public static MutableComponent trainingUploadWebhookFailed(String errorMessage) {
+	public static MutableComponent trainingUploadRelayFailed(String errorMessage) {
 		return buildError(
 			PREFIX,
 			PREFIX_LIGHT_RED,
-			"Discord webhook upload failed.",
+			"Upload relay server upload failed.",
 			"TR-UPLOAD-001",
 			errorMessage
 		);
@@ -656,6 +656,32 @@ public final class Messages extends MessageBuilder {
 			"TR-CSV-001",
 			detail
 		);
+	}
+
+	public static MutableComponent uploadRelayRedeemStarted() {
+		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
+			.append(Component.literal("Redeeming invite code with upload relay server...").withStyle(ChatFormatting.GRAY));
+	}
+
+	public static MutableComponent uploadRelayRedeemSucceeded(String detail) {
+		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
+			.append(Component.literal("Upload relay credentials configured. ").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal(detail == null || detail.isBlank() ? "" : detail).withStyle(ChatFormatting.DARK_GRAY));
+	}
+
+	public static MutableComponent uploadRelayRedeemFailed(String detail) {
+		return buildError(
+			PREFIX,
+			PREFIX_LIGHT_RED,
+			"Upload relay credential setup failed.",
+			"TR-UPLOAD-003",
+			detail
+		);
+	}
+
+	public static MutableComponent uploadRelayCredentialsCleared() {
+		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
+			.append(Component.literal("Upload relay credentials were cleared.").withStyle(ChatFormatting.GRAY));
 	}
 
 	private static MutableComponent educationWarning(String disableCommand, String... guidanceParts) {

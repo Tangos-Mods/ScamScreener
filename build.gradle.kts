@@ -129,11 +129,23 @@ tasks.withType<Test>().configureEach {
 		}
 		return null
 	}
-	val webhookProperty = System.getProperty("scamscreener.discord.webhook.url")
-		?: System.getenv("SCAMSCREENER_DISCORD_WEBHOOK_URL")
-		?: readDotEnvValue("SCAMSCREENER_DISCORD_WEBHOOK_URL")
-	if (!webhookProperty.isNullOrBlank()) {
-		systemProperty("scamscreener.discord.webhook.url", webhookProperty)
+	val relayApiUrl = System.getProperty("scamscreener.upload.api.url")
+		?: System.getenv("SCAMSCREENER_UPLOAD_API_URL")
+		?: readDotEnvValue("SCAMSCREENER_UPLOAD_API_URL")
+	val relayClientId = System.getProperty("scamscreener.upload.client.id")
+		?: System.getenv("SCAMSCREENER_UPLOAD_CLIENT_ID")
+		?: readDotEnvValue("SCAMSCREENER_UPLOAD_CLIENT_ID")
+	val relayClientSecret = System.getProperty("scamscreener.upload.client.secret")
+		?: System.getenv("SCAMSCREENER_UPLOAD_CLIENT_SECRET")
+		?: readDotEnvValue("SCAMSCREENER_UPLOAD_CLIENT_SECRET")
+	if (!relayApiUrl.isNullOrBlank()) {
+		systemProperty("scamscreener.upload.api.url", relayApiUrl)
+	}
+	if (!relayClientId.isNullOrBlank()) {
+		systemProperty("scamscreener.upload.client.id", relayClientId)
+	}
+	if (!relayClientSecret.isNullOrBlank()) {
+		systemProperty("scamscreener.upload.client.secret", relayClientSecret)
 	}
 	testLogging {
 		events("passed", "failed", "skipped")

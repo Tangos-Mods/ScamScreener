@@ -191,7 +191,7 @@ Upload behavior:
 
 - first upload asks for ToS confirmation
 - data is archived before upload
-- webhook upload starts after local preparation
+- relay upload starts after local preparation
 
 ### 6.4 Large file reminder
 
@@ -347,4 +347,3 @@ Network is only used for optional features:
 - Mixed, high-quality scam + legit labels improve model quality more than bulk noisy labels.
 - Use `ignored` when context is unclear.
 - Review often, upload periodically.
-
