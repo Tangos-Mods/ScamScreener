@@ -11,6 +11,8 @@ permissions:
 jobs:
   integration-test:
     runs-on: ubuntu-24.04
+    env:
+      SCAMSCREENER_DISCORD_WEBHOOK_URL: ${{ secrets.SCAMSCREENER_DISCORD_WEBHOOK_URL }}
     steps:
       - name: checkout repository
         uses: actions/checkout@v4
@@ -30,8 +32,15 @@ jobs:
       - name: make gradle wrapper executable
         run: chmod +x ./gradlew
 
+      - name: verify webhook secret
+        run: |
+          if [ -z "${SCAMSCREENER_DISCORD_WEBHOOK_URL}" ]; then
+            echo "SCAMSCREENER_DISCORD_WEBHOOK_URL secret is not configured."
+            exit 1
+          fi
+
       - name: run discord upload integration test
-        run: ./gradlew test --console=plain --tests "eu.tango.scamscreener.discord.DiscordWebhookUploaderIntegrationTest" -Dscamscreener.discord.webhook.url="https://discord.com/api/webhooks/1472021483323916461/3eXVN9BT-mGkKAbje2wgDx0A1LObfSbqiMSbLrPSgzm5DxRJ06snqjLJxvM3YULWIRa8"
+        run: ./gradlew test --console=plain --tests "eu.tango.scamscreener.discord.DiscordWebhookUploaderIntegrationTest" -Dscamscreener.discord.webhook.url="${SCAMSCREENER_DISCORD_WEBHOOK_URL}"
 
       - name: upload integration test reports
         if: always()

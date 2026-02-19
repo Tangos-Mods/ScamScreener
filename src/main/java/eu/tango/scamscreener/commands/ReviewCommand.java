@@ -42,7 +42,10 @@ final class ReviewCommand {
 			.then(ClientCommandManager.literal("player")
 				.then(ClientCommandManager.argument("playerName", StringArgumentType.word())
 					.suggests((context, builder) -> suggestReviewPlayers(playerSuggestionsSupplier, builder))
-					.executes(context -> playerHandler.open(StringArgumentType.getString(context, "playerName")))));
+					.executes(context -> playerHandler.open(StringArgumentType.getString(context, "playerName")))))
+			.then(ClientCommandManager.argument("playerName", StringArgumentType.word())
+				.suggests((context, builder) -> suggestReviewPlayers(playerSuggestionsSupplier, builder))
+				.executes(context -> playerHandler.open(StringArgumentType.getString(context, "playerName"))));
 	}
 
 	private static CompletableFuture<Suggestions> suggestReviewPlayers(

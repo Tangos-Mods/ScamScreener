@@ -1,6 +1,22 @@
 # Changelog
 All notable changes to this project are documented in this file.
 
+## [1.3.0] - 2026-02-18
+
+### Added
+- Added UUID-backed whitelist persistence in `config/scamscreener/scam-screener-whitelist.json`.
+- Added whitelist management via commands and GUI (`/scamscreener whitelist` and `/ss whitelist`, plus `add` and `remove`).
+- Added direct player review shortcut commands: `/scamscreener review <playerName>` and `/ss review <playerName>`.
+
+### Changed
+- Bumped mod version from `1.2.3` to `1.3.0`.
+- Detection pipeline order now runs `WhitelistStage` directly after `MuteStage`, so trusted players are skipped before scoring/warnings.
+- Review auto `[S]` preselection now follows the configured auto-capture level (`OFF` disables automatic `[S]`, and `LOW|MEDIUM|HIGH|CRITICAL` only preselect matching-or-higher risk).
+- Whitelist matching now prefers UUID and keeps player names as display metadata, with canonical name refresh when lookup succeeds.
+
+### Fixed
+- Fixed review row merging so scored/flagged context lines keep their score signal consistently, preventing lost auto-preselection state.
+
 ## [1.2.3] - 2026-02-18
 
 ### Added

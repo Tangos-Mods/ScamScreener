@@ -1,17 +1,23 @@
-# ScamScreener 1.2.3
+# ScamScreener 1.3.0
 
-This update improves review accuracy and readability: more decorated chat lines are captured, duplicate self-message echoes are removed, and each review row now shows the mod score.
+This release adds a full trusted-player whitelist workflow and makes review preselection match your Auto-Capture level.
 
 ## Added
 
-- Added per-row mod risk score display in the live reviewer, shown directly after `[I] [S] [L]` as `(0)` to `(100)`.
+- Added whitelist management in-game with both commands and GUI (`/scamscreener whitelist`, `add`, `remove`, `list`, plus `/ss` aliases).
+- Added a dedicated whitelist config file: `config/scamscreener/scam-screener-whitelist.json`.
+- Added direct review shortcut commands: `/scamscreener review <playerName>` and `/ss review <playerName>`.
 
 ## Changed
 
-- Expanded player chat parsing so heavily decorated lines (for example with level/rank tags and extra symbols between them) are recognized more reliably.
+- Detection now skips whitelist players early in the pipeline (right after mute filtering), before scoring and warnings.
+- Review auto-marking now follows `AI Auto-Capture` level (`OFF` disables automatic `[S]`; `LOW|MEDIUM|HIGH|CRITICAL` auto-mark only matching-or-higher risk rows).
+- Whitelist display names are now refreshed toward canonical Mojang names when lookup succeeds.
 
 ## Fixed
 
-- Fixed duplicate entries in live review for your own messages by de-duplicating outgoing chat against immediate incoming echo lines.
-- Fixed missing review captures for some decorated player chat formats that previously failed to parse.
+- Fixed review row merge behavior so scored flagged/context rows keep their score signal reliably during review assembly.
 
+## Removed
+
+- None.

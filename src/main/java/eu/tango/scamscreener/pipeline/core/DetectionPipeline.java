@@ -2,12 +2,15 @@ package eu.tango.scamscreener.pipeline.core;
 
 import eu.tango.scamscreener.ai.LocalAiScorer;
 import eu.tango.scamscreener.chat.mute.MutePatternManager;
+import eu.tango.scamscreener.whitelist.WhitelistManager;
 import net.minecraft.network.chat.Component;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import eu.tango.scamscreener.pipeline.model.BehaviorAnalysis;
 import eu.tango.scamscreener.pipeline.model.DetectionDecision;
 import eu.tango.scamscreener.pipeline.model.DetectionEvaluation;
@@ -25,9 +28,11 @@ import eu.tango.scamscreener.pipeline.stage.ScoringStage;
 import eu.tango.scamscreener.pipeline.stage.LevenshteinSignalStage;
 import eu.tango.scamscreener.pipeline.stage.FunnelSignalStage;
 import eu.tango.scamscreener.pipeline.stage.TrendSignalStage;
+import eu.tango.scamscreener.pipeline.stage.WhitelistStage;
 
 public final class DetectionPipeline {
 	private final MuteStage muteStage;
+	private final WhitelistStage whitelistStage;
 	private final RuleSignalStage ruleSignalStage;
 	private final LevenshteinSignalStage levenshteinSignalStage;
 	private final BehaviorAnalyzer behaviorAnalyzer;
@@ -45,9 +50,15 @@ public final class DetectionPipeline {
 	 * Creates the full detection pipeline with all stages wired up.
 	 * The pipeline is executed from {@link #process(MessageEvent, java.util.function.Consumer, Runnable)}.
 	 */
-	public DetectionPipeline(MutePatternManager mutePatternManager, LocalAiScorer localAiScorer) {
+	public DetectionPipeline(
+		MutePatternManager mutePatternManager,
+		WhitelistManager whitelistManager,
+		Function<String, UUID> uuidResolver,
+		LocalAiScorer localAiScorer
+	) {
 		RuleConfig ruleConfig = new DefaultRuleConfig();
 		this.muteStage = new MuteStage(mutePatternManager);
+		this.whitelistStage = new WhitelistStage(whitelistManager, uuidResolver);
 		this.ruleSignalStage = new RuleSignalStage(ruleConfig);
 		this.levenshteinSignalStage = new LevenshteinSignalStage(ruleConfig);
 		this.behaviorAnalyzer = new BehaviorAnalyzer(ruleConfig);
@@ -64,7 +75,7 @@ public final class DetectionPipeline {
 
 	/**
 	 * Runs the pipeline for a single chat event. Stages are executed in this order:
-	 * {@link MuteStage} -> {@link BehaviorAnalyzer} -> {@link RuleSignalStage}
+	 * {@link MuteStage} -> {@link WhitelistStage} -> {@link BehaviorAnalyzer} -> {@link RuleSignalStage}
 	 * -> {@link LevenshteinSignalStage} -> {@link BehaviorSignalStage} -> {@link TrendSignalStage}
 	 * -> {@link FunnelSignalStage} -> {@link AiSignalStage} -> {@link ScoringStage}
 	 * -> {@link DecisionStage} -> {@link OutputStage}.
@@ -88,7 +99,12 @@ public final class DetectionPipeline {
 			return Optional.empty();
 		}
 
-		MessageEvent safeEvent = maybeEvent.get();
+		Optional<MessageEvent> maybeWhitelistedEvent = whitelistStage.filter(maybeEvent.get());
+		if (maybeWhitelistedEvent.isEmpty()) {
+			return Optional.empty();
+		}
+
+		MessageEvent safeEvent = maybeWhitelistedEvent.get();
 		BehaviorAnalysis analysis = behaviorAnalyzer.analyze(safeEvent);
 		List<Signal> signals = new ArrayList<>();
 		signals.addAll(ruleSignalStage.collectSignals(safeEvent));

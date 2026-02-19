@@ -4,6 +4,8 @@
 
 Client-side Fabric mod for **Minecraft 1.21.10 / 1.21.11** that analyzes Hypixel SkyBlock chat for scam risk.
 
+Includes a UUID-backed whitelist flow (`/scamscreener whitelist`) and review preselection that follows the configured AI auto-capture level.
+
 ScamScreener combines:
 
 - manual blacklist alerts
@@ -41,12 +43,13 @@ Scams in trade/party contexts often use pressure tactics, trust manipulation, ex
 Every parsed player chat line is processed through:
 
 - `MuteStage` (early filter)
+- `WhitelistStage` (early bypass for trusted players)
 - `RuleSignalStage` (pattern/rule scoring)
 - `LevenshteinSignalStage` (similarity signals)
 - `BehaviorSignalStage` (behavior flags)
-- `AiSignalStage` (local model probability-based signal)
 - `TrendSignalStage` (multi-message trend bonus)
 - `FunnelSignalStage` (intent sequence funnel bonus)
+- `AiSignalStage` (local model probability-based signal)
 - `ScoringStage`, `DecisionStage` (threshold + dedupe), `OutputStage`
 
 When thresholds are reached:
@@ -63,7 +66,8 @@ When thresholds are reached:
 - Training samples are stored in CSV.
 - `/scamscreener upload` archives the active training CSV and uploads it via webhook (after ToS consent).
 - Existing training/model files are archived under `old/`.
-- Supports sample capture by player, by message id (`ai flag`), bulk legit capture, and alert review (`manage` screen).
+- Supports sample labeling via message id (`ai flag`) and via review flows (`review`, `review player`, `review manage`).
+- Reviewer auto `[S]` preselection follows the configured AI auto-capture threshold (`OFF|LOW|MEDIUM|HIGH|CRITICAL`).
 - Includes training data migration (`/scamscreener ai migrate`) for older CSV headers.
 
 ### 4) AI update workflow (optional online check)
@@ -101,6 +105,7 @@ Screens available:
 - debug settings
 - message settings
 - blacklist management
+- whitelist management
 - AI update controls
 
 ## Requirements
@@ -128,13 +133,21 @@ Artifact output: `build/libs/`
 ### General
 
 - `/scamscreener` (help)
+- `/ss` (short alias for the same command tree)
 - `/scamscreener add <player|uuid> [score] [reason]`
 - `/scamscreener remove <player|uuid>`
 - `/scamscreener list`
+- `/scamscreener whitelist`
+- `/scamscreener whitelist add <player>`
+- `/scamscreener whitelist remove <player>`
+- `/scamscreener whitelist list`
 - `/scamscreener upload`
 - `/scamscreener rules <list|disable|enable> [rule]`
 - `/scamscreener alertlevel [low|medium|high|critical]`
 - `/scamscreener autoleave [on|off]` (no args = status)
+- `/scamscreener review` (open recent logged chat review)
+- `/scamscreener review <playerName>`
+- `/scamscreener review player <playerName>`
 - `/scamscreener review <manage|info> <alertId>`
 - `/scamscreener edu disable <messageId>`
 - `/scamscreener settings`
@@ -146,8 +159,6 @@ Artifact output: `build/libs/`
 ### AI
 
 - `/scamscreener ai` (help)
-- `/scamscreener ai capture <player> <scam|legit> [count]`
-- `/scamscreener ai capturebulk <count>`
 - `/scamscreener ai flag <messageId> <legit|scam>`
 - `/scamscreener ai migrate`
 - `/scamscreener ai update`
@@ -155,12 +166,8 @@ Artifact output: `build/libs/`
 - `/scamscreener ai update notify [on|off]` (no args = status)
 - `/scamscreener ai model <download|accept|merge|ignore> <id>`
 - `/scamscreener ai reset`
+- `/scamscreener ai metrics [reset]`
 - `/scamscreener ai autocapture [off|low|medium|high|critical]`
-
-Short capture aliases:
-
-- `/1 <player> <count>` (capture as scam label)
-- `/0 <player> <count>` (capture as legit label)
 
 ### Mute and safety
 
@@ -179,6 +186,7 @@ All mod files are stored under:
 Important files:
 
 - `scam-screener-blacklist.json`
+- `scam-screener-whitelist.json`
 - `scam-screener-rules.json`
 - `scam-screener-local-ai-model.json`
 - `scam-screener-training-data.csv`
@@ -193,8 +201,8 @@ Archive folders:
 
 ## Training quick guide
 
-1. Collect labeled samples with `ai capture` and/or `ai flag`.
-2. (Optional) Review alert messages in-game via `[manage]` and save selected scam/legit lines.
+1. Collect labeled samples with `ai flag` and in-game review flows (`review`, `review player`, `review manage`).
+2. (Optional) Refine labels in the reviewer and save selected scam/legit lines.
 3. Run `/scamscreener upload`.
 4. Training CSV is archived and uploaded via webhook after ToS acceptance.
 5. Observe warning quality and false positives over time.
@@ -210,7 +218,7 @@ Tips:
 - Core detection and scoring run locally on the client.
 - Training and model files stay in `config/scamscreener/`.
 - Optional network calls are used for:
-  - Mojang profile lookup (name to UUID resolution)
+  - Mojang profile lookup (name/UUID resolution and whitelist name refresh)
   - training-data webhook upload (`/scamscreener upload`)
   - AI model update check/download (GitHub raw URL)
 

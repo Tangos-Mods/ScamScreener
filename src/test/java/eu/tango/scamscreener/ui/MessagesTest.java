@@ -93,6 +93,9 @@ class MessagesTest {
 		String aiHelp = Messages.aiCommandHelp().getString();
 
 		assertTrue(commandHelp.contains("/scamscreener upload"));
+		assertTrue(commandHelp.contains("/scamscreener whitelist"));
+		assertTrue(commandHelp.contains("/scamscreener whitelist add <player>"));
+		assertTrue(commandHelp.contains("/scamscreener whitelist remove <player>"));
 		assertFalse(commandHelp.contains("/scamscreener ai train"));
 		assertTrue(commandHelp.contains("/scamscreener ai metrics"));
 		assertTrue(aiHelp.contains("/scamscreener upload"));

@@ -15,6 +15,7 @@ import eu.tango.scamscreener.blacklist.BlacklistManager;
 import eu.tango.scamscreener.pipeline.core.DetectionScoring;
 import eu.tango.scamscreener.pipeline.model.DetectionResult;
 import eu.tango.scamscreener.rules.ScamRules;
+import eu.tango.scamscreener.whitelist.WhitelistManager;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
@@ -98,6 +99,64 @@ public final class Messages extends MessageBuilder {
 			.append(Component.literal(entry.reason()).withStyle(ChatFormatting.YELLOW))
 			.append(Component.literal(" | ").withStyle(ChatFormatting.DARK_GRAY))
 			.append(Component.literal(formatTimestamp(entry.addedAt())).withStyle(ChatFormatting.GREEN));
+	}
+
+	public static MutableComponent addedToWhitelist(String name, UUID uuid) {
+		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
+			.append(Component.literal(name).withStyle(ChatFormatting.AQUA))
+			.append(Component.literal(" was added to the whitelist.").withStyle(ChatFormatting.GRAY));
+	}
+
+	public static MutableComponent updatedWhitelistEntry(String name, UUID uuid) {
+		String safeName = name == null || name.isBlank() ? "unknown" : name;
+		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
+			.append(Component.literal("Updated whitelist entry: ").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal(safeName).withStyle(ChatFormatting.AQUA));
+	}
+
+	public static MutableComponent alreadyWhitelisted(String name, UUID uuid) {
+		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
+			.append(Component.literal(name).withStyle(ChatFormatting.AQUA))
+			.append(Component.literal(" is already whitelisted.").withStyle(ChatFormatting.GRAY));
+	}
+
+	public static MutableComponent removedFromWhitelist(String name, UUID uuid) {
+		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
+			.append(Component.literal(name).withStyle(ChatFormatting.AQUA))
+			.append(Component.literal(" was removed from the whitelist.").withStyle(ChatFormatting.GRAY));
+	}
+
+	public static MutableComponent notOnWhitelist(String name) {
+		String safeName = name == null || name.isBlank() ? "unknown" : name;
+		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
+			.append(Component.literal(safeName).withStyle(ChatFormatting.AQUA))
+			.append(Component.literal(" is not on the whitelist.").withStyle(ChatFormatting.GRAY));
+	}
+
+	public static MutableComponent whitelistEmpty() {
+		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
+			.append(Component.literal("The whitelist is empty.").withStyle(ChatFormatting.GRAY));
+	}
+
+	public static MutableComponent whitelistHeader() {
+		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
+			.append(Component.literal("Whitelist entries:").withStyle(ChatFormatting.GRAY));
+	}
+
+	public static Component whitelistEntry(WhitelistManager.WhitelistEntry entry) {
+		String name = entry == null || entry.name() == null || entry.name().isBlank() ? "unknown" : entry.name();
+		String timestamp = entry == null ? null : entry.addedAt();
+		return Component.literal(name).withStyle(ChatFormatting.AQUA)
+			.append(Component.literal(" | ").withStyle(ChatFormatting.DARK_GRAY))
+			.append(Component.literal(formatTimestamp(timestamp)).withStyle(ChatFormatting.GREEN));
+	}
+
+	public static MutableComponent whitelistCommandHelp() {
+		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
+			.append(Component.literal("Whitelist commands:").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal("\n- /scamscreener whitelist").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal("\n- /scamscreener whitelist add <player>").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal("\n- /scamscreener whitelist remove <player>").withStyle(ChatFormatting.GRAY));
 	}
 
 	public static MutableComponent unresolvedTarget(String input) {
@@ -331,6 +390,9 @@ public final class Messages extends MessageBuilder {
 			.append(Component.literal("\n- /scamscreener add <player> [score] [reason]").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener remove <player>").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener list").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal("\n- /scamscreener whitelist").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal("\n- /scamscreener whitelist add <player>").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal("\n- /scamscreener whitelist remove <player>").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener mute [pattern]").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener unmute <pattern>").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener autoleave [on|off]").withStyle(ChatFormatting.GRAY))

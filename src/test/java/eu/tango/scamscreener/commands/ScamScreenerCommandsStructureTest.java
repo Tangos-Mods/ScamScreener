@@ -20,6 +20,7 @@ class ScamScreenerCommandsStructureTest {
 	void buildRootRegistersUploadAndRemovesAiTrain() throws Exception {
 		ScamScreenerCommands commands = new ScamScreenerCommands(
 			null,
+			null,
 			name -> new ResolvedTarget(UUID.randomUUID(), name),
 			new MutePatternManager(),
 			(messageId, label) -> 1,
@@ -45,6 +46,7 @@ class ScamScreenerCommandsStructureTest {
 			messageId -> 1,
 			uuid -> {},
 			() -> {},
+			() -> {},
 			component -> {}
 		);
 
@@ -66,6 +68,7 @@ class ScamScreenerCommandsStructureTest {
 		assertNotNull(root.getChild("help"));
 		assertNotNull(root.getChild("upload"));
 		assertNotNull(root.getChild("ai"));
+		assertNotNull(root.getChild("whitelist"));
 		assertNull(root.getChild("train"));
 
 		CommandNode<FabricClientCommandSource> ai = root.getChild("ai");
@@ -81,11 +84,17 @@ class ScamScreenerCommandsStructureTest {
 		assertNotNull(review.getChild("help"));
 		assertNotNull(review.getChild("player"));
 
+		CommandNode<FabricClientCommandSource> whitelist = root.getChild("whitelist");
+		assertNotNull(whitelist);
+		assertNotNull(whitelist.getChild("add"));
+		assertNotNull(whitelist.getChild("remove"));
+
 		CommandNode<FabricClientCommandSource> aliasRoot = dispatcher.getRoot().getChild("ss");
 		assertNotNull(aliasRoot);
 		assertNotNull(aliasRoot.getChild("help"));
 		assertNotNull(aliasRoot.getChild("upload"));
 		assertNotNull(aliasRoot.getChild("ai"));
+		assertNotNull(aliasRoot.getChild("whitelist"));
 		assertNull(aliasRoot.getChild("train"));
 	}
 }

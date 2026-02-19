@@ -22,6 +22,8 @@ import eu.tango.scamscreener.discord.DiscordWebhookUploader;
 import eu.tango.scamscreener.gui.MainSettingsScreen;
 import eu.tango.scamscreener.gui.AlertInfoScreen;
 import eu.tango.scamscreener.gui.AlertManageScreen;
+import eu.tango.scamscreener.gui.WhitelistSettingsScreen;
+import eu.tango.scamscreener.pipeline.core.DetectionScoring;
 import eu.tango.scamscreener.pipeline.model.DetectionOutcome;
 import eu.tango.scamscreener.pipeline.core.DetectionPipeline;
 import eu.tango.scamscreener.pipeline.model.MessageEvent;
@@ -29,6 +31,7 @@ import eu.tango.scamscreener.pipeline.core.MessageEventParser;
 import eu.tango.scamscreener.location.LocationService;
 import eu.tango.scamscreener.lookup.MojangProfileService;
 import eu.tango.scamscreener.lookup.PlayerLookup;
+import eu.tango.scamscreener.lookup.ResolvedTarget;
 import eu.tango.scamscreener.lookup.TargetResolutionService;
 import eu.tango.scamscreener.rules.ScamRules;
 import eu.tango.scamscreener.ui.Messages;
@@ -56,6 +59,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -66,10 +70,12 @@ import eu.tango.scamscreener.security.DiscordSafety;
 import eu.tango.scamscreener.security.OutgoingMessageGuard;
 import eu.tango.scamscreener.security.BypassCommandHandler;
 import eu.tango.scamscreener.security.CoopAddSafety;
+import eu.tango.scamscreener.whitelist.WhitelistManager;
 import net.minecraft.client.gui.screens.Screen;
 
 public class ScamScreenerClient implements ClientModInitializer {
 	private static final BlacklistManager BLACKLIST = new BlacklistManager();
+	private static final WhitelistManager WHITELIST = new WhitelistManager();
 	private static final Logger LOGGER = LoggerFactory.getLogger(ScamScreenerClient.class);
 	private static ScamScreenerClient INSTANCE;
 	private final PlayerLookup playerLookup = new PlayerLookup();
@@ -81,7 +87,12 @@ public class ScamScreenerClient implements ClientModInitializer {
 	private final DiscordWebhookUploader discordWebhookUploader = new DiscordWebhookUploader();
 	private final ModelUpdateService modelUpdateService = new ModelUpdateService();
 	private final MutePatternManager mutePatternManager = new MutePatternManager();
-	private final DetectionPipeline detectionPipeline = new DetectionPipeline(mutePatternManager, new LocalAiScorer());
+	private final DetectionPipeline detectionPipeline = new DetectionPipeline(
+		mutePatternManager,
+		WHITELIST,
+		playerLookup::findUuidByName,
+		new LocalAiScorer()
+	);
 	private final LocationService locationService = new LocationService();
 	private final EmailSafety emailSafety = new EmailSafety();
 	private final DiscordSafety discordSafety = new DiscordSafety();
@@ -107,12 +118,14 @@ public class ScamScreenerClient implements ClientModInitializer {
 		INSTANCE = this;
 		AsyncDispatcher.init();
 		BLACKLIST.load();
+		WHITELIST.load();
 		ScamRules.reloadConfig();
 		autoLeaveOnBlacklist = ScamRulesConfig.loadOrCreate().autoLeaveOnBlacklist;
 		mutePatternManager.load();
 		loadDebugConfig();
 		debugReporter = new DebugReporter(debugConfig);
 		blacklistAlertService = new BlacklistAlertService(BLACKLIST, playerLookup, debugReporter, () -> autoLeaveOnBlacklist);
+		refreshWhitelistDisplayNamesAsync();
 		Runnable openSettingsAction = () -> {
 			Minecraft client = Minecraft.getInstance();
 			if (client == null) {
@@ -139,9 +152,11 @@ public class ScamScreenerClient implements ClientModInitializer {
 
 	private void registerCommands() {
 		Runnable openSettingsHandler = tickController::requestOpenSettings;
+		Runnable openWhitelistScreenHandler = this::openWhitelistSettingsScreen;
 
 		ScamScreenerCommands commands = new ScamScreenerCommands(
 			BLACKLIST,
+			WHITELIST,
 			targetResolutionService::resolveTargetOrReply,
 			mutePatternManager,
 			trainingCommandHandler::captureMessageById,
@@ -167,9 +182,50 @@ public class ScamScreenerClient implements ClientModInitializer {
 			this::disableEducationMessage,
 			ignored -> {},
 			openSettingsHandler,
+			openWhitelistScreenHandler,
 			MessageDispatcher::reply
 		);
 		commands.register();
+	}
+
+	private void openWhitelistSettingsScreen() {
+		Minecraft client = Minecraft.getInstance();
+		if (client == null) {
+			return;
+		}
+		refreshWhitelistDisplayNamesAsync();
+		AsyncDispatcher.onClient(client, () -> {
+			Screen parent = client.screen;
+			client.setScreen(new WhitelistSettingsScreen(parent, WHITELIST, targetResolutionService::resolveTargetOrReply));
+		});
+	}
+
+	private void refreshWhitelistDisplayNamesAsync() {
+		for (WhitelistManager.WhitelistEntry entry : WHITELIST.allEntries()) {
+			if (entry == null || entry.uuid() == null) {
+				continue;
+			}
+			String onlineName = playerLookup.findNameByUuid(entry.uuid());
+			if (isUsableName(onlineName)) {
+				WHITELIST.updateDisplayName(entry.uuid(), onlineName);
+				continue;
+			}
+			ResolvedTarget cached = mojangProfileService.lookupByUuidCached(entry.uuid());
+			if (cached != null && isUsableName(cached.name())) {
+				WHITELIST.updateDisplayName(entry.uuid(), cached.name());
+				continue;
+			}
+			mojangProfileService.lookupByUuidAsync(entry.uuid()).thenAccept(resolved -> {
+				if (resolved == null || !isUsableName(resolved.name())) {
+					return;
+				}
+				WHITELIST.updateDisplayName(entry.uuid(), resolved.name());
+			});
+		}
+	}
+
+	private static boolean isUsableName(String name) {
+		return name != null && !name.isBlank() && !"unknown".equalsIgnoreCase(name.trim());
 	}
 
 	public static Screen createSettingsScreen(Screen parent) {
@@ -184,7 +240,10 @@ public class ScamScreenerClient implements ClientModInitializer {
 		return new MainSettingsScreen(
 			parent,
 			BLACKLIST,
+			WHITELIST,
 			mutePatternManager,
+			targetResolutionService::resolveTargetOrReply,
+			this::refreshWhitelistDisplayNamesAsync,
 			() -> autoLeaveOnBlacklist,
 			this::setAutoLeaveEnabled,
 			this::setAllDebug,
@@ -235,7 +294,11 @@ public class ScamScreenerClient implements ClientModInitializer {
 			final int[] scoreHolder = {0};
 			detectionPipeline.process(event, MessageDispatcher::reply, NotificationService::playWarningTone, evaluation -> {
 				funnelMetricsService.recordEvaluation(evaluation);
-				scoreHolder[0] = toReviewScore(evaluation == null ? null : evaluation.result());
+				if (evaluation == null || evaluation.result() == null) {
+					scoreHolder[0] = 0;
+					return;
+				}
+				scoreHolder[0] = shouldAutoMarkScamInReview(evaluation.result()) ? toReviewScore(evaluation.result()) : 0;
 			})
 				.ifPresent(this::autoAddFlaggedMessageToTrainingData);
 			reviewScore = scoreHolder[0];
@@ -387,13 +450,13 @@ public class ScamScreenerClient implements ClientModInitializer {
 			return 0;
 		}
 		AsyncDispatcher
-			.supplyBackground(() -> collectReviewMessages(context))
-			.thenAccept(messages -> AsyncDispatcher.onClient(client, () -> {
+			.supplyBackground(() -> collectReviewRows(context))
+			.thenAccept(rows -> AsyncDispatcher.onClient(client, () -> {
 				Screen parent = client.screen;
 				client.setScreen(new AlertManageScreen(
 					parent,
 					context,
-					messages,
+					rows,
 					request -> saveAlertReview(context, request)
 				));
 			}))
@@ -651,36 +714,85 @@ public class ScamScreenerClient implements ClientModInitializer {
 		return EducationMessages.disableMessage(messageId);
 	}
 
-	private List<String> collectReviewMessages(AlertReviewRegistry.AlertContext context) {
+	private List<AlertManageScreen.ReviewRow> collectReviewRows(AlertReviewRegistry.AlertContext context) {
 		if (context == null) {
 			return List.of();
 		}
-		List<String> out = new ArrayList<>();
-		Set<String> seen = new LinkedHashSet<>();
+
+		List<AlertManageScreen.ReviewRow> out = new ArrayList<>();
+		Map<String, Integer> indexByMessage = new LinkedHashMap<>();
 		String playerName = context.playerName();
 		if (playerName != null && !playerName.isBlank() && !"unknown".equalsIgnoreCase(playerName.trim())) {
 			for (TrainingDataService.CapturedChat capture : trainingDataService.recentCapturedForPlayer(playerName, trainingDataService.maxCapturedChatLines())) {
 				if (capture == null) {
 					continue;
 				}
-				addNormalizedUnique(out, seen, capture.rawMessage());
+				String rowId = "player-"
+					+ capture.timestampMs()
+					+ "-"
+					+ capture.speakerKey()
+					+ "-"
+					+ Integer.toHexString((capture.rawMessage() == null ? "" : capture.rawMessage()).hashCode());
+				addOrMergeReviewRow(out, indexByMessage, rowId, capture.rawMessage(), capture.modScore());
 			}
 		}
-		for (String message : context.evaluatedMessages()) {
-			addNormalizedUnique(out, seen, message);
+
+		int contextScore = Math.max(0, Math.min(100, context.riskScore()));
+		int contextModScore = shouldAutoMarkScamInReview(context.riskLevel()) ? contextScore : 0;
+		List<String> contextMessages = context.evaluatedMessages() == null ? List.of() : context.evaluatedMessages();
+		for (int i = 0; i < contextMessages.size(); i++) {
+			addOrMergeReviewRow(out, indexByMessage, "alert-" + i, contextMessages.get(i), contextModScore);
 		}
 		return out;
 	}
 
-	private static void addNormalizedUnique(List<String> out, Set<String> seen, String raw) {
-		if (out == null || seen == null || raw == null) {
+	private List<String> collectReviewMessages(AlertReviewRegistry.AlertContext context) {
+		List<AlertManageScreen.ReviewRow> rows = collectReviewRows(context);
+		if (rows.isEmpty()) {
+			return List.of();
+		}
+		List<String> out = new ArrayList<>();
+		for (AlertManageScreen.ReviewRow row : rows) {
+			if (row == null || row.message() == null || row.message().isBlank()) {
+				continue;
+			}
+			out.add(row.message());
+		}
+		return out;
+	}
+
+	private static void addOrMergeReviewRow(
+		List<AlertManageScreen.ReviewRow> out,
+		Map<String, Integer> indexByMessage,
+		String rowId,
+		String rawMessage,
+		int modScore
+	) {
+		if (out == null || indexByMessage == null || rawMessage == null) {
 			return;
 		}
-		String normalized = raw.replace('\n', ' ').replace('\r', ' ').trim();
-		if (normalized.isBlank() || !seen.add(normalized)) {
+		String normalized = rawMessage.replace('\n', ' ').replace('\r', ' ').trim();
+		if (normalized.isBlank()) {
 			return;
 		}
-		out.add(normalized);
+		int clampedScore = Math.max(0, Math.min(100, modScore));
+		Integer existingIndex = indexByMessage.get(normalized);
+		if (existingIndex != null && existingIndex >= 0 && existingIndex < out.size()) {
+			AlertManageScreen.ReviewRow existing = out.get(existingIndex);
+			if (existing != null && clampedScore > existing.modScore()) {
+				out.set(
+					existingIndex,
+					new AlertManageScreen.ReviewRow(existing.rowId(), existing.message(), existing.currentLabel(), clampedScore)
+				);
+			}
+			return;
+		}
+
+		String safeRowId = (rowId == null || rowId.isBlank())
+			? "row-" + out.size() + "-" + Integer.toHexString(normalized.hashCode())
+			: rowId;
+		out.add(new AlertManageScreen.ReviewRow(safeRowId, normalized, -1, clampedScore));
+		indexByMessage.put(normalized, out.size() - 1);
 	}
 
 	private List<AlertManageScreen.ReviewRow> buildRecentCapturedReviewRows() {
@@ -712,6 +824,40 @@ public class ScamScreenerClient implements ClientModInitializer {
 		}
 		int rounded = (int) Math.round(result.totalScore());
 		return Math.max(0, Math.min(100, rounded));
+	}
+
+	private static boolean shouldAutoMarkScamInReview(eu.tango.scamscreener.pipeline.model.DetectionResult result) {
+		if (result == null || result.level() == null) {
+			return false;
+		}
+		return shouldAutoMarkScamInReview(DetectionScoring.toScamRiskLevel(result.level()));
+	}
+
+	private static boolean shouldAutoMarkScamInReview(ScamRules.ScamRiskLevel riskLevel) {
+		if (riskLevel == null) {
+			return false;
+		}
+		ScamRules.ScamRiskLevel minimum = autoCaptureMinimumRiskLevel();
+		if (minimum == null) {
+			return false;
+		}
+		return riskLevel.ordinal() >= minimum.ordinal();
+	}
+
+	private static ScamRules.ScamRiskLevel autoCaptureMinimumRiskLevel() {
+		String setting = ScamRules.autoCaptureAlertLevelSetting();
+		if (setting == null || setting.isBlank()) {
+			return null;
+		}
+		String normalized = setting.trim().toUpperCase(Locale.ROOT);
+		if ("OFF".equals(normalized)) {
+			return null;
+		}
+		try {
+			return ScamRules.ScamRiskLevel.valueOf(normalized);
+		} catch (IllegalArgumentException ignored) {
+			return null;
+		}
 	}
 
 	private TrainingCsvReviewLoadResult loadTrainingCsvReviewRows() {

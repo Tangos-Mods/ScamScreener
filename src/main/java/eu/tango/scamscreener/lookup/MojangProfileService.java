@@ -27,6 +27,8 @@ public final class MojangProfileService {
 
 	private final Map<String, CacheEntry> cache = new ConcurrentHashMap<>();
 	private final Map<String, CompletableFuture<ResolvedTarget>> pendingLookups = new ConcurrentHashMap<>();
+	private final Map<UUID, CacheEntry> uuidCache = new ConcurrentHashMap<>();
+	private final Map<UUID, CompletableFuture<ResolvedTarget>> pendingUuidLookups = new ConcurrentHashMap<>();
 
 	public ResolvedTarget lookupCached(String input) {
 		String key = normalizeKey(input);
@@ -34,7 +36,7 @@ public final class MojangProfileService {
 			return null;
 		}
 		CacheEntry cached = cache.get(key);
-		if (cached == null || cached.expiresAt().isBefore(Instant.now())) {
+		if (isExpired(cached)) {
 			cache.remove(key);
 			return null;
 		}
@@ -53,6 +55,29 @@ public final class MojangProfileService {
 		}
 
 		return pendingLookups.computeIfAbsent(key, this::fetchAsync);
+	}
+
+	public ResolvedTarget lookupByUuidCached(UUID uuid) {
+		if (uuid == null) {
+			return null;
+		}
+		CacheEntry cached = uuidCache.get(uuid);
+		if (isExpired(cached)) {
+			uuidCache.remove(uuid);
+			return null;
+		}
+		return cached.target();
+	}
+
+	public CompletableFuture<ResolvedTarget> lookupByUuidAsync(UUID uuid) {
+		if (uuid == null) {
+			return CompletableFuture.completedFuture(null);
+		}
+		ResolvedTarget cached = lookupByUuidCached(uuid);
+		if (cached != null) {
+			return CompletableFuture.completedFuture(cached);
+		}
+		return pendingUuidLookups.computeIfAbsent(uuid, this::fetchByUuidAsync);
 	}
 
 	private CompletableFuture<ResolvedTarget> fetchAsync(String key) {
@@ -74,10 +99,39 @@ public final class MojangProfileService {
 					pendingLookups.remove(key);
 					if (result != null) {
 						cache.put(key, new CacheEntry(result, Instant.now().plus(CACHE_TTL)));
+						uuidCache.put(result.uuid(), new CacheEntry(result, Instant.now().plus(CACHE_TTL)));
 					}
 				});
 		} catch (Exception e) {
 			LOGGER.debug("Failed to create Mojang profile request for {}", key, e);
+			return CompletableFuture.completedFuture(null);
+		}
+	}
+
+	private CompletableFuture<ResolvedTarget> fetchByUuidAsync(UUID uuid) {
+		try {
+			HttpRequest request = HttpRequest.newBuilder()
+				.uri(URI.create("https://sessionserver.mojang.com/session/minecraft/profile/" + undashed(uuid)))
+				.timeout(LOOKUP_TIMEOUT)
+				.GET()
+				.build();
+
+			return HTTP_CLIENT.sendAsync(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8))
+				.thenApply(this::parseResponse)
+				.exceptionally(error -> {
+					LOGGER.debug("Failed Mojang profile lookup for UUID {}", uuid, error);
+					return null;
+				})
+				.whenComplete((result, error) -> {
+					pendingUuidLookups.remove(uuid);
+					if (result != null) {
+						Instant expiresAt = Instant.now().plus(CACHE_TTL);
+						uuidCache.put(uuid, new CacheEntry(result, expiresAt));
+						cache.put(normalizeKey(result.name()), new CacheEntry(result, expiresAt));
+					}
+				});
+		} catch (Exception e) {
+			LOGGER.debug("Failed to create Mojang UUID profile request for {}", uuid, e);
 			return CompletableFuture.completedFuture(null);
 		}
 	}
@@ -106,6 +160,14 @@ public final class MojangProfileService {
 			return null;
 		}
 		return trimmed.toLowerCase(Locale.ROOT);
+	}
+
+	private static String undashed(UUID uuid) {
+		return uuid.toString().replace("-", "");
+	}
+
+	private static boolean isExpired(CacheEntry cached) {
+		return cached == null || cached.expiresAt().isBefore(Instant.now());
 	}
 
 	private static UUID uuidFromUndashed(String undashed) {

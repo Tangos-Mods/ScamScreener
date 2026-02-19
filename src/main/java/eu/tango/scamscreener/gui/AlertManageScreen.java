@@ -45,14 +45,14 @@ public final class AlertManageScreen extends ScamScreenerGUI {
 	public AlertManageScreen(
 		Screen parent,
 		AlertReviewRegistry.AlertContext alertContext,
-		List<String> sourceMessages,
+		List<ReviewRow> sourceRows,
 		SubmitHandler submitHandler
 	) {
 		this(
 			parent,
 			Component.literal("Manage Alert"),
 			alertContext,
-			toLegacyRows(sourceMessages),
+			sourceRows,
 			true,
 			submitHandler,
 			null,
@@ -127,7 +127,7 @@ public final class AlertManageScreen extends ScamScreenerGUI {
 		this.openFileHandler = openFileHandler;
 		this.refreshRowsSupplier = refreshRowsSupplier;
 		for (int i = 0; i < this.sourceRows.size(); i++) {
-			states.add(SelectionState.fromCurrentLabel(this.sourceRows.get(i).currentLabel()));
+			states.add(SelectionState.fromReviewRow(this.sourceRows.get(i)));
 		}
 	}
 
@@ -332,7 +332,7 @@ public final class AlertManageScreen extends ScamScreenerGUI {
 			if (existing == null && row != null && row.message() != null && !row.message().isBlank()) {
 				existing = byMessage.get(row.message());
 			}
-			states.add(existing == null ? SelectionState.fromCurrentLabel(row.currentLabel()) : existing);
+			states.add(existing == null ? SelectionState.fromReviewRow(row) : existing);
 		}
 
 		int maxOffset = Math.max(0, sourceRows.size() - maxVisibleRows);
@@ -567,6 +567,17 @@ public final class AlertManageScreen extends ScamScreenerGUI {
 				case 0 -> LEGIT;
 				default -> IGNORE;
 			};
+		}
+
+		private static SelectionState fromReviewRow(ReviewRow row) {
+			if (row == null) {
+				return IGNORE;
+			}
+			SelectionState byLabel = fromCurrentLabel(row.currentLabel());
+			if (byLabel != IGNORE) {
+				return byLabel;
+			}
+			return row.modScore() > 0 ? SCAM : IGNORE;
 		}
 	}
 

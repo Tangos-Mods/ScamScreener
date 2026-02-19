@@ -4,7 +4,9 @@ import eu.tango.scamscreener.ai.FunnelMetricsService;
 import eu.tango.scamscreener.ai.ModelUpdateService;
 import eu.tango.scamscreener.blacklist.BlacklistManager;
 import eu.tango.scamscreener.chat.mute.MutePatternManager;
+import eu.tango.scamscreener.lookup.ResolvedTarget;
 import eu.tango.scamscreener.rules.ScamRules;
+import eu.tango.scamscreener.whitelist.WhitelistManager;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -15,6 +17,7 @@ import java.util.function.BiFunction;
 import java.util.function.BiConsumer;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 public final class MainSettingsScreen extends ScamScreenerGUI {
@@ -22,7 +25,10 @@ public final class MainSettingsScreen extends ScamScreenerGUI {
 	private static final String[] AUTO_CAPTURE_LEVELS = {"OFF", "LOW", "MEDIUM", "HIGH", "CRITICAL"};
 
 	private final BlacklistManager blacklistManager;
+	private final WhitelistManager whitelistManager;
 	private final MutePatternManager mutePatternManager;
+	private final Function<String, ResolvedTarget> targetResolver;
+	private final Runnable refreshWhitelistNamesHandler;
 	private final BooleanSupplier autoLeaveEnabledSupplier;
 	private final Consumer<Boolean> setAutoLeaveEnabledHandler;
 	private final Consumer<Boolean> setAllDebugHandler;
@@ -45,7 +51,10 @@ public final class MainSettingsScreen extends ScamScreenerGUI {
 	public MainSettingsScreen(
 		Screen parent,
 		BlacklistManager blacklistManager,
+		WhitelistManager whitelistManager,
 		MutePatternManager mutePatternManager,
+		Function<String, ResolvedTarget> targetResolver,
+		Runnable refreshWhitelistNamesHandler,
 		BooleanSupplier autoLeaveEnabledSupplier,
 		Consumer<Boolean> setAutoLeaveEnabledHandler,
 		Consumer<Boolean> setAllDebugHandler,
@@ -61,7 +70,10 @@ public final class MainSettingsScreen extends ScamScreenerGUI {
 	) {
 		super(Component.literal("ScamScreener Settings"), parent);
 		this.blacklistManager = blacklistManager;
+		this.whitelistManager = whitelistManager;
 		this.mutePatternManager = mutePatternManager;
+		this.targetResolver = targetResolver;
+		this.refreshWhitelistNamesHandler = refreshWhitelistNamesHandler;
 		this.autoLeaveEnabledSupplier = autoLeaveEnabledSupplier;
 		this.setAutoLeaveEnabledHandler = setAutoLeaveEnabledHandler;
 		this.setAllDebugHandler = setAllDebugHandler;
@@ -150,6 +162,14 @@ public final class MainSettingsScreen extends ScamScreenerGUI {
 			));
 		}).bounds(thirdColumnX, y + ROW_HEIGHT, thirdWidth, 20).build());
 		y += ROW_HEIGHT * 2;
+
+		this.addRenderableWidget(Button.builder(Component.literal("Whitelist"), button -> {
+			if (refreshWhitelistNamesHandler != null) {
+				refreshWhitelistNamesHandler.run();
+			}
+			openScreen(new WhitelistSettingsScreen(this, whitelistManager, targetResolver));
+		}).bounds(x, y, buttonWidth, 20).build());
+		y += ROW_HEIGHT;
 
 		int halfWidth = splitWidth(buttonWidth, 2, splitSpacing);
 		int rightHalfX = x + halfWidth + splitSpacing;

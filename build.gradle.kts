@@ -106,6 +106,35 @@ tasks {
 
 tasks.withType<Test>().configureEach {
 	useJUnitPlatform()
+	fun readDotEnvValue(key: String): String? {
+		val envFile = rootProject.file(".env")
+		if (!envFile.isFile) {
+			return null
+		}
+		for (line in envFile.readLines()) {
+			val trimmed = line.trim()
+			if (trimmed.isBlank() || trimmed.startsWith("#")) {
+				continue
+			}
+			val separatorIndex = trimmed.indexOf('=')
+			if (separatorIndex <= 0) {
+				continue
+			}
+			val entryKey = trimmed.substring(0, separatorIndex).trim()
+			if (entryKey != key) {
+				continue
+			}
+			val rawValue = trimmed.substring(separatorIndex + 1).trim()
+			return rawValue.trim('"')
+		}
+		return null
+	}
+	val webhookProperty = System.getProperty("scamscreener.discord.webhook.url")
+		?: System.getenv("SCAMSCREENER_DISCORD_WEBHOOK_URL")
+		?: readDotEnvValue("SCAMSCREENER_DISCORD_WEBHOOK_URL")
+	if (!webhookProperty.isNullOrBlank()) {
+		systemProperty("scamscreener.discord.webhook.url", webhookProperty)
+	}
 	testLogging {
 		events("passed", "failed", "skipped")
 		exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL

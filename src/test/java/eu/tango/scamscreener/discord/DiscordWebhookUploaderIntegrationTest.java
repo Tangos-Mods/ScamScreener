@@ -10,14 +10,27 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DiscordWebhookUploaderIntegrationTest {
 	private static final String WEBHOOK_OVERRIDE_PROPERTY = "scamscreener.discord.webhook.url";
-	private static final String LEGACY_TEST_WEBHOOK_URL = "https://discord.com/api/webhooks/1472021483323916461/3eXVN9BT-mGkKAbje2wgDx0A1LObfSbqiMSbLrPSgzm5DxRJ06snqjLJxvM3YULWIRa8";
+	private static final String WEBHOOK_ENV = "SCAMSCREENER_DISCORD_WEBHOOK_URL";
 
 	@Test
 	void uploadsEmbedAndFileToWebhook() throws Exception {
+		String configuredWebhook = System.getProperty(WEBHOOK_OVERRIDE_PROPERTY);
+		if (configuredWebhook == null || configuredWebhook.isBlank()) {
+			configuredWebhook = System.getenv(WEBHOOK_ENV);
+		}
+		assertTrue(
+			configuredWebhook != null && configuredWebhook.startsWith("https://discord.com/api/webhooks/"),
+			"Discord webhook is not configured. Set -Dscamscreener.discord.webhook.url=<discord webhook url> or SCAMSCREENER_DISCORD_WEBHOOK_URL."
+		);
+
 		String previousWebhook = System.getProperty(WEBHOOK_OVERRIDE_PROPERTY);
-		System.setProperty(WEBHOOK_OVERRIDE_PROPERTY, LEGACY_TEST_WEBHOOK_URL);
+		System.setProperty(WEBHOOK_OVERRIDE_PROPERTY, configuredWebhook.trim());
 
 		DiscordWebhookUploader uploader = new DiscordWebhookUploader();
+		assertTrue(
+			uploader.isConfigured(),
+			"Discord webhook is not configured. Set -Dscamscreener.discord.webhook.url=<discord webhook url>."
+		);
 
 		Path tempUploadFile = null;
 		try {

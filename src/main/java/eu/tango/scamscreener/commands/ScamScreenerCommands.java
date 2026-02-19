@@ -5,6 +5,7 @@ import eu.tango.scamscreener.blacklist.BlacklistManager;
 import eu.tango.scamscreener.chat.mute.MutePatternManager;
 import eu.tango.scamscreener.lookup.ResolvedTarget;
 import eu.tango.scamscreener.ui.Messages;
+import eu.tango.scamscreener.whitelist.WhitelistManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
@@ -19,6 +20,7 @@ import java.util.function.Supplier;
 
 public final class ScamScreenerCommands {
 	private final BlacklistManager blacklist;
+	private final WhitelistManager whitelist;
 	private final Function<String, ResolvedTarget> targetResolver;
 	private final MutePatternManager mutePatternManager;
 	private final CaptureByMessageHandler captureByMessageHandler;
@@ -44,10 +46,12 @@ public final class ScamScreenerCommands {
 	private final EducationDisableHandler educationDisableHandler;
 	private final Consumer<UUID> onBlacklistRemoved;
 	private final Runnable openSettingsHandler;
+	private final Runnable openWhitelistScreenHandler;
 	private final Consumer<Component> reply;
 
 	public ScamScreenerCommands(
 		BlacklistManager blacklist,
+		WhitelistManager whitelist,
 		Function<String, ResolvedTarget> targetResolver,
 		MutePatternManager mutePatternManager,
 		CaptureByMessageHandler captureByMessageHandler,
@@ -73,9 +77,11 @@ public final class ScamScreenerCommands {
 		EducationDisableHandler educationDisableHandler,
 		Consumer<UUID> onBlacklistRemoved,
 		Runnable openSettingsHandler,
+		Runnable openWhitelistScreenHandler,
 		Consumer<Component> reply
 	) {
 		this.blacklist = blacklist;
+		this.whitelist = whitelist;
 		this.targetResolver = targetResolver;
 		this.mutePatternManager = mutePatternManager;
 		this.captureByMessageHandler = captureByMessageHandler;
@@ -101,6 +107,7 @@ public final class ScamScreenerCommands {
 		this.educationDisableHandler = educationDisableHandler;
 		this.onBlacklistRemoved = onBlacklistRemoved;
 		this.openSettingsHandler = openSettingsHandler;
+		this.openWhitelistScreenHandler = openWhitelistScreenHandler;
 		this.reply = reply;
 	}
 
@@ -118,6 +125,7 @@ public final class ScamScreenerCommands {
 			.then(AddCommand.build(blacklist, targetResolver, reply))
 			.then(RemoveCommand.build(blacklist, targetResolver, onBlacklistRemoved, reply))
 			.then(ListCommand.build(blacklist, reply))
+			.then(WhitelistCommand.build(whitelist, targetResolver, openWhitelistScreenHandler, reply))
 			.then(MuteCommand.build(mutePatternManager, reply))
 			.then(UnmuteCommand.build(mutePatternManager, reply))
 			.then(EmailBypassCommand.build(emailBypassHandler, reply))
