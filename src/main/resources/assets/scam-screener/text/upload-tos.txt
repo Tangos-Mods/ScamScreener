@@ -1,98 +1,33 @@
-Terms of Service (TOS)
-Last Updated: [Insert Date]
+Terms of Service (ToS)
+Last Updated: 2026-02-19
 
-By using this Mod and its optional data upload / training features, you agree to the following terms:
+By using this mod and its optional training data export flow, you agree to the following:
 
+1. Consent and purpose
 
+When you use the upload flow, the mod archives your local training CSV and guides you to upload it manually in the community Discord server.
+Shared training data is used to improve scam detection and model quality.
 
-1. Data Upload & Processing Consent
+2. Data scope
 
-By enabling or using the training and data upload functionality, you explicitly consent to the collection, upload, storage, and processing of chat message data for the purpose of improving, training, and evaluating the Mod’s scam detection systems and AI models.
+Training files are intended to contain chat content and derived scam-related labels/features only.
+Do not include malware, executables, or unrelated personal data.
 
-Uploaded chat data is used solely for behavioral analysis related to scam detection and prevention.
+3. User-controlled upload
 
+The mod does not automatically submit your file to Discord.
+You decide whether to join the server and upload the archived file yourself.
 
+4. Responsibility
 
-2. Anonymization of Training Data
+By uploading, you confirm that:
+- You have the right to share the data.
+- You understand the file may include public multiplayer chat content.
+- You accept that contributed training data may be retained for research and model training.
 
-All training datasets are anonymized.
+5. Disclaimer
 
-Training files do NOT contain personally identifying information about the sender of any message.
+Scam detection is probabilistic and may produce false positives or false negatives.
+Warnings are automated assessments and should not be treated as guaranteed fact.
 
-Specifically, training datasets exclude:
-
-- Player Names
-- Player UUIDs
-- Account Identifiers
-- Any direct personal identifiers
-
-The training data contains only:
-
-- Chat message content
-- Behavioral scam indicators
-- Linguistic or statistical features derived from the messages
-
-No dataset used for model training can be used to identify an individual player.
-
-
-
-3. Upload Metadata & Debug Information
-
-Separate from the anonymized training datasets, the Mod transmits technical metadata about the uploader for debugging, validation, and system integrity purposes.
-
-This metadata is NOT embedded into the training message datasets themselves.
-
-Uploaded metadata may include:
-
-- Player Name
-- Player UUID
-- Mod Version
-- AI Model Version
-- Local Upload Timestamp
-
-This information may be visible to developers, maintainers, or — where applicable — publicly accessible within debugging or research environments.
-
-
-
-4. Purpose Limitation
-
-All collected data is used exclusively for:
-
-- Scam behavior research
-- AI / detection model training
-- System debugging
-- Feature improvement
-
-Data will not be sold or used for unrelated commercial profiling purposes.
-
-
-
-5. User Responsibility
-
-By enabling uploads, you confirm that:
-
-- You have the right to submit the data being uploaded.
-- You understand that chat content may originate from public multiplayer environments.
-- You accept that anonymized behavioral data may be retained indefinitely for research and training.
-
-
-
-6. Opt-Out
-
-If the Mod provides upload or training toggles, you may disable these features at any time.
-
-Disabling will stop future uploads but does not retroactively remove already submitted datasets.
-
-
-
-7. Disclaimer
-
-The Mod operates on probabilistic scam detection models.
-
-Warnings, flags, or classifications are automated assessments and may be inaccurate.
-
-No liability is assumed for false positives, false negatives, or user actions taken based on Mod output.
-
-
-
-By using the upload or AI training features, you acknowledge that you have read and agreed to these Terms of Service.
+By continuing, you acknowledge that you have read and accepted these terms.

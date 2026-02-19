@@ -18,7 +18,6 @@ import eu.tango.scamscreener.chat.mute.MutePatternManager;
 import eu.tango.scamscreener.chat.parser.ChatLineParser;
 import eu.tango.scamscreener.chat.parser.OutgoingChatCommandParser;
 import eu.tango.scamscreener.chat.trigger.TriggerContext;
-import eu.tango.scamscreener.discord.DiscordWebhookUploader;
 import eu.tango.scamscreener.gui.MainSettingsScreen;
 import eu.tango.scamscreener.gui.AlertInfoScreen;
 import eu.tango.scamscreener.gui.AlertManageScreen;
@@ -84,7 +83,6 @@ public class ScamScreenerClient implements ClientModInitializer {
 	private final TrainingUploadReminderService trainingUploadReminderService = new TrainingUploadReminderService(trainingDataService::trainingDataPath);
 	private final FunnelMetricsService funnelMetricsService = new FunnelMetricsService();
 	private final LocalAiTrainer localAiTrainer = new LocalAiTrainer();
-	private final DiscordWebhookUploader discordWebhookUploader = new DiscordWebhookUploader();
 	private final ModelUpdateService modelUpdateService = new ModelUpdateService();
 	private final MutePatternManager mutePatternManager = new MutePatternManager();
 	private final DetectionPipeline detectionPipeline = new DetectionPipeline(
@@ -100,8 +98,7 @@ public class ScamScreenerClient implements ClientModInitializer {
 	private final TrainingCommandHandler trainingCommandHandler = new TrainingCommandHandler(
 		trainingDataService,
 		funnelMetricsService,
-		localAiTrainer,
-		discordWebhookUploader
+		localAiTrainer
 	);
 	private final OutgoingMessageGuard outgoingMessageGuard = new OutgoingMessageGuard(emailSafety, discordSafety, coopAddSafety);
 	private final ModelUpdateCommandHandler modelUpdateCommandHandler = new ModelUpdateCommandHandler(modelUpdateService);

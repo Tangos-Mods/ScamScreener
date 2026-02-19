@@ -24,15 +24,6 @@ Base directory: `src/test/java/eu/tango/scamscreener/`
     - changed content does not match,
     - missing inputs (`null`/blank) return `false`.
 
-### `discord/DiscordWebhookUploaderIntegrationTest.java`
-- **What is tested:**
-  - End-to-end Discord webhook upload with multipart file + embed fields.
-  - Embed includes uploader test data, UUID, timestamp, and hash field.
-- **How it is tested:**
-  - Opt-in integration test (`-Dscamscreener.discord.integration.enabled=true`).
-  - Uses the configured webhook in `DiscordWebhookUploader`.
-  - Creates a temporary `.csv.old.<n>` file, uploads it with fixed test context, and asserts successful response + `sha256=` in result detail.
-
 ### `chat/parser/ChatLineParserTest.java`
 - **What is tested:**
   - Detection of valid player chat lines.

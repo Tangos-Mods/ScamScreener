@@ -27,6 +27,7 @@ public final class Messages extends MessageBuilder {
 	private static final String PREFIX = DEFAULT_PREFIX;
 	private static final int PREFIX_LIGHT_RED = DEFAULT_PREFIX_COLOR;
 	private static final String FANDOM_WEBSITE_URL_SCAM = "https://hypixel-skyblock.fandom.com/wiki/Scams";
+	private static final String SKYBLOCK_ENHANCED_DISCORD_URL = "https://discord.gg/uzbJnXbfvA";
 
 	private Messages() {
 	}
@@ -328,24 +329,12 @@ public final class Messages extends MessageBuilder {
 			.append(Component.literal("AI up-to-date message on server join disabled.").withStyle(ChatFormatting.GRAY));
 	}
 
-	public static MutableComponent trainingUploadWebhookStarted(String path) {
+	public static MutableComponent trainingUploadJoinDiscordPrompt(String path) {
 		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
-			.append(Component.literal("Uploading...").withStyle(ChatFormatting.GRAY));
-	}
-
-	public static MutableComponent trainingUploadWebhookSucceeded(String path, String verificationDetail) {
-		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
-			.append(Component.literal("Training data uploaded sucessfully.").withStyle(ChatFormatting.GRAY));
-	}
-
-	public static MutableComponent trainingUploadWebhookFailed(String errorMessage) {
-		return buildError(
-			PREFIX,
-			PREFIX_LIGHT_RED,
-			"Discord webhook upload failed.",
-			"TR-UPLOAD-001",
-			errorMessage
-		);
+			.append(Component.literal("Archived training data: ").withStyle(ChatFormatting.GRAY))
+			.append(clickableContainingFolderPath(path == null ? "" : path))
+			.append(Component.literal(". Do you want to join the Discord server and upload it manually? ").withStyle(ChatFormatting.GRAY))
+			.append(clickableUrl("Join Discord", SKYBLOCK_ENHANCED_DISCORD_URL, "Open Discord invite"));
 	}
 
 	public static MutableComponent trainingUploadUnavailable(String detail) {

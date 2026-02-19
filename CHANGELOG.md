@@ -1,6 +1,20 @@
 # Changelog
 All notable changes to this project are documented in this file.
 
+## [1.3.1] - 2026-02-19
+
+### Added
+- Added a manual upload handoff message for `/scamscreener upload` with a clickable Discord invite and clickable archived training-data folder path.
+
+### Changed
+- Bumped mod version from `1.3.0` to `1.3.1`.
+- `/scamscreener upload` now archives the active training CSV and prompts the player to join Discord for manual upload instead of sending via webhook.
+- Updated upload ToS and README upload/network documentation to reflect the manual, player-controlled Discord upload flow.
+
+### Removed
+- Removed Discord webhook upload implementation (`DiscordWebhookUploader`) and webhook integration test/workflow wiring.
+- Removed webhook-specific environment/runtime test wiring from `.env.example`, Gradle test configuration, and GitHub Actions.
+
 ## [1.3.0] - 2026-02-18
 
 ### Added

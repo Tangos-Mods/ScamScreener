@@ -64,7 +64,7 @@ When thresholds are reached:
 ### 3) Training data capture and upload lifecycle
 
 - Training samples are stored in CSV.
-- `/scamscreener upload` archives the active training CSV and uploads it via webhook (after ToS consent).
+- `/scamscreener upload` archives the active training CSV (after ToS consent), opens the archive folder, and asks whether you want to join the Discord server for manual upload.
 - Existing training/model files are archived under `old/`.
 - Supports sample labeling via message id (`ai flag`) and via review flows (`review`, `review player`, `review manage`).
 - Reviewer auto `[S]` preselection follows the configured AI auto-capture threshold (`OFF|LOW|MEDIUM|HIGH|CRITICAL`).
@@ -204,7 +204,7 @@ Archive folders:
 1. Collect labeled samples with `ai flag` and in-game review flows (`review`, `review player`, `review manage`).
 2. (Optional) Refine labels in the reviewer and save selected scam/legit lines.
 3. Run `/scamscreener upload`.
-4. Training CSV is archived and uploaded via webhook after ToS acceptance.
+4. Training CSV is archived and the mod asks whether you want to join Discord to upload the file manually.
 5. Observe warning quality and false positives over time.
 
 Tips:
@@ -219,7 +219,7 @@ Tips:
 - Training and model files stay in `config/scamscreener/`.
 - Optional network calls are used for:
   - Mojang profile lookup (name/UUID resolution and whitelist name refresh)
-  - training-data webhook upload (`/scamscreener upload`)
+  - opening the Discord invite link for manual training-data upload (`/scamscreener upload`)
   - AI model update check/download (GitHub raw URL)
 
 ## Limitations

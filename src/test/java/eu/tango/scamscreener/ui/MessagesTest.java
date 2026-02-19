@@ -42,7 +42,6 @@ class MessagesTest {
 	void errorMessagesIncludeStableErrorCodes() {
 		assertTrue(Messages.modelUpdateCheckFailed("boom").getString().contains("[MU-CHECK-001]"));
 		assertTrue(Messages.trainingSaveFailed("boom").getString().contains("[TR-SAVE-001]"));
-		assertTrue(Messages.trainingUploadWebhookFailed("boom").getString().contains("[TR-UPLOAD-001]"));
 		assertTrue(Messages.trainingUploadUnavailable("boom").getString().contains("[TR-UPLOAD-002]"));
 		assertTrue(Messages.trainingCsvReviewFailed("boom").getString().contains("[TR-CSV-001]"));
 		assertTrue(Messages.mutePatternInvalid("(bad").getString().contains("[MUTE-REGEX-001]"));
@@ -79,12 +78,11 @@ class MessagesTest {
 	}
 
 	@Test
-	void trainingWebhookMessagesUseSimpleStatusText() {
-		MutableComponent started = Messages.trainingUploadWebhookStarted("ignored-path");
-		MutableComponent success = Messages.trainingUploadWebhookSucceeded("ignored-path", "ignored-detail");
+	void trainingUploadJoinDiscordPromptContainsDiscordInvite() {
+		MutableComponent prompt = Messages.trainingUploadJoinDiscordPrompt("C:\\temp\\training.csv.old.1");
 
-		assertTrue(started.getString().contains("Uploading..."));
-		assertTrue(success.getString().contains("Training data uploaded sucessfully."));
+		assertTrue(prompt.getString().contains("Do you want to join the Discord server"));
+		assertTrue(hasClickValue(prompt, "https://discord.gg/uzbJnXbfvA"));
 	}
 
 	@Test

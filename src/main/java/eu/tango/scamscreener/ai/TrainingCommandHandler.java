@@ -1,7 +1,6 @@
 package eu.tango.scamscreener.ai;
 
 import eu.tango.scamscreener.rules.ScamRules;
-import eu.tango.scamscreener.discord.DiscordWebhookUploader;
 import eu.tango.scamscreener.ui.MessageDispatcher;
 import eu.tango.scamscreener.ui.Messages;
 import eu.tango.scamscreener.ui.MessageFlagging;
@@ -36,18 +35,15 @@ public final class TrainingCommandHandler {
 	private final TrainingDataService trainingDataService;
 	private final FunnelMetricsService funnelMetricsService;
 	private final LocalAiTrainer localAiTrainer;
-	private final DiscordWebhookUploader discordWebhookUploader;
 
 	public TrainingCommandHandler(
 		TrainingDataService trainingDataService,
 		FunnelMetricsService funnelMetricsService,
-		LocalAiTrainer localAiTrainer,
-		DiscordWebhookUploader discordWebhookUploader
+		LocalAiTrainer localAiTrainer
 	) {
 		this.trainingDataService = trainingDataService;
 		this.funnelMetricsService = funnelMetricsService == null ? new FunnelMetricsService() : funnelMetricsService;
 		this.localAiTrainer = localAiTrainer;
-		this.discordWebhookUploader = discordWebhookUploader == null ? new DiscordWebhookUploader() : discordWebhookUploader;
 	}
 
 	public int captureChatAsTrainingData(String playerName, int label, int count) {
@@ -150,8 +146,7 @@ public final class TrainingCommandHandler {
 			return 0;
 		}
 		if (Files.isRegularFile(uploadPath)) {
-			MessageDispatcher.reply(Messages.trainingUploadWebhookStarted(uploadPath.toString()));
-			uploadArchivedTrainingDataAsync(uploadPath);
+			MessageDispatcher.reply(Messages.trainingUploadJoinDiscordPrompt(uploadPath.toString()));
 		} else {
 			// Code: TR-UPLOAD-002
 			MessageDispatcher.reply(Messages.trainingUploadUnavailable("Training data file not found: " + uploadPath));
@@ -580,20 +575,6 @@ public final class TrainingCommandHandler {
 		} catch (IOException ignored) {
 			return UPLOAD_TOS_FALLBACK;
 		}
-	}
-
-	private void uploadArchivedTrainingDataAsync(Path uploadPath) {
-		DiscordWebhookUploader.UploaderContext uploaderContext = DiscordWebhookUploader.captureCurrentUploader();
-		AsyncDispatcher.runIo(() -> {
-			DiscordWebhookUploader.UploadResult result = discordWebhookUploader.uploadTrainingFile(uploadPath, uploaderContext);
-			if (result.success()) {
-				MessageDispatcher.reply(Messages.trainingUploadWebhookSucceeded(uploadPath.toString(), result.detail()));
-				return;
-			}
-			LOGGER.warn("Failed to upload training data to Discord webhook: {}", result.detail());
-			// Code: TR-UPLOAD-001
-			MessageDispatcher.reply(Messages.trainingUploadWebhookFailed(result.detail()));
-		});
 	}
 
 	private static Path resolveOldFolder(Path archivedPath) {
