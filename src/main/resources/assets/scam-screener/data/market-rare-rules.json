@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "item_keys": [
+    "crystal_helmet",
+    "crystal_chestplate",
+    "crystal_leggings",
+    "crystal_boots"
+  ],
+  "name_contains": [
+    "exotic",
+    "crystal",
+    "seymour"
+  ],
+  "lore_contains": [
+    "dyed",
+    "exotic",
+    "hex color",
+    "set bonus"
+  ]
+}
+

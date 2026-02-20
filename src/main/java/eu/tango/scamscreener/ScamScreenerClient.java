@@ -27,7 +27,17 @@ import eu.tango.scamscreener.pipeline.model.DetectionOutcome;
 import eu.tango.scamscreener.pipeline.core.DetectionPipeline;
 import eu.tango.scamscreener.pipeline.model.MessageEvent;
 import eu.tango.scamscreener.pipeline.core.MessageEventParser;
-import eu.tango.scamscreener.location.LocationService;
+import eu.tango.scamscreener.market.AuctionBinIndexRepository;
+import eu.tango.scamscreener.market.AuctionSalesRepository;
+import eu.tango.scamscreener.market.BazaarRepository;
+import eu.tango.scamscreener.market.HypixelMarketApiClient;
+import eu.tango.scamscreener.market.MarketClickConfirmStore;
+import eu.tango.scamscreener.market.MarketDataRefreshService;
+import eu.tango.scamscreener.market.MarketDatabase;
+import eu.tango.scamscreener.market.MarketRiskAnalyzer;
+import eu.tango.scamscreener.market.MarketUiGuard;
+import eu.tango.scamscreener.market.NpcPriceCatalog;
+import eu.tango.scamscreener.market.RareItemClassifier;
 import eu.tango.scamscreener.lookup.MojangProfileService;
 import eu.tango.scamscreener.lookup.PlayerLookup;
 import eu.tango.scamscreener.lookup.ResolvedTarget;
@@ -46,10 +56,12 @@ import eu.tango.scamscreener.util.TextUtil;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.fabricmc.fabric.api.client.message.v1.ClientSendMessageEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.inventory.ClickType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -91,7 +103,20 @@ public class ScamScreenerClient implements ClientModInitializer {
 		playerLookup::findUuidByName,
 		new LocalAiScorer()
 	);
-	private final LocationService locationService = new LocationService();
+	private final MarketDatabase marketDatabase = new MarketDatabase();
+	private final AuctionBinIndexRepository auctionBinIndexRepository = new AuctionBinIndexRepository(marketDatabase);
+	private final AuctionSalesRepository auctionSalesRepository = new AuctionSalesRepository(marketDatabase);
+	private final BazaarRepository bazaarRepository = new BazaarRepository(marketDatabase);
+	private final NpcPriceCatalog npcPriceCatalog = new NpcPriceCatalog(marketDatabase);
+	private final HypixelMarketApiClient hypixelMarketApiClient = new HypixelMarketApiClient();
+	private final MarketRiskAnalyzer marketRiskAnalyzer = new MarketRiskAnalyzer(
+		auctionBinIndexRepository,
+		auctionSalesRepository,
+		bazaarRepository,
+		npcPriceCatalog
+	);
+	private final RareItemClassifier rareItemClassifier = new RareItemClassifier();
+	private final MarketClickConfirmStore marketClickConfirmStore = new MarketClickConfirmStore();
 	private final EmailSafety emailSafety = new EmailSafety();
 	private final DiscordSafety discordSafety = new DiscordSafety();
 	private final CoopAddSafety coopAddSafety = new CoopAddSafety(BLACKLIST, playerLookup);
@@ -109,6 +134,8 @@ public class ScamScreenerClient implements ClientModInitializer {
 	private DebugReporter debugReporter;
 	private BlacklistAlertService blacklistAlertService;
 	private ClientTickController tickController;
+	private MarketDataRefreshService marketDataRefreshService;
+	private MarketUiGuard marketUiGuard;
 
 	@Override
 	public void onInitializeClient() {
@@ -122,6 +149,20 @@ public class ScamScreenerClient implements ClientModInitializer {
 		loadDebugConfig();
 		debugReporter = new DebugReporter(debugConfig);
 		blacklistAlertService = new BlacklistAlertService(BLACKLIST, playerLookup, debugReporter, () -> autoLeaveOnBlacklist);
+		marketDataRefreshService = new MarketDataRefreshService(
+			hypixelMarketApiClient,
+			auctionBinIndexRepository,
+			auctionSalesRepository,
+			bazaarRepository,
+			npcPriceCatalog,
+			debugReporter
+		);
+		marketUiGuard = new MarketUiGuard(
+			marketRiskAnalyzer,
+			rareItemClassifier,
+			marketClickConfirmStore,
+			debugReporter
+		);
 		refreshWhitelistDisplayNamesAsync();
 		Runnable openSettingsAction = () -> {
 			Minecraft client = Minecraft.getInstance();
@@ -137,14 +178,21 @@ public class ScamScreenerClient implements ClientModInitializer {
 			mutePatternManager,
 			detectionPipeline,
 			openSettingsAction,
-			locationService,
 			trainingUploadReminderService
 		);
 		registerCommands();
 		registerHypixelMessageChecks();
-		ClientLifecycleEvents.CLIENT_STOPPING.register(client -> AsyncDispatcher.shutdown());
-		ClientTickEvents.END_CLIENT_TICK.register(client ->
-			tickController.onClientTick(client, () -> modelUpdateService.checkForUpdateAsync(MessageDispatcher::reply)));
+		registerMarketTooltipHook();
+		ClientLifecycleEvents.CLIENT_STOPPING.register(client -> {
+			if (marketDataRefreshService != null) {
+				marketDataRefreshService.close();
+			}
+			AsyncDispatcher.shutdown();
+		});
+		ClientTickEvents.END_CLIENT_TICK.register(client -> {
+			tickController.onClientTick(client, () -> modelUpdateService.checkForUpdateAsync(MessageDispatcher::reply));
+			handleMarketTick(client);
+		});
 	}
 
 	private void registerCommands() {
@@ -256,6 +304,27 @@ public class ScamScreenerClient implements ClientModInitializer {
 		);
 	}
 
+	public static boolean allowMarketInventoryClick(int containerId, int slotId, int buttonNum, ClickType clickType) {
+		ScamScreenerClient instance = INSTANCE;
+		if (instance == null || instance.marketUiGuard == null) {
+			return true;
+		}
+		return instance.marketUiGuard.allowInventoryClick(containerId, slotId, buttonNum, clickType);
+	}
+
+	private void handleMarketTick(Minecraft client) {
+		if (marketDataRefreshService == null) {
+			return;
+		}
+		if (client == null || client.player == null || client.getConnection() == null) {
+			if (marketUiGuard != null) {
+				marketUiGuard.reset();
+			}
+			return;
+		}
+		marketDataRefreshService.tick(ScamRules.marketSafetyEnabled(), System.currentTimeMillis());
+	}
+
 	private void registerHypixelMessageChecks() {
 		ClientReceiveMessageEvents.ALLOW_GAME.register((message, overlay) -> {
 			String plain = message == null ? "" : message.getString();
@@ -266,6 +335,15 @@ public class ScamScreenerClient implements ClientModInitializer {
 		ClientReceiveMessageEvents.CHAT.register((message, signedMessage, sender, params, timestamp) -> handleHypixelMessage(message));
 		ClientSendMessageEvents.ALLOW_CHAT.register(this::handleOutgoingChat);
 		ClientSendMessageEvents.ALLOW_COMMAND.register(this::handleOutgoingCommand);
+	}
+
+	private void registerMarketTooltipHook() {
+		ItemTooltipCallback.EVENT.register((stack, context, type, lines) -> {
+			if (marketUiGuard == null || lines == null) {
+				return;
+			}
+			marketUiGuard.appendMarketTooltipStatus(stack, lines);
+		});
 	}
 
 	private void handleHypixelMessage(Component message) {

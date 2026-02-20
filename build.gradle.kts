@@ -32,6 +32,7 @@ dependencies {
 
 	modImplementation("net.fabricmc.fabric-api:fabric-api:${property("deps.fabric_api")}")
 	modImplementation("maven.modrinth:modmenu:${property("deps.modmenu_version")}")
+	implementation("org.xerial:sqlite-jdbc:3.46.1.3")
 
 	compileOnly("org.projectlombok:lombok:1.18.36")
 	annotationProcessor("org.projectlombok:lombok:1.18.36")

@@ -6,7 +6,7 @@ import java.util.Locale;
 import java.util.Map;
 
 public final class DebugRegistry {
-	private static final List<String> KEYS = List.of("updater", "trade", "mute", "chatcolor");
+	private static final List<String> KEYS = List.of("updater", "trade", "market", "mute", "chatcolor");
 
 	private DebugRegistry() {
 	}

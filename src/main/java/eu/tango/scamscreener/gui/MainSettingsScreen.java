@@ -163,6 +163,11 @@ public final class MainSettingsScreen extends ScamScreenerGUI {
 		}).bounds(thirdColumnX, y + ROW_HEIGHT, thirdWidth, 20).build());
 		y += ROW_HEIGHT * 2;
 
+		this.addRenderableWidget(Button.builder(Component.literal("Market Safety"), button -> {
+			openScreen(new MarketSafetySettingsScreen(this));
+		}).bounds(x, y, buttonWidth, 20).build());
+		y += ROW_HEIGHT;
+
 		this.addRenderableWidget(Button.builder(Component.literal("Whitelist"), button -> {
 			if (refreshWhitelistNamesHandler != null) {
 				refreshWhitelistNamesHandler.run();

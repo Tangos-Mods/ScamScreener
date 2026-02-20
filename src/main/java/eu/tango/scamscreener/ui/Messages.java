@@ -996,5 +996,96 @@ public final class Messages extends MessageBuilder {
 
 		return message.append(Component.literal("\n" + WARNING_BORDER).withStyle(ChatFormatting.DARK_RED));
 	}
+
+	public static MutableComponent marketSafetyBlocked(
+		String reason,
+		double ratio,
+		long offeredPriceCoins,
+		long fairPriceCoins,
+		int currentClick,
+		int requiredClicks
+	) {
+		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
+			.append(Component.literal("Blocked market action (").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal(safeText(reason)).withStyle(ChatFormatting.GOLD))
+			.append(Component.literal("). ").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal(formatRatio(ratio)).withStyle(ChatFormatting.DARK_RED, ChatFormatting.BOLD))
+			.append(Component.literal("x | price ").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal(formatCoins(offeredPriceCoins)).withStyle(ChatFormatting.YELLOW))
+			.append(Component.literal(" vs fair ").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal(formatCoins(fairPriceCoins)).withStyle(ChatFormatting.YELLOW))
+			.append(Component.literal(" | confirm ").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal(Math.max(0, currentClick) + "/" + Math.max(1, requiredClicks)).withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD));
+	}
+
+	public static MutableComponent marketSafetyWarning(
+		String reason,
+		double ratio,
+		long offeredPriceCoins,
+		long fairPriceCoins,
+		boolean lowConfidence
+	) {
+		MutableComponent message = prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
+			.append(Component.literal("Market warning (").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal(safeText(reason)).withStyle(ChatFormatting.GOLD))
+			.append(Component.literal("): ").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal(formatRatio(ratio)).withStyle(ChatFormatting.YELLOW, ChatFormatting.BOLD))
+			.append(Component.literal("x | price ").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal(formatCoins(offeredPriceCoins)).withStyle(ChatFormatting.YELLOW))
+			.append(Component.literal(" vs fair ").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal(formatCoins(fairPriceCoins)).withStyle(ChatFormatting.YELLOW));
+		if (lowConfidence) {
+			message.append(Component.literal(" (low confidence, downgraded to warn)").withStyle(ChatFormatting.DARK_GRAY));
+		}
+		return message;
+	}
+
+	public static MutableComponent marketRareTradeBlocked(String itemName, int currentClick, int requiredClicks) {
+		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
+			.append(Component.literal("Rare-item trade protection: ").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal(safeText(itemName)).withStyle(ChatFormatting.AQUA))
+			.append(Component.literal(" blocked. Confirm ").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal(Math.max(0, currentClick) + "/" + Math.max(1, requiredClicks)).withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD));
+	}
+
+	public static MutableComponent marketInflatedHighlight(String itemName, double multiple, boolean severe, boolean npcBased) {
+		String label = severe ? "SEVERE" : "WARN";
+		String source = npcBased ? "NPC flip" : "30d inflation";
+		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
+			.append(Component.literal("Market highlight [" + label + "] ").withStyle(severe ? ChatFormatting.DARK_RED : ChatFormatting.GOLD))
+			.append(Component.literal(safeText(itemName)).withStyle(ChatFormatting.AQUA))
+			.append(Component.literal(" | " + source + " ").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal(formatRatio(multiple) + "x").withStyle(severe ? ChatFormatting.DARK_RED : ChatFormatting.GOLD, ChatFormatting.BOLD));
+	}
+
+	public static MutableComponent marketConfirmProgress(int currentClick, int requiredClicks, int windowSeconds) {
+		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
+			.append(Component.literal("Market action confirmed ").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal(Math.max(0, currentClick) + "/" + Math.max(1, requiredClicks)).withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD))
+			.append(Component.literal(" within " + Math.max(1, windowSeconds) + "s.").withStyle(ChatFormatting.GRAY));
+	}
+
+	public static MutableComponent marketTooltipCompetetive() {
+		return Component.literal("[SS] ").withStyle(ChatFormatting.RED)
+			.append(Component.literal("Competetive").withStyle(ChatFormatting.DARK_GREEN));
+	}
+
+	public static MutableComponent marketTooltipOverbidding() {
+		return Component.literal("[SS] ").withStyle(ChatFormatting.RED)
+			.append(Component.literal("Overbidding").withStyle(ChatFormatting.DARK_RED));
+	}
+
+	public static MutableComponent marketTooltipUnderbidding() {
+		return Component.literal("[SS] ").withStyle(ChatFormatting.RED)
+			.append(Component.literal("Underbidding").withStyle(ChatFormatting.DARK_RED));
+	}
+
+	private static String formatCoins(long coins) {
+		return String.format(Locale.ROOT, "%,d", Math.max(0L, coins));
+	}
+
+	private static String formatRatio(double ratio) {
+		return String.format(Locale.ROOT, "%.2f", Math.max(0.0, ratio));
+	}
 }
 

@@ -109,6 +109,62 @@ public class ScamRules {
 		return config.notifyAiUpToDateOnJoin();
 	}
 
+	public static boolean marketSafetyEnabled() {
+		return config.marketSafetyEnabled();
+	}
+
+	public static String marketSafetyProfile() {
+		return config.marketSafetyProfile().name();
+	}
+
+	public static int marketConfirmClicksRequired() {
+		return config.marketConfirmClicksRequired();
+	}
+
+	public static int marketConfirmWindowSeconds() {
+		return config.marketConfirmWindowSeconds();
+	}
+
+	public static double marketAhOverbidWarnMultiple() {
+		return config.marketAhOverbidWarnMultiple();
+	}
+
+	public static double marketAhOverbidBlockMultiple() {
+		return config.marketAhOverbidBlockMultiple();
+	}
+
+	public static double marketInflatedWarnMultiple30d() {
+		return config.marketInflatedWarnMultiple30d();
+	}
+
+	public static double marketInflatedSevereMultiple30d() {
+		return config.marketInflatedSevereMultiple30d();
+	}
+
+	public static double marketNpcWarnMultiple() {
+		return config.marketNpcWarnMultiple();
+	}
+
+	public static double marketNpcBlockMultiple() {
+		return config.marketNpcBlockMultiple();
+	}
+
+	public static double marketRareUnderpriceWarnRatio() {
+		return config.marketRareUnderpriceWarnRatio();
+	}
+
+	public static double marketRareUnderpriceBlockRatio() {
+		return config.marketRareUnderpriceBlockRatio();
+	}
+
+	public static boolean marketRareTradeProtectionEnabled() {
+		return config.marketRareTradeProtectionEnabled();
+	}
+
+	public static boolean marketTooltipHighlightEnabled() {
+		return config.marketTooltipHighlightEnabled();
+	}
+
 	public static int levelMediumThreshold() {
 		return config.levelMediumThreshold();
 	}
@@ -227,6 +283,120 @@ public class ScamRules {
 		return config.notifyAiUpToDateOnJoin();
 	}
 
+	public static boolean setMarketSafetyEnabled(boolean enabled) {
+		ScamRulesConfig cfg = ScamRulesConfig.loadOrCreate();
+		cfg.marketSafetyEnabled = enabled;
+		ScamRulesConfig.save(cfg);
+		reloadConfig();
+		return config.marketSafetyEnabled();
+	}
+
+	public static String setMarketSafetyProfile(String profile) {
+		MarketSafetyProfile parsed = MarketSafetyProfile.parseOrDefault(profile, MarketSafetyProfile.BALANCED);
+		ScamRulesConfig cfg = ScamRulesConfig.loadOrCreate();
+		cfg.marketSafetyProfile = parsed.name();
+		applyMarketProfileDefaults(cfg, parsed);
+		ScamRulesConfig.save(cfg);
+		reloadConfig();
+		return config.marketSafetyProfile().name();
+	}
+
+	public static int setMarketConfirmClicksRequired(int value) {
+		ScamRulesConfig cfg = ScamRulesConfig.loadOrCreate();
+		cfg.marketConfirmClicksRequired = value;
+		ScamRulesConfig.save(cfg);
+		reloadConfig();
+		return config.marketConfirmClicksRequired();
+	}
+
+	public static int setMarketConfirmWindowSeconds(int value) {
+		ScamRulesConfig cfg = ScamRulesConfig.loadOrCreate();
+		cfg.marketConfirmWindowSeconds = value;
+		ScamRulesConfig.save(cfg);
+		reloadConfig();
+		return config.marketConfirmWindowSeconds();
+	}
+
+	public static double setMarketAhOverbidWarnMultiple(double value) {
+		ScamRulesConfig cfg = ScamRulesConfig.loadOrCreate();
+		cfg.marketAhOverbidWarnMultiple = value;
+		ScamRulesConfig.save(cfg);
+		reloadConfig();
+		return config.marketAhOverbidWarnMultiple();
+	}
+
+	public static double setMarketAhOverbidBlockMultiple(double value) {
+		ScamRulesConfig cfg = ScamRulesConfig.loadOrCreate();
+		cfg.marketAhOverbidBlockMultiple = value;
+		ScamRulesConfig.save(cfg);
+		reloadConfig();
+		return config.marketAhOverbidBlockMultiple();
+	}
+
+	public static double setMarketInflatedWarnMultiple30d(double value) {
+		ScamRulesConfig cfg = ScamRulesConfig.loadOrCreate();
+		cfg.marketInflatedWarnMultiple30d = value;
+		ScamRulesConfig.save(cfg);
+		reloadConfig();
+		return config.marketInflatedWarnMultiple30d();
+	}
+
+	public static double setMarketInflatedSevereMultiple30d(double value) {
+		ScamRulesConfig cfg = ScamRulesConfig.loadOrCreate();
+		cfg.marketInflatedSevereMultiple30d = value;
+		ScamRulesConfig.save(cfg);
+		reloadConfig();
+		return config.marketInflatedSevereMultiple30d();
+	}
+
+	public static double setMarketNpcWarnMultiple(double value) {
+		ScamRulesConfig cfg = ScamRulesConfig.loadOrCreate();
+		cfg.marketNpcWarnMultiple = value;
+		ScamRulesConfig.save(cfg);
+		reloadConfig();
+		return config.marketNpcWarnMultiple();
+	}
+
+	public static double setMarketNpcBlockMultiple(double value) {
+		ScamRulesConfig cfg = ScamRulesConfig.loadOrCreate();
+		cfg.marketNpcBlockMultiple = value;
+		ScamRulesConfig.save(cfg);
+		reloadConfig();
+		return config.marketNpcBlockMultiple();
+	}
+
+	public static double setMarketRareUnderpriceWarnRatio(double value) {
+		ScamRulesConfig cfg = ScamRulesConfig.loadOrCreate();
+		cfg.marketRareUnderpriceWarnRatio = value;
+		ScamRulesConfig.save(cfg);
+		reloadConfig();
+		return config.marketRareUnderpriceWarnRatio();
+	}
+
+	public static double setMarketRareUnderpriceBlockRatio(double value) {
+		ScamRulesConfig cfg = ScamRulesConfig.loadOrCreate();
+		cfg.marketRareUnderpriceBlockRatio = value;
+		ScamRulesConfig.save(cfg);
+		reloadConfig();
+		return config.marketRareUnderpriceBlockRatio();
+	}
+
+	public static boolean setMarketRareTradeProtectionEnabled(boolean enabled) {
+		ScamRulesConfig cfg = ScamRulesConfig.loadOrCreate();
+		cfg.marketRareTradeProtectionEnabled = enabled;
+		ScamRulesConfig.save(cfg);
+		reloadConfig();
+		return config.marketRareTradeProtectionEnabled();
+	}
+
+	public static boolean setMarketTooltipHighlightEnabled(boolean enabled) {
+		ScamRulesConfig cfg = ScamRulesConfig.loadOrCreate();
+		cfg.marketTooltipHighlightEnabled = enabled;
+		ScamRulesConfig.save(cfg);
+		reloadConfig();
+		return config.marketTooltipHighlightEnabled();
+	}
+
 	public static Set<ScamRule> disabledRules() {
 		Set<ScamRule> disabled = config.disabledRules();
 		return disabled.isEmpty() ? EnumSet.noneOf(ScamRule.class) : EnumSet.copyOf(disabled);
@@ -317,6 +487,23 @@ public class ScamRules {
 		MEDIUM,
 		HIGH,
 		CRITICAL
+	}
+
+	public enum MarketSafetyProfile {
+		CONSERVATIVE,
+		BALANCED,
+		AGGRESSIVE;
+
+		private static MarketSafetyProfile parseOrDefault(String raw, MarketSafetyProfile fallback) {
+			if (raw == null || raw.isBlank()) {
+				return fallback;
+			}
+			try {
+				return MarketSafetyProfile.valueOf(raw.trim().toUpperCase(Locale.ROOT));
+			} catch (IllegalArgumentException ignored) {
+				return fallback;
+			}
+		}
 	}
 
 	public record BehaviorContext(
@@ -475,6 +662,20 @@ public class ScamRules {
 		int similarityMaxTrainingSamples,
 		int similarityMaxCompareLength,
 		int similarityMinMessageLength,
+		boolean marketSafetyEnabled,
+		MarketSafetyProfile marketSafetyProfile,
+		int marketConfirmClicksRequired,
+		int marketConfirmWindowSeconds,
+		double marketAhOverbidWarnMultiple,
+		double marketAhOverbidBlockMultiple,
+		double marketInflatedWarnMultiple30d,
+		double marketInflatedSevereMultiple30d,
+		double marketNpcWarnMultiple,
+		double marketNpcBlockMultiple,
+		double marketRareUnderpriceWarnRatio,
+		double marketRareUnderpriceBlockRatio,
+		boolean marketRareTradeProtectionEnabled,
+		boolean marketTooltipHighlightEnabled,
 		Set<ScamRule> disabledRules
 	) {
 		private boolean isEnabled(ScamRule rule) {
@@ -516,6 +717,20 @@ public class ScamRules {
 				config.similarityMaxTrainingSamples,
 				config.similarityMaxCompareLength,
 				config.similarityMinMessageLength,
+				config.marketSafetyEnabled,
+				MarketSafetyProfile.parseOrDefault(config.marketSafetyProfile, MarketSafetyProfile.BALANCED),
+				config.marketConfirmClicksRequired,
+				config.marketConfirmWindowSeconds,
+				config.marketAhOverbidWarnMultiple,
+				config.marketAhOverbidBlockMultiple,
+				config.marketInflatedWarnMultiple30d,
+				config.marketInflatedSevereMultiple30d,
+				config.marketNpcWarnMultiple,
+				config.marketNpcBlockMultiple,
+				config.marketRareUnderpriceWarnRatio,
+				config.marketRareUnderpriceBlockRatio,
+				config.marketRareTradeProtectionEnabled,
+				config.marketTooltipHighlightEnabled,
 				parseDisabledRules(config.disabledRules)
 			);
 		}
@@ -536,6 +751,44 @@ public class ScamRules {
 			}
 		}
 		return disabled;
+	}
+
+	private static void applyMarketProfileDefaults(ScamRulesConfig cfg, MarketSafetyProfile profile) {
+		if (cfg == null || profile == null) {
+			return;
+		}
+		switch (profile) {
+			case CONSERVATIVE -> {
+				cfg.marketAhOverbidWarnMultiple = 2.0;
+				cfg.marketAhOverbidBlockMultiple = 3.0;
+				cfg.marketInflatedWarnMultiple30d = 2.5;
+				cfg.marketInflatedSevereMultiple30d = 4.5;
+				cfg.marketNpcWarnMultiple = 15.0;
+				cfg.marketNpcBlockMultiple = 60.0;
+				cfg.marketRareUnderpriceWarnRatio = 0.75;
+				cfg.marketRareUnderpriceBlockRatio = 0.55;
+			}
+			case BALANCED -> {
+				cfg.marketAhOverbidWarnMultiple = ScamRulesConfig.DEFAULT_MARKET_AH_OVERBID_WARN_MULTIPLE;
+				cfg.marketAhOverbidBlockMultiple = ScamRulesConfig.DEFAULT_MARKET_AH_OVERBID_BLOCK_MULTIPLE;
+				cfg.marketInflatedWarnMultiple30d = ScamRulesConfig.DEFAULT_MARKET_INFLATED_WARN_MULTIPLE_30D;
+				cfg.marketInflatedSevereMultiple30d = ScamRulesConfig.DEFAULT_MARKET_INFLATED_SEVERE_MULTIPLE_30D;
+				cfg.marketNpcWarnMultiple = ScamRulesConfig.DEFAULT_MARKET_NPC_WARN_MULTIPLE;
+				cfg.marketNpcBlockMultiple = ScamRulesConfig.DEFAULT_MARKET_NPC_BLOCK_MULTIPLE;
+				cfg.marketRareUnderpriceWarnRatio = ScamRulesConfig.DEFAULT_MARKET_RARE_UNDERPRICE_WARN_RATIO;
+				cfg.marketRareUnderpriceBlockRatio = ScamRulesConfig.DEFAULT_MARKET_RARE_UNDERPRICE_BLOCK_RATIO;
+			}
+			case AGGRESSIVE -> {
+				cfg.marketAhOverbidWarnMultiple = 3.0;
+				cfg.marketAhOverbidBlockMultiple = 5.0;
+				cfg.marketInflatedWarnMultiple30d = 4.0;
+				cfg.marketInflatedSevereMultiple30d = 8.0;
+				cfg.marketNpcWarnMultiple = 30.0;
+				cfg.marketNpcBlockMultiple = 120.0;
+				cfg.marketRareUnderpriceWarnRatio = 0.55;
+				cfg.marketRareUnderpriceBlockRatio = 0.35;
+			}
+		}
 	}
 
 	private enum AutoCaptureAlertLevel {

@@ -94,6 +94,7 @@ final class DebugSettingsScreen extends ScamScreenerGUI {
 		return switch (DebugRegistry.normalize(key)) {
 			case "updater" -> "Updater";
 			case "trade" -> "Trade";
+			case "market" -> "Market";
 			case "mute" -> "Mute";
 			case "chatcolor" -> "Chat Color";
 			default -> key == null ? "" : key;

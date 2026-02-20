@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "prices": [
+    {
+      "item_id": "rookie_hoe",
+      "npc_price_coins": 1,
+      "source": "manual-v1"
+    },
+    {
+      "item_id": "promising_axe",
+      "npc_price_coins": 10,
+      "source": "manual-v1"
+    },
+    {
+      "item_id": "promising_shovel",
+      "npc_price_coins": 10,
+      "source": "manual-v1"
+    },
+    {
+      "item_id": "promising_pickaxe",
+      "npc_price_coins": 10,
+      "source": "manual-v1"
+    },
+    {
+      "item_id": "glass_bottle",
+      "npc_price_coins": 6,
+      "source": "manual-v1"
+    },
+    {
+      "item_id": "bucket",
+      "npc_price_coins": 100,
+      "source": "manual-v1"
+    },
+    {
+      "item_id": "wooden_hoe",
+      "npc_price_coins": 20,
+      "source": "manual-v1"
+    },
+    {
+      "item_id": "wooden_shovel",
+      "npc_price_coins": 20,
+      "source": "manual-v1"
+    },
+    {
+      "item_id": "wooden_pickaxe",
+      "npc_price_coins": 20,
+      "source": "manual-v1"
+    },
+    {
+      "item_id": "wooden_axe",
+      "npc_price_coins": 20,
+      "source": "manual-v1"
+    }
+  ]
+}
+

@@ -71,6 +71,20 @@ public final class ScamRulesConfig {
 	public static final long DEFAULT_FUNNEL_CONTEXT_TTL_MILLIS = 600_000L;
 	public static final int DEFAULT_FUNNEL_FULL_SEQUENCE_WEIGHT = 28;
 	public static final int DEFAULT_FUNNEL_PARTIAL_SEQUENCE_WEIGHT = 14;
+	public static final boolean DEFAULT_MARKET_SAFETY_ENABLED = true;
+	public static final String DEFAULT_MARKET_SAFETY_PROFILE = "BALANCED";
+	public static final int DEFAULT_MARKET_CONFIRM_CLICKS_REQUIRED = 3;
+	public static final int DEFAULT_MARKET_CONFIRM_WINDOW_SECONDS = 8;
+	public static final double DEFAULT_MARKET_AH_OVERBID_WARN_MULTIPLE = 2.5;
+	public static final double DEFAULT_MARKET_AH_OVERBID_BLOCK_MULTIPLE = 4.0;
+	public static final double DEFAULT_MARKET_INFLATED_WARN_MULTIPLE_30D = 3.0;
+	public static final double DEFAULT_MARKET_INFLATED_SEVERE_MULTIPLE_30D = 6.0;
+	public static final double DEFAULT_MARKET_NPC_WARN_MULTIPLE = 25.0;
+	public static final double DEFAULT_MARKET_NPC_BLOCK_MULTIPLE = 100.0;
+	public static final double DEFAULT_MARKET_RARE_UNDERPRICE_WARN_RATIO = 0.65;
+	public static final double DEFAULT_MARKET_RARE_UNDERPRICE_BLOCK_RATIO = 0.45;
+	public static final boolean DEFAULT_MARKET_RARE_TRADE_PROTECTION_ENABLED = true;
+	public static final boolean DEFAULT_MARKET_TOOLTIP_HIGHLIGHT_ENABLED = true;
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
@@ -125,6 +139,20 @@ public final class ScamRulesConfig {
 	public long funnelContextTtlMillis = DEFAULT_FUNNEL_CONTEXT_TTL_MILLIS;
 	public int funnelFullSequenceWeight = DEFAULT_FUNNEL_FULL_SEQUENCE_WEIGHT;
 	public int funnelPartialSequenceWeight = DEFAULT_FUNNEL_PARTIAL_SEQUENCE_WEIGHT;
+	public boolean marketSafetyEnabled = DEFAULT_MARKET_SAFETY_ENABLED;
+	public String marketSafetyProfile = DEFAULT_MARKET_SAFETY_PROFILE;
+	public int marketConfirmClicksRequired = DEFAULT_MARKET_CONFIRM_CLICKS_REQUIRED;
+	public int marketConfirmWindowSeconds = DEFAULT_MARKET_CONFIRM_WINDOW_SECONDS;
+	public double marketAhOverbidWarnMultiple = DEFAULT_MARKET_AH_OVERBID_WARN_MULTIPLE;
+	public double marketAhOverbidBlockMultiple = DEFAULT_MARKET_AH_OVERBID_BLOCK_MULTIPLE;
+	public double marketInflatedWarnMultiple30d = DEFAULT_MARKET_INFLATED_WARN_MULTIPLE_30D;
+	public double marketInflatedSevereMultiple30d = DEFAULT_MARKET_INFLATED_SEVERE_MULTIPLE_30D;
+	public double marketNpcWarnMultiple = DEFAULT_MARKET_NPC_WARN_MULTIPLE;
+	public double marketNpcBlockMultiple = DEFAULT_MARKET_NPC_BLOCK_MULTIPLE;
+	public double marketRareUnderpriceWarnRatio = DEFAULT_MARKET_RARE_UNDERPRICE_WARN_RATIO;
+	public double marketRareUnderpriceBlockRatio = DEFAULT_MARKET_RARE_UNDERPRICE_BLOCK_RATIO;
+	public boolean marketRareTradeProtectionEnabled = DEFAULT_MARKET_RARE_TRADE_PROTECTION_ENABLED;
+	public boolean marketTooltipHighlightEnabled = DEFAULT_MARKET_TOOLTIP_HIGHLIGHT_ENABLED;
 	public Set<String> disabledRules = new LinkedHashSet<>();
 
 	public static ScamRulesConfig loadOrCreate() {
@@ -149,13 +177,10 @@ public final class ScamRulesConfig {
 			fallback.alertThresholdMediumMigrationDone = true;
 			return fallback;
 		}
-		String previousMinAlertRiskLevel = loaded.minAlertRiskLevel;
-		Boolean previousAlertThresholdMigrationState = loaded.alertThresholdMediumMigrationDone;
-		int previousCapturedChatCacheSize = loaded.capturedChatCacheSize;
+		String previousSerialized = GSON.toJson(loaded);
 		ScamRulesConfig normalized = loaded.withDefaults();
-		if (!Objects.equals(previousMinAlertRiskLevel, normalized.minAlertRiskLevel)
-			|| !Objects.equals(previousAlertThresholdMigrationState, normalized.alertThresholdMediumMigrationDone)
-			|| previousCapturedChatCacheSize != normalized.capturedChatCacheSize) {
+		String normalizedSerialized = GSON.toJson(normalized);
+		if (!Objects.equals(previousSerialized, normalizedSerialized)) {
 			save(normalized);
 		}
 		return normalized;
@@ -248,6 +273,17 @@ public final class ScamRulesConfig {
 		if (isBlank(funnelNegativeIntentPattern)) {
 			funnelNegativeIntentPattern = DEFAULT_FUNNEL_NEGATIVE_INTENT_PATTERN;
 		}
+		if (isBlank(marketSafetyProfile)) {
+			marketSafetyProfile = DEFAULT_MARKET_SAFETY_PROFILE;
+		}
+		String normalizedMarketProfile = marketSafetyProfile.trim().toUpperCase(Locale.ROOT);
+		if (!"CONSERVATIVE".equals(normalizedMarketProfile)
+			&& !"BALANCED".equals(normalizedMarketProfile)
+			&& !"AGGRESSIVE".equals(normalizedMarketProfile)) {
+			marketSafetyProfile = DEFAULT_MARKET_SAFETY_PROFILE;
+		} else {
+			marketSafetyProfile = normalizedMarketProfile;
+		}
 		localAiMaxScore = clampInt(localAiMaxScore, 0, 100, DEFAULT_LOCAL_AI_MAX_SCORE);
 		localAiTriggerProbability = clampDouble(localAiTriggerProbability, 0.0, 1.0, DEFAULT_LOCAL_AI_TRIGGER_PROBABILITY);
 		if (localAiFunnelMaxScore == null) {
@@ -276,6 +312,28 @@ public final class ScamRulesConfig {
 		funnelContextTtlMillis = clampLong(funnelContextTtlMillis, 60_000L, 7_200_000L, DEFAULT_FUNNEL_CONTEXT_TTL_MILLIS);
 		funnelFullSequenceWeight = clampInt(funnelFullSequenceWeight, 1, 100, DEFAULT_FUNNEL_FULL_SEQUENCE_WEIGHT);
 		funnelPartialSequenceWeight = clampInt(funnelPartialSequenceWeight, 1, 100, DEFAULT_FUNNEL_PARTIAL_SEQUENCE_WEIGHT);
+		marketConfirmClicksRequired = clampInt(marketConfirmClicksRequired, 1, 6, DEFAULT_MARKET_CONFIRM_CLICKS_REQUIRED);
+		marketConfirmWindowSeconds = clampInt(marketConfirmWindowSeconds, 3, 20, DEFAULT_MARKET_CONFIRM_WINDOW_SECONDS);
+		marketAhOverbidWarnMultiple = clampDouble(marketAhOverbidWarnMultiple, 1.2, 25.0, DEFAULT_MARKET_AH_OVERBID_WARN_MULTIPLE);
+		marketAhOverbidBlockMultiple = clampDouble(marketAhOverbidBlockMultiple, marketAhOverbidWarnMultiple, 40.0, DEFAULT_MARKET_AH_OVERBID_BLOCK_MULTIPLE);
+		marketInflatedWarnMultiple30d = clampDouble(marketInflatedWarnMultiple30d, 1.2, 40.0, DEFAULT_MARKET_INFLATED_WARN_MULTIPLE_30D);
+		marketInflatedSevereMultiple30d = clampDouble(marketInflatedSevereMultiple30d, marketInflatedWarnMultiple30d, 80.0, DEFAULT_MARKET_INFLATED_SEVERE_MULTIPLE_30D);
+		marketNpcWarnMultiple = clampDouble(marketNpcWarnMultiple, 2.0, 500.0, DEFAULT_MARKET_NPC_WARN_MULTIPLE);
+		marketNpcBlockMultiple = clampDouble(marketNpcBlockMultiple, marketNpcWarnMultiple, 2_000.0, DEFAULT_MARKET_NPC_BLOCK_MULTIPLE);
+		marketRareUnderpriceWarnRatio = clampDouble(marketRareUnderpriceWarnRatio, 0.05, 1.0, DEFAULT_MARKET_RARE_UNDERPRICE_WARN_RATIO);
+		marketRareUnderpriceBlockRatio = clampDouble(marketRareUnderpriceBlockRatio, 0.01, marketRareUnderpriceWarnRatio, DEFAULT_MARKET_RARE_UNDERPRICE_BLOCK_RATIO);
+		if (marketAhOverbidBlockMultiple < marketAhOverbidWarnMultiple) {
+			marketAhOverbidBlockMultiple = marketAhOverbidWarnMultiple;
+		}
+		if (marketInflatedSevereMultiple30d < marketInflatedWarnMultiple30d) {
+			marketInflatedSevereMultiple30d = marketInflatedWarnMultiple30d;
+		}
+		if (marketNpcBlockMultiple < marketNpcWarnMultiple) {
+			marketNpcBlockMultiple = marketNpcWarnMultiple;
+		}
+		if (marketRareUnderpriceBlockRatio > marketRareUnderpriceWarnRatio) {
+			marketRareUnderpriceBlockRatio = marketRareUnderpriceWarnRatio;
+		}
 		if (!Boolean.TRUE.equals(alertThresholdMediumMigrationDone)) {
 			minAlertRiskLevel = DEFAULT_MIN_ALERT_RISK_LEVEL;
 			alertThresholdMediumMigrationDone = true;

@@ -23,6 +23,13 @@ public final class DebugReporter {
 		MessageDispatcher.reply(DebugMessages.debug("Mute", message));
 	}
 
+	public void debugMarket(String message) {
+		if (!debugConfig.isEnabled("market")) {
+			return;
+		}
+		MessageDispatcher.reply(DebugMessages.debug("Market", message));
+	}
+
 	public void debugChatColor(String message) {
 		if (!debugConfig.isEnabled("chatcolor")) {
 			return;

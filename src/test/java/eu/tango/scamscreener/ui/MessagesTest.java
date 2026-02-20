@@ -86,6 +86,17 @@ class MessagesTest {
 	}
 
 	@Test
+	void marketMessagesContainExpectedSignals() {
+		assertTrue(Messages.marketSafetyBlocked("overbid", 4.5, 100_000_000L, 20_000_000L, 1, 3).getString().contains("Blocked market action"));
+		assertTrue(Messages.marketRareTradeBlocked("Crystal Helmet", 1, 3).getString().contains("Rare-item trade protection"));
+		assertTrue(Messages.marketInflatedHighlight("Rookie Hoe", 120.0, true, true).getString().contains("SEVERE"));
+		assertTrue(Messages.marketConfirmProgress(3, 3, 8).getString().contains("3/3"));
+		assertTrue(Messages.marketTooltipCompetetive().getString().contains("[SS] Competetive"));
+		assertTrue(Messages.marketTooltipOverbidding().getString().contains("[SS] Overbidding"));
+		assertTrue(Messages.marketTooltipUnderbidding().getString().contains("[SS] Underbidding"));
+	}
+
+	@Test
 	void helpMessagesListUploadCommandInsteadOfAiTrain() {
 		String commandHelp = Messages.commandHelp().getString();
 		String aiHelp = Messages.aiCommandHelp().getString();
@@ -145,6 +156,12 @@ class MessagesTest {
 		}
 		if (type == int.class || type == Integer.class) {
 			return 1;
+		}
+		if (type == long.class || type == Long.class) {
+			return 1L;
+		}
+		if (type == double.class || type == Double.class) {
+			return 1.0;
 		}
 		if (type == boolean.class || type == Boolean.class) {
 			return true;
