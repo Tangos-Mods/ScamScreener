@@ -6,7 +6,7 @@ Client-side Fabric mod for **Minecraft 1.21.10 / 1.21.11** that analyzes Hypixel
 
 Includes a UUID-backed whitelist flow (`/scamscreener whitelist`) and review preselection that follows the configured AI auto-capture level.
 
-ScamScreener combines:
+**ScamScreener combines:**
 
 - manual blacklist alerts
 - rule-based detection (regex + behavior signals)
@@ -15,11 +15,17 @@ ScamScreener combines:
 - message muting with custom patterns
 - outgoing safety guard for email addresses and Discord invite links
 
-Current version in `gradle.properties`: see version badge above.
-
 ## Why this mod?
 
 Scams in trade/party contexts often use pressure tactics, trust manipulation, external platform pushes, or repeated contact attempts. ScamScreener scores these signals in real time and shows explainable warnings with hoverable rule details.
+
+## What gets processed
+
+- Incoming player chat lines (for local scam-risk detection).
+- Relevant in-game interaction messages (trade, party, co-op context lines).
+- Outgoing messages/commands for safety guard checks (email, Discord invites, `/coopadd` confirmation).
+- Local mod config and model/training files in `config/scamscreener/`.
+- Optional online checks only when related features are used (Mojang name lookup, model update check/download, optional Discord invite open).
 
 ## Features
 

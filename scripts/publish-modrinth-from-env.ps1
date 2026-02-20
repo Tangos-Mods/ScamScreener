@@ -1,5 +1,6 @@
 param(
-	[string]$EnvFile = ".env"
+	[string]$EnvFile = ".env",
+	[string]$PublishTaskName = "publishModrinth"
 )
 
 $ErrorActionPreference = "Stop"
@@ -47,22 +48,27 @@ if (-not (Test-Path $gradleWrapper)) {
 	throw "Gradle wrapper not found: $gradleWrapper"
 }
 
+if ([string]::IsNullOrWhiteSpace($PublishTaskName)) {
+	throw "PublishTaskName must not be empty."
+}
+
 $tasksOutput = & $gradleWrapper tasks --all --console=plain
 if ($LASTEXITCODE -ne 0) {
 	exit $LASTEXITCODE
 }
 
+$taskPattern = "^\s*([0-9]+\.[0-9]+\.[0-9]+):{0}\b" -f [Regex]::Escape($PublishTaskName)
 $versions = $tasksOutput |
-	Select-String -Pattern '^\s*([0-9]+\.[0-9]+\.[0-9]+):publishModrinth\b' |
+	Select-String -Pattern $taskPattern |
 	ForEach-Object { $_.Matches[0].Groups[1].Value } |
 	Sort-Object { [Version]$_ } -Unique
 
 if (-not $versions) {
-	throw "No StoneCutter publishModrinth tasks found."
+	throw "No StoneCutter $PublishTaskName tasks found."
 }
 
-$publishTasks = $versions | ForEach-Object { ":{0}:publishModrinth" -f $_ }
-Write-Host ("Publishing versions: " + ($versions -join ", "))
+$publishTasks = $versions | ForEach-Object { ":{0}:{1}" -f $_, $PublishTaskName }
+Write-Host ("Publishing $PublishTaskName versions: " + ($versions -join ", "))
 
 & $gradleWrapper @publishTasks
 exit $LASTEXITCODE

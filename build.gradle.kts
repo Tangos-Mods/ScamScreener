@@ -113,6 +113,9 @@ tasks.withType<Test>().configureEach {
 }
 
 publishMods {
+	val modrinthToken = providers.environmentVariable("MODRINTH_TOKEN")
+	val curseforgeToken = providers.environmentVariable("CURSEFORGE_TOKEN")
+
 	file = tasks.remapJar.map { it.archiveFile.get() }
 	additionalFiles.from(tasks.remapSourcesJar.map { it.archiveFile.get() })
 	displayName = "${property("mod.name")} ${property("mod.version")} for ${stonecutter.current.version}"
@@ -121,11 +124,12 @@ publishMods {
 	type = STABLE
 	modLoaders.add("fabric")
 
-	dryRun = providers.environmentVariable("MODRINTH_TOKEN").getOrNull() == null
+	dryRun = modrinthToken.getOrNull() == null && curseforgeToken.getOrNull() == null
 
 	modrinth {
 		projectId = property("publish.modrinth") as String
-		accessToken = providers.environmentVariable("MODRINTH_TOKEN")
+		accessToken = modrinthToken
+		projectDescription = rootProject.file("SPOTLIGHT.md").readText()
 		minecraftVersions.add(stonecutter.current.version)
 		requires {
 			slug = "P7dR8mSH" // Fabric API
@@ -135,11 +139,13 @@ publishMods {
 		}
 	}
 
-	/*
 	curseforge {
 		projectId = property("publish.curseforge") as String
-		accessToken = providers.environmentVariable("CURSEFORGE_TOKEN")
+		accessToken = curseforgeToken
 		minecraftVersions.add(stonecutter.current.version)
+		javaVersions.add(JavaVersion.VERSION_21)
+		clientRequired = true
+		serverRequired = false
 		requires {
 			slug = "fabric-api"
 		}
@@ -147,5 +153,4 @@ publishMods {
 			slug = "modmenu"
 		}
 	}
-	 */
 }

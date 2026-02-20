@@ -1,6 +1,8 @@
 # ScamScreener 1.3.1
 
-This unreleased build keeps the whitelist/review improvements and switches training-data upload to a manual Discord handoff flow.
+This version keeps the whitelist/review improvements and switches training-data upload to a manual Discord handoff flow.
+
+The whitelisted users are ignored by ScamScreener.
 
 ## Added
 
@@ -24,4 +26,4 @@ This unreleased build keeps the whitelist/review improvements and switches train
 
 ## Removed
 
-- Removed Discord webhook uploader code and related Discord webhook integration workflows/tests.
+- Removed Discord webhook uploader code and related Discord webhook integration workflows/tests
