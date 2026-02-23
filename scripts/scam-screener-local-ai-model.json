@@ -29,7 +29,7 @@
                                 "funnel_sequence_norm":  0.48774982708593967,
                                 "funnel_full_chain":  0.14664837744885692,
                                 "funnel_partial_chain":  1.0926826118713127,
-                                "rapid_followup":  2.004327202000347,
+                                "rapid_followup":  0.004327202000347,
                                 "channel_pm":  1.2990494357988298,
                                 "channel_party":  0.0,
                                 "channel_public":  0.9735907199718148,
@@ -47,7 +47,7 @@
                        "denseFeatureWeights":  {
                                                    "ctx_pushes_external_platform":  0.15054440966615026,
                                                    "ctx_repeated_contact_3plus":  -0.04005526136437656,
-                                                   "intent_offer":  2.3533175981140957,
+                                                   "intent_offer":  0.8533175981140957,
                                                    "intent_rep":  0.5936563375003754,
                                                    "intent_redirect":  0.15054440966615026,
                                                    "intent_instruction":  0.1762652920590224,
