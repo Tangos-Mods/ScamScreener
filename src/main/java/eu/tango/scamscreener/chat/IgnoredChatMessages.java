@@ -10,7 +10,9 @@ public final class IgnoredChatMessages {
 		"[scamscreener]",
 		"[npc]",
 		"[security]",
-		"[hypixel]"
+		"[hypixel]",
+		"[crowd]",
+		"[boss]"
 	);
 	private static final List<Pattern> SYSTEM_MESSAGE_PATTERNS = List.of(
 		Pattern.compile("^you'?ll be partying with: [A-Za-z0-9_]{3,16}\\.?$", Pattern.CASE_INSENSITIVE),

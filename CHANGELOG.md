@@ -1,6 +1,14 @@
 # Changelog
 All notable changes to this project are documented in this file.
 
+## [1.3.2] - 2026-02-23
+
+### Changed
+- Bumped mod version from `1.3.1` to `1.3.2`.
+
+### Fixed
+- Fixed system-message filtering to ignore `[CROWD]` and `[BOSS]` chat prefixes in `IgnoredChatMessages`, so these lines are no longer treated like regular player chat.
+
 ## [1.3.1] - 2026-02-19
 
 ### Added
