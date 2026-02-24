@@ -1,5 +1,8 @@
 package eu.tango.scamscreener.chat.trigger;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -39,6 +42,7 @@ public enum TriggerContext {
 
 	private final String triggerReason;
 	private final Pattern pattern;
+	private static final Logger LOGGER = LoggerFactory.getLogger(TriggerContext.class);
 
 	TriggerContext(String triggerReason, Pattern pattern) {
 		this.triggerReason = triggerReason;
@@ -46,11 +50,19 @@ public enum TriggerContext {
 	}
 
 	public String matchPlayerName(String message) {
-		Matcher matcher = pattern.matcher(message);
-		if (!matcher.matches()) {
+		if (message == null || message.isBlank()) {
 			return null;
 		}
-		return matcher.group(1);
+		try {
+			Matcher matcher = pattern.matcher(message);
+			if (!matcher.matches()) {
+				return null;
+			}
+			return matcher.group(1);
+		} catch (StackOverflowError error) {
+			LOGGER.warn("Skipped trigger regex due to StackOverflowError ({})", triggerReason);
+			return null;
+		}
 	}
 
 	public String triggerReason() {

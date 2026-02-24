@@ -14,11 +14,16 @@ import eu.tango.scamscreener.pipeline.model.Signal;
 import eu.tango.scamscreener.pipeline.model.SignalSource;
 import eu.tango.scamscreener.rules.ScamRules;
 import eu.tango.scamscreener.util.TextUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -33,6 +38,13 @@ import java.util.Set;
 
 public final class TrainingDataService {
 	public static final int DEFAULT_CAPTURED_CHAT_CACHE_SIZE = ScamRulesConfig.DEFAULT_CAPTURED_CHAT_CACHE_SIZE;
+	private static final Logger LOGGER = LoggerFactory.getLogger(TrainingDataService.class);
+	private static final int HARD_MAX_CAPTURED_CHAT_CACHE_SIZE = 500;
+	private static final int MIN_CAPTURED_CHAT_CACHE_SIZE = 50;
+	private static final long PLAYER_STATE_TTL_MILLIS = 600_000L;
+	private static final int PLAYER_STATE_CLEANUP_INTERVAL_CAPTURES = 128;
+	private static final int MAX_PLAYERS_TRACKED = 2_048;
+	private static final long MAX_AUTO_MIGRATION_FILE_SIZE_BYTES = 16L * 1024L * 1024L;
 
 	private static final List<String> TRAINING_COLUMNS = List.of(
 		"message",
@@ -78,18 +90,22 @@ public final class TrainingDataService {
 	private final Deque<CapturedChat> pendingReviewChat = new ArrayDeque<>();
 	private final Map<String, Long> lastTimestampByPlayer = new HashMap<>();
 	private final Map<String, Integer> repeatedContactByPlayer = new HashMap<>();
+	private final Map<String, Long> lastSeenByPlayer = new HashMap<>();
 	private final ChatEchoDeduplicator outgoingEchoDeduplicator = new ChatEchoDeduplicator(30_000L);
 	private final Object captureLock = new Object();
 	private final Object trainingFileLock = new Object();
 	private final int maxCapturedChatLines;
 	private String lastCapturedChatLine = "";
+	private int capturesSinceCleanup;
+	private boolean warnedAboutLargeMigrationFile;
 
 	public TrainingDataService() {
 		this(DEFAULT_CAPTURED_CHAT_CACHE_SIZE);
 	}
 
 	public TrainingDataService(int maxCapturedChatLines) {
-		this.maxCapturedChatLines = maxCapturedChatLines <= 0 ? DEFAULT_CAPTURED_CHAT_CACHE_SIZE : maxCapturedChatLines;
+		int normalized = maxCapturedChatLines <= 0 ? DEFAULT_CAPTURED_CHAT_CACHE_SIZE : maxCapturedChatLines;
+		this.maxCapturedChatLines = Math.max(MIN_CAPTURED_CHAT_CACHE_SIZE, Math.min(HARD_MAX_CAPTURED_CHAT_CACHE_SIZE, normalized));
 	}
 
 	public int maxCapturedChatLines() {
@@ -245,7 +261,7 @@ public final class TrainingDataService {
 		List<String> savedMessages = new ArrayList<>();
 		synchronized (trainingFileLock) {
 			ensureFileInitialized();
-			ensureLatestHeader();
+			ensureLatestHeader(true);
 
 			StringBuilder rows = new StringBuilder();
 			for (CapturedChat capture : captures) {
@@ -284,7 +300,7 @@ public final class TrainingDataService {
 		);
 		synchronized (trainingFileLock) {
 			ensureFileInitialized();
-			ensureLatestHeader();
+			ensureLatestHeader(true);
 			String row = buildTrainingCsvRow(capture, label, result);
 			if (row == null || row.isBlank()) {
 				return;
@@ -299,7 +315,7 @@ public final class TrainingDataService {
 		markMessagesAsSaved(List.of(capture.rawMessage()));
 	}
 
-	private static void ensureFileInitialized() throws IOException {
+	private void ensureFileInitialized() throws IOException {
 		Files.createDirectories(TRAINING_DATA_PATH.getParent());
 		if (!Files.exists(TRAINING_DATA_PATH)) {
 			Files.writeString(
@@ -311,62 +327,39 @@ public final class TrainingDataService {
 		}
 	}
 
-	private static int ensureLatestHeader() throws IOException {
+	private int ensureLatestHeader(boolean autoMigration) throws IOException {
 		if (!Files.exists(TRAINING_DATA_PATH)) {
 			return 0;
 		}
-		List<String> lines = Files.readAllLines(TRAINING_DATA_PATH, StandardCharsets.UTF_8);
-		if (lines.isEmpty()) {
-			Files.writeString(TRAINING_DATA_PATH, TRAINING_HEADER + System.lineSeparator(), StandardCharsets.UTF_8);
-			return 0;
-		}
-		String first = lines.get(0).trim();
-		if (TRAINING_HEADER.equals(first)) {
+		if (autoMigration && shouldSkipAutoMigration()) {
 			return 0;
 		}
 
-		Map<String, Integer> oldIndex = headerIndex(first);
-		if (!oldIndex.containsKey("message") || !oldIndex.containsKey("label")) {
-			lines.set(0, TRAINING_HEADER);
-			Files.write(TRAINING_DATA_PATH, lines, StandardCharsets.UTF_8);
-			return 0;
-		}
+		try (BufferedReader reader = Files.newBufferedReader(TRAINING_DATA_PATH, StandardCharsets.UTF_8)) {
+			String first = reader.readLine();
+			if (first == null || first.trim().isEmpty()) {
+				Files.writeString(TRAINING_DATA_PATH, TRAINING_HEADER + System.lineSeparator(), StandardCharsets.UTF_8);
+				return 0;
+			}
+			String trimmedFirst = first.trim();
+			if (TRAINING_HEADER.equals(trimmedFirst)) {
+				return 0;
+			}
 
-		List<String> migrated = new ArrayList<>(lines.size());
-		migrated.add(TRAINING_HEADER);
-		int updated = 0;
-		for (int i = 1; i < lines.size(); i++) {
-			String line = lines.get(i).trim();
-			if (line.isEmpty()) {
-				continue;
+			Map<String, Integer> oldIndex = headerIndex(trimmedFirst);
+			if (!oldIndex.containsKey("message") || !oldIndex.containsKey("label")) {
+				rewriteHeaderOnly(reader);
+				return 0;
 			}
-			List<String> cols = parseCsvLine(line);
-			String message = normalizeTrainingMessage(value(cols, oldIndex.get("message"), ""));
-			int label = parseInt(value(cols, oldIndex.get("label"), "0"), 0);
-			if (message.isBlank()) {
-				continue;
-			}
-			Map<String, String> values = defaultColumnValues(message, label, "unknown", 0L);
-			values.put("pushes_external_platform", value(cols, oldIndex.get("pushes_external_platform"), "0"));
-			values.put("demands_upfront_payment", value(cols, oldIndex.get("demands_upfront_payment"), "0"));
-			values.put("requests_sensitive_data", value(cols, oldIndex.get("requests_sensitive_data"), "0"));
-			values.put("claims_middleman_without_proof", value(cols, oldIndex.get("claims_middleman_without_proof"), "0"));
-			values.put("too_good_to_be_true", value(cols, oldIndex.get("too_good_to_be_true"), "0"));
-			values.put("repeated_contact_attempts", value(cols, oldIndex.get("repeated_contact_attempts"), "0"));
-			values.put("is_spam", value(cols, oldIndex.get("is_spam"), "0"));
-			values.put("asks_for_stuff", value(cols, oldIndex.get("asks_for_stuff"), "0"));
-			values.put("advertising", value(cols, oldIndex.get("advertising"), "0"));
-			migrated.add(joinRow(values));
-			updated++;
+
+			return rewriteMigratedCsv(reader, oldIndex);
 		}
-		Files.write(TRAINING_DATA_PATH, migrated, StandardCharsets.UTF_8);
-		return updated;
 	}
 
 	public int migrateTrainingData() throws IOException {
 		synchronized (trainingFileLock) {
 			ensureFileInitialized();
-			return ensureLatestHeader();
+			return ensureLatestHeader(false);
 		}
 	}
 
@@ -375,9 +368,105 @@ public final class TrainingDataService {
 			if (!Files.isRegularFile(TRAINING_DATA_PATH)) {
 				return List.of();
 			}
-			ensureLatestHeader();
-			return Files.readAllLines(TRAINING_DATA_PATH, StandardCharsets.UTF_8);
+			ensureLatestHeader(true);
+			List<String> lines = new ArrayList<>();
+			try (BufferedReader reader = Files.newBufferedReader(TRAINING_DATA_PATH, StandardCharsets.UTF_8)) {
+				String line;
+				while ((line = reader.readLine()) != null) {
+					lines.add(line);
+				}
+			}
+			return lines;
 		}
+	}
+
+	private boolean shouldSkipAutoMigration() throws IOException {
+		long size = Files.size(TRAINING_DATA_PATH);
+		if (size <= MAX_AUTO_MIGRATION_FILE_SIZE_BYTES) {
+			return false;
+		}
+		if (!warnedAboutLargeMigrationFile) {
+			warnedAboutLargeMigrationFile = true;
+			LOGGER.warn(
+				"Skipping auto training CSV migration because file is larger than {} bytes: {} ({} bytes)",
+				MAX_AUTO_MIGRATION_FILE_SIZE_BYTES,
+				TRAINING_DATA_PATH,
+				size
+			);
+		}
+		return true;
+	}
+
+	private void rewriteHeaderOnly(BufferedReader remainingReader) throws IOException {
+		Path tempPath = tempMigrationPath("header-reset");
+		try (BufferedWriter writer = Files.newBufferedWriter(
+			tempPath,
+			StandardCharsets.UTF_8,
+			StandardOpenOption.CREATE,
+			StandardOpenOption.TRUNCATE_EXISTING,
+			StandardOpenOption.WRITE
+		)) {
+			writer.write(TRAINING_HEADER);
+			writer.newLine();
+			String line;
+			while ((line = remainingReader.readLine()) != null) {
+				writer.write(line);
+				writer.newLine();
+			}
+		}
+		replaceTrainingCsv(tempPath);
+	}
+
+	private int rewriteMigratedCsv(BufferedReader remainingReader, Map<String, Integer> oldIndex) throws IOException {
+		Path tempPath = tempMigrationPath("migrate");
+		int updated = 0;
+		try (BufferedWriter writer = Files.newBufferedWriter(
+			tempPath,
+			StandardCharsets.UTF_8,
+			StandardOpenOption.CREATE,
+			StandardOpenOption.TRUNCATE_EXISTING,
+			StandardOpenOption.WRITE
+		)) {
+			writer.write(TRAINING_HEADER);
+			writer.newLine();
+			String line;
+			while ((line = remainingReader.readLine()) != null) {
+				String trimmed = line.trim();
+				if (trimmed.isEmpty()) {
+					continue;
+				}
+				List<String> cols = parseCsvLine(trimmed);
+				String message = normalizeTrainingMessage(value(cols, oldIndex.get("message"), ""));
+				int label = parseInt(value(cols, oldIndex.get("label"), "0"), 0);
+				if (message.isBlank()) {
+					continue;
+				}
+				Map<String, String> values = defaultColumnValues(message, label, "unknown", 0L);
+				values.put("pushes_external_platform", value(cols, oldIndex.get("pushes_external_platform"), "0"));
+				values.put("demands_upfront_payment", value(cols, oldIndex.get("demands_upfront_payment"), "0"));
+				values.put("requests_sensitive_data", value(cols, oldIndex.get("requests_sensitive_data"), "0"));
+				values.put("claims_middleman_without_proof", value(cols, oldIndex.get("claims_middleman_without_proof"), "0"));
+				values.put("too_good_to_be_true", value(cols, oldIndex.get("too_good_to_be_true"), "0"));
+				values.put("repeated_contact_attempts", value(cols, oldIndex.get("repeated_contact_attempts"), "0"));
+				values.put("is_spam", value(cols, oldIndex.get("is_spam"), "0"));
+				values.put("asks_for_stuff", value(cols, oldIndex.get("asks_for_stuff"), "0"));
+				values.put("advertising", value(cols, oldIndex.get("advertising"), "0"));
+				writer.write(joinRow(values));
+				writer.newLine();
+				updated++;
+			}
+		}
+		replaceTrainingCsv(tempPath);
+		return updated;
+	}
+
+	private static Path tempMigrationPath(String suffix) {
+		String fileName = TRAINING_DATA_PATH.getFileName().toString();
+		return TRAINING_DATA_PATH.resolveSibling(fileName + "." + suffix + ".tmp");
+	}
+
+	private static void replaceTrainingCsv(Path tempPath) throws IOException {
+		Files.move(tempPath, TRAINING_DATA_PATH, StandardCopyOption.REPLACE_EXISTING);
 	}
 
 	private String buildTrainingCsvRow(CapturedChat capture, int label, DetectionResult detection) {
@@ -389,7 +478,7 @@ public final class TrainingDataService {
 		long timestamp = capture.timestampMs() > 0 ? capture.timestampMs() : System.currentTimeMillis();
 		String speakerKey = capture.speakerKey();
 		long deltaMs = computeDelta(speakerKey, timestamp);
-		int repeatedContact = updateRepeatedContact(speakerKey);
+		int repeatedContact = updateRepeatedContact(speakerKey, timestamp);
 
 		MessageEvent messageEvent = MessageEvent.from(speakerKey, capture.rawMessage(), timestamp, MessageContext.UNKNOWN, capture.channel());
 		List<Signal> existingSignals = detection == null || detection.signals() == null ? List.of() : detection.signals();
@@ -447,16 +536,19 @@ public final class TrainingDataService {
 
 	private long computeDelta(String speakerKey, long timestamp) {
 		synchronized (captureLock) {
-			Long previous = lastTimestampByPlayer.put(speakerKey, timestamp);
-			if (previous == null || previous <= 0L || timestamp <= previous) {
+			long safeTimestamp = safeTimestamp(timestamp);
+			Long previous = lastTimestampByPlayer.put(speakerKey, safeTimestamp);
+			touchPlayerState(speakerKey, safeTimestamp);
+			if (previous == null || previous <= 0L || safeTimestamp <= previous) {
 				return 0L;
 			}
-			return timestamp - previous;
+			return safeTimestamp - previous;
 		}
 	}
 
-	private int updateRepeatedContact(String speakerKey) {
+	private int updateRepeatedContact(String speakerKey, long timestamp) {
 		synchronized (captureLock) {
+			touchPlayerState(speakerKey, timestamp);
 			int next = repeatedContactByPlayer.getOrDefault(speakerKey, 0) + 1;
 			if (next > 9) {
 				next = 9;
@@ -464,6 +556,63 @@ public final class TrainingDataService {
 			repeatedContactByPlayer.put(speakerKey, next);
 			return next;
 		}
+	}
+
+	private void touchPlayerState(String speakerKey, long timestamp) {
+		if (speakerKey == null || speakerKey.isBlank()) {
+			return;
+		}
+		lastSeenByPlayer.put(speakerKey, safeTimestamp(timestamp));
+		if (lastSeenByPlayer.size() > MAX_PLAYERS_TRACKED) {
+			enforceMaxPlayersTrackedLocked();
+		}
+	}
+
+	private void cleanupPlayerStateIfNeeded(long now) {
+		capturesSinceCleanup++;
+		if (capturesSinceCleanup < PLAYER_STATE_CLEANUP_INTERVAL_CAPTURES && lastSeenByPlayer.size() <= MAX_PLAYERS_TRACKED) {
+			return;
+		}
+		capturesSinceCleanup = 0;
+		long cutoff = safeTimestamp(now) - PLAYER_STATE_TTL_MILLIS;
+		Iterator<Map.Entry<String, Long>> iterator = lastSeenByPlayer.entrySet().iterator();
+		while (iterator.hasNext()) {
+			Map.Entry<String, Long> entry = iterator.next();
+			Long seen = entry.getValue();
+			if (seen != null && seen >= cutoff) {
+				continue;
+			}
+			String key = entry.getKey();
+			iterator.remove();
+			lastTimestampByPlayer.remove(key);
+			repeatedContactByPlayer.remove(key);
+		}
+		enforceMaxPlayersTrackedLocked();
+	}
+
+	private void enforceMaxPlayersTrackedLocked() {
+		while (lastSeenByPlayer.size() > MAX_PLAYERS_TRACKED) {
+			String oldestKey = null;
+			long oldestSeen = Long.MAX_VALUE;
+			for (Map.Entry<String, Long> entry : lastSeenByPlayer.entrySet()) {
+				Long seen = entry.getValue();
+				long value = seen == null ? Long.MIN_VALUE : seen;
+				if (oldestKey == null || value < oldestSeen) {
+					oldestKey = entry.getKey();
+					oldestSeen = value;
+				}
+			}
+			if (oldestKey == null) {
+				return;
+			}
+			lastSeenByPlayer.remove(oldestKey);
+			lastTimestampByPlayer.remove(oldestKey);
+			repeatedContactByPlayer.remove(oldestKey);
+		}
+	}
+
+	private static long safeTimestamp(long timestamp) {
+		return timestamp > 0L ? timestamp : System.currentTimeMillis();
 	}
 
 	private static Map<String, String> defaultColumnValues(String message, int label, String channel, long deltaMs) {
@@ -700,6 +849,7 @@ public final class TrainingDataService {
 			return;
 		}
 		synchronized (captureLock) {
+			long now = safeTimestamp(capture.timestampMs());
 			lastCapturedChatLine = capture.rawMessage().trim();
 			recentChat.addLast(capture);
 			while (recentChat.size() > maxCapturedChatLines) {
@@ -709,6 +859,8 @@ public final class TrainingDataService {
 			while (pendingReviewChat.size() > maxCapturedChatLines) {
 				pendingReviewChat.removeFirst();
 			}
+			touchPlayerState(capture.speakerKey(), now);
+			cleanupPlayerStateIfNeeded(now);
 		}
 	}
 

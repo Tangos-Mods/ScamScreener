@@ -10,8 +10,12 @@ import eu.tango.scamscreener.pipeline.core.RuleConfig;
 import eu.tango.scamscreener.pipeline.model.MessageEvent;
 import eu.tango.scamscreener.pipeline.model.Signal;
 import eu.tango.scamscreener.pipeline.model.SignalSource;
+import eu.tango.scamscreener.util.RegexSafety;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class RuleSignalStage {
+	private static final Logger LOGGER = LoggerFactory.getLogger(RuleSignalStage.class);
 	private static final Pattern URGENCY_ALLOWLIST = Pattern.compile("\\b(auction|ah|flip|bin|bid|bidding)\\b");
 	private static final Pattern TRADE_CONTEXT_ALLOWLIST = Pattern.compile("\\b(sell|selling|buy|buying|trade|trading|price|coins?|payment|pay|lf|lb)\\b");
 	private static final Pattern COERCION_THREAT_PATTERN = Pattern.compile(
@@ -115,8 +119,9 @@ public final class RuleSignalStage {
 					ScamRules.ScamRule.PRESSURE_AND_URGENCY,
 					List.of()
 				));
-			} else if (urgencyScore.score() >= URGENCY_SCORE_THRESHOLD && !(URGENCY_ALLOWLIST.matcher(message).find() && !hasSuspiciousContext)
-				&& !(TRADE_CONTEXT_ALLOWLIST.matcher(message).find() && !hasSuspiciousContext)) {
+			} else if (urgencyScore.score() >= URGENCY_SCORE_THRESHOLD
+				&& !(RegexSafety.safeFind(URGENCY_ALLOWLIST, message, LOGGER, "urgency allowlist") && !hasSuspiciousContext)
+				&& !(RegexSafety.safeFind(TRADE_CONTEXT_ALLOWLIST, message, LOGGER, "trade-context allowlist") && !hasSuspiciousContext)) {
 				signals.add(new Signal(
 					ScamRules.ScamRule.PRESSURE_AND_URGENCY.name(),
 					SignalSource.RULE,
@@ -198,9 +203,9 @@ public final class RuleSignalStage {
 		}
 
 		if (ruleConfig.isEnabled(ScamRules.ScamRule.DISCORD_HANDLE)) {
-			Matcher handleMatch = DISCORD_HANDLE_PATTERN.matcher(message);
-			if (DISCORD_WORD_PATTERN.matcher(message).find() && handleMatch.find()) {
-				String handle = handleMatch.group();
+			String handle = firstMatch(DISCORD_HANDLE_PATTERN, message);
+			if (RegexSafety.safeFind(DISCORD_WORD_PATTERN, message, LOGGER, "discord keyword")
+				&& handle != null && !handle.isBlank()) {
 				signals.add(new Signal(
 					ScamRules.ScamRule.DISCORD_HANDLE.name(),
 					SignalSource.RULE,
@@ -230,15 +235,11 @@ public final class RuleSignalStage {
 		if (pattern == null || message == null || message.isBlank()) {
 			return false;
 		}
-		return pattern.matcher(message).find();
+		return RegexSafety.safeFind(pattern, message, LOGGER, "rule pattern matching");
 	}
 
 	private static String firstMatch(Pattern pattern, String message) {
-		Matcher matcher = pattern.matcher(message);
-		if (!matcher.find()) {
-			return null;
-		}
-		return matcher.group();
+		return RegexSafety.safeFirstMatch(pattern, message, LOGGER, "rule first match");
 	}
 
 	private static PhraseScore scorePhrase(String message, List<String> keywords, List<String> phrases) {

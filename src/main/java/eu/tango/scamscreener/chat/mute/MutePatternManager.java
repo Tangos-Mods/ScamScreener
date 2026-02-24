@@ -10,9 +10,13 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import eu.tango.scamscreener.util.RegexSafety;
 
 public final class MutePatternManager {
 	private static final int REGEX_FLAGS = Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE;
+	private static final Logger LOGGER = LoggerFactory.getLogger(MutePatternManager.class);
 
 	private final Set<String> patterns = new LinkedHashSet<>();
 	private final List<Pattern> compiledPatterns = new ArrayList<>();
@@ -76,7 +80,7 @@ public final class MutePatternManager {
 			return false;
 		}
 		for (Pattern pattern : compiledPatterns) {
-			if (pattern.matcher(message).find()) {
+			if (RegexSafety.safeFind(pattern, message, LOGGER, "mute pattern matching")) {
 				blockedSinceLastNotify++;
 				return true;
 			}

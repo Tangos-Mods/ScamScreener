@@ -3,11 +3,15 @@ package eu.tango.scamscreener.pipeline.core;
 import eu.tango.scamscreener.chat.parser.ChatLineParser;
 import eu.tango.scamscreener.pipeline.model.MessageContext;
 import eu.tango.scamscreener.pipeline.model.MessageEvent;
+import eu.tango.scamscreener.util.RegexSafety;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Locale;
 import java.util.regex.Pattern;
 
 public final class MessageEventParser {
+	private static final Logger LOGGER = LoggerFactory.getLogger(MessageEventParser.class);
 	private static final Pattern COLOR_CODE_PATTERN = Pattern.compile("\\u00A7.");
 
 	private MessageEventParser() {
@@ -37,7 +41,13 @@ public final class MessageEventParser {
 			return new ChannelContext(MessageContext.UNKNOWN, "unknown");
 		}
 
-		String cleaned = COLOR_CODE_PATTERN.matcher(rawLine).replaceAll("").trim().toLowerCase(Locale.ROOT);
+		String cleaned = RegexSafety.safePatternReplaceAll(
+			COLOR_CODE_PATTERN,
+			rawLine,
+			"",
+			LOGGER,
+			"message event color stripping"
+		).trim().toLowerCase(Locale.ROOT);
 		if (cleaned.isBlank()) {
 			return new ChannelContext(MessageContext.UNKNOWN, "unknown");
 		}

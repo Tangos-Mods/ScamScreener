@@ -1,35 +1,189 @@
-﻿# TODO's
+﻿Task: Implement performance + memory optimizations in ScamScreener
 
-## Overhaul der Action Buttons in den Risk Messages
-- [x] Entferne die Buttons scam und legit in den Riskmessages
-- [x] stattdessen erstelle einen neuen button manage (Hover: öffnet ein fenster zum auswerten und der anschließenden option die Daten hochzuladen)
-- [x] der Upload Button öffnet ein Screen, bei dem alle Nachrichten des Spielers der geflagged wurde sichtbar sind
-- [x] Klickt man eine Nachricht wird sie hellrot und danach hellgrün, beim dritten mal wieder weiß
-  - [x] Hellrot markiert eine scam zeile
-  - [x] hellgrün markiert eine legit zeile
-  - [x] weiß wird ignoriert
-- [x] Im screen gibt es dann buttons
-  - [x] cancel: schließt den Screen ohne zu speichern
-  - [x] save: speichert die daten in die trainings csv -> und durchläuft die bereits implementierte normalisierung
-  - [x] save & upload: speichert die daten in die trainings csv und lädt sie über den Webhook hoch -> und durchläuft auch die bereits implementierte normalisierung
-- [x] füge in diesem Screen eine Checkbox hinzu, wenn diese checked ist, fügt sie den Spieler zur Blacklist hinzu
-- [x] füge in diesem Screen eine Checkbox hinzu, wenn diese checked ist, fügt sie den Spieler zur /block Liste hinzu
+Repository: Tangos-Mods/ScamScreener
+Branch: perf/memory-optimizations
 
-Das neue Alert Design sollte dann in etwa so aussehen:
+########################################
+OBJECTIVES
+########################################
 
-===============================
-        HIGH RISK MESSAGE
-        Kd_Gaming1 | 45
-        [manage] [info]
-===============================
+Reduce RAM usage, prevent unbounded map growth, remove regex backtracking risk,
+and eliminate large file memory spikes.
 
-- [x] info öffnet dann auch ein Screen, welches die Aktuelle Rules zeile (Similarity Match, External Platform Push, etc.) genauer aufschlüsselt.
+########################################
+1) REMOVE HEURISTIC BODY NAME SCANNING
+########################################
 
-nach dem risk alert kommt eine separate nachricht mit einer kleinen education:
-  [ScamScreener] The user is trying to move you over to an external platform. Scammers often do this, so proceed with caution. If you're unsure whether it's a scam, treat it as one until proven otherwise. More info and help can be found here. [disable info message]
-- [x] diese message kann dann über den click deaktiviert werden. Dafür erstelle einen neue config namens scamscreener-edu.json wo festgehalten wird, welche dieser Edu Messages deakiviert ist.
-- [x] Die Edu Messages sollen in einer Separaten Klasse erfasst werden
+File:
+src/main/java/eu/tango/scamscreener/util/TextUtil.java
 
+Actions:
+- Delete MIXED_NAME_TOKEN_PATTERN constant.
+- Remove replaceAll() call using it.
+- Do NOT replace with another regex heuristic.
+- Keep only:
+  - color code stripping
+  - @mentions anonymization
+  - command target anonymization
+  - optional speaker hint replace
 
-## Alert Threshold Change
-- [x] ändere den default Alert Threshold auf Medium ab und erzwinge diese einstellung einmalig, sodass Spieler die die Mod schon haben, auf diese einstellung wechseln. Aber das darf nur ein einziges mal geändert werden. Danach ist der Force wieder weg, sodass die Spielerpräferenz wieder persistent bleibt
+Reason:
+Eliminates catastrophic backtracking + reduces CPU + avoids StackOverflowError.
+
+########################################
+2) ADD REGEX SAFETY CATCHES
+########################################
+
+Files:
+- TextUtil.java
+- MutePatternManager.java
+
+Actions:
+Wrap all regex execution:
+
+try {
+    matcher.find() / replaceAll()
+} catch (StackOverflowError e) {
+    log warning
+    skip execution
+}
+
+Reason:
+Prevents client crashes from malicious or pathological regex.
+
+########################################
+3) ADD TTL CLEANUP — TREND STORE
+########################################
+
+File:
+src/main/java/eu/tango/scamscreener/pipeline/core/TrendStore.java
+
+Add:
+- lastSeenMillis per player
+- TTL constant (e.g. 5–10 minutes)
+
+Cleanup trigger:
+- every 64 evaluations OR
+- when map size increases
+
+Logic:
+
+historyByPlayer.entrySet().removeIf(
+  now - entry.lastSeenMillis > TTL
+);
+
+Also:
+If a player deque becomes empty → remove key.
+
+########################################
+4) ADD TTL CLEANUP — TRAINING DATA SERVICE
+########################################
+
+File:
+src/main/java/eu/tango/scamscreener/ai/TrainingDataService.java
+
+Maps to protect:
+- lastTimestampByPlayer
+- repeatedContactByPlayer
+
+Add:
+- lastSeen tracking
+- periodic cleanup
+
+Example trigger:
+every 128 recorded chat lines.
+
+########################################
+5) HARD CAP CHAT CACHES
+########################################
+
+Ensure max limits exist + enforced:
+
+- recentChat
+- pendingReviewChat
+
+If not already configurable:
+Add config value:
+
+maxCapturedChatLines = 200–500 default
+
+########################################
+6) LIMIT LOCAL AI TOKEN VOCABULARY
+########################################
+
+File:
+LocalAiScorer / Model config loader
+
+Add:
+- maxTokenWeights limit (e.g. 5k tokens)
+- prune lowest-weight tokens when exceeded
+
+Reason:
+Token weight map is the largest RAM consumer.
+
+########################################
+7) STREAM TRAINING CSV — REMOVE RAM SPIKES
+########################################
+
+File:
+TrainingDataService.java
+
+Replace:
+
+Files.readAllLines()
+
+With:
+
+BufferedReader streaming read.
+
+Add safeguard:
+
+If CSV > X MB → skip auto migration.
+
+########################################
+8) OPTIONAL LRU FAILSAFE (GLOBAL)
+########################################
+
+For all player maps:
+
+If map.size() > MAX_PLAYERS_TRACKED:
+    evict oldest entries
+
+Prevents hub/lobby explosion scenarios.
+
+########################################
+9) DO NOT USE System.gc()
+########################################
+
+Explicitly avoid forced GC calls.
+
+Memory is freed by:
+- removing references
+- TTL pruning
+- capped collections
+
+########################################
+EXPECTED RESULTS
+########################################
+
+- No StackOverflow from regex
+- Stable heap usage over long sessions
+- No unbounded player map growth
+- Reduced CPU from regex removal
+- No large CSV read spikes
+- Predictable memory ceiling
+
+########################################
+COMMIT MESSAGE
+########################################
+
+"Performance + memory optimization pass:
+
+- Removed MIXED_NAME_TOKEN_PATTERN heuristic scanning
+- Added StackOverflowError guards to regex execution
+- Implemented TTL cleanup for TrendStore + TrainingDataService
+- Added cache size caps
+- Limited AI token vocabulary
+- Replaced CSV readAllLines with streaming IO
+
+Prevents unbounded RAM growth and regex backtracking crashes."

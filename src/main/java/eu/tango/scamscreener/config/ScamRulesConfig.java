@@ -56,7 +56,7 @@ public final class ScamRulesConfig {
 	public static final int DEFAULT_SIMILARITY_MAX_TRAINING_SAMPLES = 250;
 	public static final int DEFAULT_SIMILARITY_MAX_COMPARE_LENGTH = 160;
 	public static final int DEFAULT_SIMILARITY_MIN_MESSAGE_LENGTH = 6;
-	public static final int DEFAULT_CAPTURED_CHAT_CACHE_SIZE = 1000;
+	public static final int DEFAULT_CAPTURED_CHAT_CACHE_SIZE = 300;
 	public static final String DEFAULT_FUNNEL_SERVICE_OFFER_PATTERN = "\\b(carry|service|offer|offering|sell|selling|helping)\\b";
 	public static final String DEFAULT_FUNNEL_FREE_OFFER_PATTERN = "\\b(free|for free|giveaway|free carry)\\b";
 	public static final String DEFAULT_FUNNEL_REP_REQUEST_PATTERN = "\\b(rep|reputation|vouch|voucher|feedback|rep me|vouch me)\\b";
@@ -270,7 +270,7 @@ public final class ScamRulesConfig {
 		similarityMaxTrainingSamples = clampInt(similarityMaxTrainingSamples, 10, 2000, DEFAULT_SIMILARITY_MAX_TRAINING_SAMPLES);
 		similarityMaxCompareLength = clampInt(similarityMaxCompareLength, 40, 400, DEFAULT_SIMILARITY_MAX_COMPARE_LENGTH);
 		similarityMinMessageLength = clampInt(similarityMinMessageLength, 2, 40, DEFAULT_SIMILARITY_MIN_MESSAGE_LENGTH);
-		capturedChatCacheSize = clampInt(capturedChatCacheSize, 50, 20_000, DEFAULT_CAPTURED_CHAT_CACHE_SIZE);
+		capturedChatCacheSize = clampInt(capturedChatCacheSize, 50, 500, DEFAULT_CAPTURED_CHAT_CACHE_SIZE);
 		funnelWindowSize = clampInt(funnelWindowSize, 5, 60, DEFAULT_FUNNEL_WINDOW_SIZE);
 		funnelWindowMillis = clampLong(funnelWindowMillis, 15_000L, 900_000L, DEFAULT_FUNNEL_WINDOW_MILLIS);
 		funnelContextTtlMillis = clampLong(funnelContextTtlMillis, 60_000L, 7_200_000L, DEFAULT_FUNNEL_CONTEXT_TTL_MILLIS);

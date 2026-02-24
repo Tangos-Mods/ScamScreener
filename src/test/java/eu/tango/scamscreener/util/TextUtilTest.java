@@ -25,10 +25,17 @@ class TextUtilTest {
 	}
 
 	@Test
-	void anonymizeForAiReplacesMixedNameTokens() {
+	void anonymizeForAiKeepsMixedNameTokensWithoutHint() {
 		String input = "abc XxTrade_99";
 
-		assertEquals("abc player", TextUtil.anonymizeForAi(input, null));
+		assertEquals("abc XxTrade_99", TextUtil.anonymizeForAi(input, null));
+	}
+
+	@Test
+	void anonymizeForAiReplacesSpeakerHintWhenProvided() {
+		String input = "abc XxTrade_99";
+
+		assertEquals("abc player", TextUtil.anonymizeForAi(input, "XxTrade_99"));
 	}
 
 	@Test

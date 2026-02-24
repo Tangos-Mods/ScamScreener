@@ -205,9 +205,8 @@ public final class LocalAiScorer {
 			Map<String, Double> dense = cfg.denseFeatureWeights == null
 				? new LinkedHashMap<>(AiFeatureSpace.defaultDenseWeights())
 				: cfg.denseFeatureWeights;
-			Map<String, Double> tokens = cfg.tokenWeights == null
-				? new LinkedHashMap<>()
-				: cfg.tokenWeights;
+			int maxTokenWeights = LocalAiModelConfig.normalizeMaxTokenWeights(cfg.maxTokenWeights);
+			Map<String, Double> tokens = LocalAiModelConfig.pruneTokenWeights(cfg.tokenWeights, maxTokenWeights);
 			DenseHeadWeights funnel = DenseHeadWeights.from(cfg, dense);
 			return new ModelWeights(cfg.intercept, dense, tokens, funnel);
 		}

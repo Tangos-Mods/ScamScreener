@@ -5,6 +5,9 @@ scripts/scam-screener-local-ai-model.json format.
 
 Usage:
   python scripts/train_local_ai.py --data scripts/scam-screener-training-data.csv --out scripts/scam-screener-local-ai-model.json
+  python scripts/train_local_ai.py --data scripts/scam-screener-training-data.csv --out scripts/scam-screener-local-ai-model.json -funnel
+  python scripts/train_local_ai.py --data scripts/scam-screener-training-data.csv --out scripts/scam-screener-local-ai-model.json -ai
+  python scripts/train_local_ai.py --data scripts/scam-screener-training-data.csv --out scripts/scam-screener-local-ai-model.json -tokens
 """
 
 from __future__ import annotations
@@ -12,6 +15,8 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import math
+import re
 from pathlib import Path
 
 from sklearn.linear_model import LogisticRegression
@@ -80,6 +85,11 @@ URGENCY_WORDS = ("now", "quick", "fast", "urgent", "sofort", "jetzt")
 TRUST_WORDS = ("trust", "legit", "safe", "trusted", "middleman")
 TOO_GOOD_WORDS = ("free", "100%", "guaranteed", "garantiert", "dupe", "rank")
 PLATFORM_WORDS = ("discord", "telegram", "t.me", "server", "dm", "vc", "voice")
+TOKEN_PATTERN = re.compile(r"[a-z0-9_]{3,24}")
+TOKEN_MIN_NGRAM = 3
+TOKEN_MAX_NGRAM = 5
+MAX_TOKEN_FEATURES = 5000
+MIN_TOKEN_COUNT = 3
 
 
 def _bool(v: str) -> float:
@@ -123,6 +133,58 @@ def _norm(value: float, cap: float) -> float:
     if out > 1:
         return 1.0
     return out
+
+
+def _tokenize_words(text: str) -> list[str]:
+    if not text:
+        return []
+    return TOKEN_PATTERN.findall(text.lower())
+
+
+def _extract_token_features(text: str) -> set[str]:
+    words = _tokenize_words(text)
+    if not words:
+        return set()
+
+    features: set[str] = set()
+    for i in range(len(words)):
+        for n in range(TOKEN_MIN_NGRAM, TOKEN_MAX_NGRAM + 1):
+            end = i + n
+            if end > len(words):
+                break
+            features.add(f"ng{n}:{' '.join(words[i:end])}")
+    return features
+
+
+def _build_token_vocab(messages: list[str], labels: list[int]) -> list[str]:
+    if not messages:
+        return []
+
+    counts: dict[str, int] = {}
+    positives: dict[str, int] = {}
+    base_rate = sum(labels) / float(len(labels))
+
+    for message, label in zip(messages, labels):
+        for token in _extract_token_features(message):
+            counts[token] = counts.get(token, 0) + 1
+            if label == 1:
+                positives[token] = positives.get(token, 0) + 1
+
+    for min_count in (MIN_TOKEN_COUNT, 2, 1):
+        ranked: list[tuple[float, int, str]] = []
+        for token, count in counts.items():
+            if count < min_count:
+                continue
+            token_rate = positives.get(token, 0) / float(count)
+            score = abs(token_rate - base_rate) * math.log1p(count)
+            if score > 0.0:
+                ranked.append((score, count, token))
+
+        if ranked:
+            ranked.sort(key=lambda item: (-item[0], -item[1], item[2]))
+            return [token for _, _, token in ranked[:MAX_TOKEN_FEATURES]]
+
+    return []
 
 
 def _features(row: dict[str, str]) -> list[float]:
@@ -189,11 +251,96 @@ def _funnel_label(row: dict[str, str]) -> int:
     return 0
 
 
+def _default_model_payload() -> dict:
+    return {
+        "version": 9,
+        "intercept": -2.25,
+        "denseFeatureWeights": {name: 0.0 for name in DENSE_FEATURE_NAMES},
+        "tokenWeights": {},
+        "funnelHead": {
+            "intercept": -2.25,
+            "denseFeatureWeights": {name: 0.0 for name in FUNNEL_DENSE_FEATURE_NAMES},
+        },
+    }
+
+
+def _load_output_model(path: Path) -> dict:
+    defaults = _default_model_payload()
+    if not path.exists():
+        return defaults
+
+    try:
+        loaded = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return defaults
+    if not isinstance(loaded, dict):
+        return defaults
+
+    model = dict(loaded)
+
+    version = model.get("version")
+    model["version"] = int(version) if isinstance(version, (int, float)) else defaults["version"]
+
+    intercept = model.get("intercept")
+    model["intercept"] = float(intercept) if isinstance(intercept, (int, float)) else defaults["intercept"]
+
+    dense_weights = model.get("denseFeatureWeights")
+    dense_out: dict[str, float] = {}
+    if isinstance(dense_weights, dict):
+        for key, value in dense_weights.items():
+            if isinstance(key, str) and isinstance(value, (int, float)):
+                dense_out[key] = float(value)
+    for name, value in defaults["denseFeatureWeights"].items():
+        dense_out.setdefault(name, value)
+    model["denseFeatureWeights"] = dense_out
+
+    token_weights = model.get("tokenWeights")
+    token_out: dict[str, float] = {}
+    if isinstance(token_weights, dict):
+        for key, value in token_weights.items():
+            if isinstance(key, str) and isinstance(value, (int, float)):
+                token_out[key] = float(value)
+    model["tokenWeights"] = token_out
+
+    funnel_head = model.get("funnelHead")
+    if not isinstance(funnel_head, dict):
+        funnel_head = {}
+    funnel_intercept = funnel_head.get("intercept")
+    funnel_intercept_out = (
+        float(funnel_intercept) if isinstance(funnel_intercept, (int, float)) else defaults["funnelHead"]["intercept"]
+    )
+
+    funnel_dense_weights = funnel_head.get("denseFeatureWeights")
+    funnel_dense_out: dict[str, float] = {}
+    if isinstance(funnel_dense_weights, dict):
+        for key, value in funnel_dense_weights.items():
+            if isinstance(key, str) and isinstance(value, (int, float)):
+                funnel_dense_out[key] = float(value)
+    for name, value in defaults["funnelHead"]["denseFeatureWeights"].items():
+        funnel_dense_out.setdefault(name, value)
+
+    model["funnelHead"] = {
+        "intercept": funnel_intercept_out,
+        "denseFeatureWeights": funnel_dense_out,
+    }
+    return model
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--data", required=True, type=Path)
     parser.add_argument("--out", required=True, type=Path)
+    mode_group = parser.add_mutually_exclusive_group()
+    mode_group.add_argument("-funnel", "--funnel", action="store_true", help="Train only the funnel head.")
+    mode_group.add_argument("-ai", "--ai", action="store_true", help="Train only AI dense weights and intercept.")
+    mode_group.add_argument("-tokens", "--tokens", action="store_true", help="Train only token weights.")
     args = parser.parse_args()
+
+    train_all = not (args.funnel or args.ai or args.tokens)
+    train_funnel = args.funnel or train_all
+    train_ai = args.ai or train_all
+    train_tokens = args.tokens or train_all
+    fit_main_model = train_ai or train_tokens
 
     with args.data.open("r", encoding="utf-8", newline="") as f:
         rows = list(csv.DictReader(f))
@@ -202,6 +349,7 @@ def main() -> None:
         raise SystemExit("No rows found in training data.")
 
     x: list[list[float]] = []
+    messages: list[str] = []
     y: list[int] = []
     funnel_y: list[int] = []
     sample_weight: list[float] = []
@@ -210,40 +358,77 @@ def main() -> None:
         label_raw = (row.get("label") or "").strip()
         if label_raw not in ("0", "1"):
             continue
+        message = row.get("message") or ""
         x.append(_features(row))
+        messages.append(message)
         y.append(int(label_raw))
         funnel_y.append(_funnel_label(row))
         sample_weight.append(_float(row.get("sample_weight"), 1.0))
 
     if len(x) < 12:
         raise SystemExit("Not enough usable rows (need at least 12).")
-    if not (0 in y and 1 in y):
-        raise SystemExit("Training data must contain both labels 0 and 1.")
+    if fit_main_model and not (0 in y and 1 in y):
+        raise SystemExit("AI/token training data must contain both labels 0 and 1.")
 
-    model = LogisticRegression(max_iter=2500)
-    model.fit(x, y, sample_weight=sample_weight)
-    funnel_x = [[row[idx] for idx in FUNNEL_DENSE_INDEXES] for row in x]
     funnel_target = funnel_y if (0 in funnel_y and 1 in funnel_y) else y
-    funnel_model = LogisticRegression(max_iter=2500)
-    funnel_model.fit(funnel_x, funnel_target, sample_weight=sample_weight)
+    if train_funnel and not (0 in funnel_target and 1 in funnel_target):
+        raise SystemExit("Funnel training data must contain both labels 0 and 1.")
 
-    dense_weights = {
-        name: float(weight) for name, weight in zip(DENSE_FEATURE_NAMES, model.coef_[0])
-    }
-    funnel_dense_weights = {
-        name: float(weight) for name, weight in zip(FUNNEL_DENSE_FEATURE_NAMES, funnel_model.coef_[0])
-    }
+    out = _load_output_model(args.out)
 
-    out = {
-        "version": 9,
-        "intercept": float(model.intercept_[0]),
-        "denseFeatureWeights": dense_weights,
-        "tokenWeights": {},
-        "funnelHead": {
-            "intercept": float(funnel_model.intercept_[0]),
-            "denseFeatureWeights": funnel_dense_weights,
-        },
-    }
+    if fit_main_model:
+        x_main = [row.copy() for row in x]
+        token_vocab: list[str] = []
+        if train_tokens:
+            token_vocab = _build_token_vocab(messages, y)
+            token_index = {token: idx for idx, token in enumerate(token_vocab)}
+            if token_index:
+                token_count = len(token_vocab)
+                for idx, message in enumerate(messages):
+                    token_values = [0.0] * token_count
+                    for token in _extract_token_features(message):
+                        token_idx = token_index.get(token)
+                        if token_idx is not None:
+                            token_values[token_idx] = 1.0
+                    x_main[idx].extend(token_values)
+
+        model = LogisticRegression(max_iter=2500)
+        model.fit(x_main, y, sample_weight=sample_weight)
+        dense_count = len(DENSE_FEATURE_NAMES)
+
+        if train_ai:
+            dense_weights = {
+                name: float(weight) for name, weight in zip(DENSE_FEATURE_NAMES, model.coef_[0][:dense_count])
+            }
+            dense_out = dict(out.get("denseFeatureWeights", {}))
+            dense_out.update(dense_weights)
+            out["intercept"] = float(model.intercept_[0])
+            out["denseFeatureWeights"] = dense_out
+
+        if train_tokens:
+            token_weights = {
+                token: float(weight)
+                for token, weight in zip(token_vocab, model.coef_[0][dense_count:dense_count + len(token_vocab)])
+            }
+            out["tokenWeights"] = token_weights
+
+    if train_funnel:
+        funnel_x = [[row[idx] for idx in FUNNEL_DENSE_INDEXES] for row in x]
+        funnel_model = LogisticRegression(max_iter=2500)
+        funnel_model.fit(funnel_x, funnel_target, sample_weight=sample_weight)
+        funnel_dense_weights = {
+            name: float(weight) for name, weight in zip(FUNNEL_DENSE_FEATURE_NAMES, funnel_model.coef_[0])
+        }
+        funnel_out = out.get("funnelHead")
+        if not isinstance(funnel_out, dict):
+            funnel_out = {}
+        funnel_dense_out = funnel_out.get("denseFeatureWeights")
+        if not isinstance(funnel_dense_out, dict):
+            funnel_dense_out = {}
+        funnel_dense_out.update(funnel_dense_weights)
+        funnel_out["intercept"] = float(funnel_model.intercept_[0])
+        funnel_out["denseFeatureWeights"] = funnel_dense_out
+        out["funnelHead"] = funnel_out
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(out, indent=2), encoding="utf-8")

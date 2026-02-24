@@ -10,17 +10,24 @@ import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 public final class LocalAiModelConfig {
+	public static final int MODEL_SCHEMA_VERSION = 10;
+	public static final int DEFAULT_MAX_TOKEN_WEIGHTS = 5_000;
+
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 	private static final Path FILE_PATH = ScamScreenerPaths.inModConfigDir("scam-screener-local-ai-model.json");
 
-	public int version = 9;
+	public int version = MODEL_SCHEMA_VERSION;
 	public double intercept = -2.25;
 	public Map<String, Double> denseFeatureWeights = new LinkedHashMap<>(AiFeatureSpace.defaultDenseWeights());
 	public Map<String, Double> tokenWeights = new LinkedHashMap<>();
+	public int maxTokenWeights = DEFAULT_MAX_TOKEN_WEIGHTS;
 	public DenseHeadConfig funnelHead = DenseHeadConfig.defaultFunnelHead();
 
 	public static LocalAiModelConfig loadOrCreate() {
@@ -34,8 +41,8 @@ public final class LocalAiModelConfig {
 		if (loaded == null) {
 			return new LocalAiModelConfig();
 		}
-		if (loaded.version < 9) {
-			loaded.version = 9;
+		if (loaded.version < MODEL_SCHEMA_VERSION) {
+			loaded.version = MODEL_SCHEMA_VERSION;
 		}
 		if (loaded.denseFeatureWeights == null || loaded.denseFeatureWeights.isEmpty()) {
 			loaded.denseFeatureWeights = new LinkedHashMap<>(AiFeatureSpace.defaultDenseWeights());
@@ -44,9 +51,11 @@ public final class LocalAiModelConfig {
 				loaded.denseFeatureWeights.putIfAbsent(entry.getKey(), entry.getValue());
 			}
 		}
+		loaded.maxTokenWeights = normalizeMaxTokenWeights(loaded.maxTokenWeights);
 		if (loaded.tokenWeights == null) {
 			loaded.tokenWeights = new LinkedHashMap<>();
 		}
+		loaded.tokenWeights = pruneTokenWeights(loaded.tokenWeights, loaded.maxTokenWeights);
 		if (loaded.funnelHead == null) {
 			loaded.funnelHead = DenseHeadConfig.fromMainHead(loaded.intercept, loaded.denseFeatureWeights);
 		} else {
@@ -64,6 +73,12 @@ public final class LocalAiModelConfig {
 	}
 
 	public static void save(LocalAiModelConfig config) {
+		if (config == null) {
+			return;
+		}
+		config.version = Math.max(MODEL_SCHEMA_VERSION, config.version);
+		config.maxTokenWeights = normalizeMaxTokenWeights(config.maxTokenWeights);
+		config.tokenWeights = pruneTokenWeights(config.tokenWeights, config.maxTokenWeights);
 		try {
 			Files.createDirectories(FILE_PATH.getParent());
 			try (Writer writer = Files.newBufferedWriter(FILE_PATH, StandardCharsets.UTF_8)) {
@@ -75,6 +90,44 @@ public final class LocalAiModelConfig {
 
 	public static Path filePath() {
 		return FILE_PATH;
+	}
+
+	public static int normalizeMaxTokenWeights(int rawValue) {
+		if (rawValue < 500 || rawValue > 50_000) {
+			return DEFAULT_MAX_TOKEN_WEIGHTS;
+		}
+		return rawValue;
+	}
+
+	public static Map<String, Double> pruneTokenWeights(Map<String, Double> tokenWeights, int maxTokenWeights) {
+		if (tokenWeights == null || tokenWeights.isEmpty()) {
+			return new LinkedHashMap<>();
+		}
+		int normalizedLimit = normalizeMaxTokenWeights(maxTokenWeights);
+		List<Map.Entry<String, Double>> entries = new ArrayList<>();
+		for (Map.Entry<String, Double> entry : tokenWeights.entrySet()) {
+			if (entry == null || entry.getKey() == null || entry.getKey().isBlank() || entry.getValue() == null) {
+				continue;
+			}
+			if (!Double.isFinite(entry.getValue())) {
+				continue;
+			}
+			entries.add(Map.entry(entry.getKey(), entry.getValue()));
+		}
+		if (entries.isEmpty()) {
+			return new LinkedHashMap<>();
+		}
+		entries.sort(
+			Comparator.<Map.Entry<String, Double>>comparingDouble(entry -> Math.abs(entry.getValue())).reversed()
+				.thenComparing(Map.Entry::getKey, String.CASE_INSENSITIVE_ORDER)
+		);
+		int keep = Math.min(normalizedLimit, entries.size());
+		Map<String, Double> pruned = new LinkedHashMap<>(keep);
+		for (int i = 0; i < keep; i++) {
+			Map.Entry<String, Double> entry = entries.get(i);
+			pruned.put(entry.getKey(), entry.getValue());
+		}
+		return pruned;
 	}
 
 	public static final class DenseHeadConfig {

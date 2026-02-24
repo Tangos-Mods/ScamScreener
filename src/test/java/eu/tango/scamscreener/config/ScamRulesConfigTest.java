@@ -57,6 +57,16 @@ class ScamRulesConfigTest {
 		assertEquals(ScamRulesConfig.DEFAULT_CAPTURED_CHAT_CACHE_SIZE, config.capturedChatCacheSize);
 	}
 
+	@Test
+	void withDefaultsCapsCapturedChatCacheSizeAtMemorySafeLimit() throws Exception {
+		ScamRulesConfig config = new ScamRulesConfig();
+		config.capturedChatCacheSize = 20_000;
+
+		invokeWithDefaults(config);
+
+		assertEquals(ScamRulesConfig.DEFAULT_CAPTURED_CHAT_CACHE_SIZE, config.capturedChatCacheSize);
+	}
+
 	private static void invokeWithDefaults(ScamRulesConfig config) throws Exception {
 		Method method = ScamRulesConfig.class.getDeclaredMethod("withDefaults");
 		method.setAccessible(true);

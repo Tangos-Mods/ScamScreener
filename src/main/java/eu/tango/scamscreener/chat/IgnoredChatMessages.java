@@ -1,10 +1,15 @@
 package eu.tango.scamscreener.chat;
 
+import eu.tango.scamscreener.util.RegexSafety;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
 public final class IgnoredChatMessages {
+	private static final Logger LOGGER = LoggerFactory.getLogger(IgnoredChatMessages.class);
 	private static final Pattern COLOR_CODE_PATTERN = Pattern.compile("\\u00A7.");
 	private static final List<String> SYSTEM_PREFIXES = List.of(
 		"[scamscreener]",
@@ -13,6 +18,11 @@ public final class IgnoredChatMessages {
 		"[hypixel]",
 		"[crowd]",
 		"[boss]"
+	);
+	private static final List<String> GUILD_PREFIXES = List.of(
+		"Guild Name",
+		"Online Members",
+		"Total Members"
 	);
 	private static final List<Pattern> SYSTEM_MESSAGE_PATTERNS = List.of(
 		Pattern.compile("^you'?ll be partying with: [A-Za-z0-9_]{3,16}\\.?$", Pattern.CASE_INSENSITIVE),
@@ -43,7 +53,7 @@ public final class IgnoredChatMessages {
 		if (rawLine == null || rawLine.isBlank()) {
 			return "";
 		}
-		return COLOR_CODE_PATTERN.matcher(rawLine).replaceAll("").trim();
+		return RegexSafety.safePatternReplaceAll(COLOR_CODE_PATTERN, rawLine, "", LOGGER, "ignored-chat color stripping").trim();
 	}
 
 	public static boolean isSystemLine(String rawLine) {
@@ -71,22 +81,28 @@ public final class IgnoredChatMessages {
 		if (cleanedLine == null || cleanedLine.isBlank()) {
 			return false;
 		}
-		if (startsWithAny(cleanedLine, SYSTEM_PREFIXES)) {
+		if (startsWithAny(cleanedLine, SYSTEM_PREFIXES, GUILD_PREFIXES)) {
 			return true;
 		}
 		for (Pattern pattern : SYSTEM_MESSAGE_PATTERNS) {
-			if (pattern.matcher(cleanedLine).matches()) {
+			if (RegexSafety.safeMatches(pattern, cleanedLine, LOGGER, "system line pattern")) {
 				return true;
 			}
 		}
 		return false;
 	}
 
-	private static boolean startsWithAny(String value, List<String> prefixes) {
+	@SafeVarargs
+	private static boolean startsWithAny(String value, List<String>... prefixGroups) {
 		String normalized = value.toLowerCase(Locale.ROOT);
-		for (String prefix : prefixes) {
-			if (normalized.startsWith(prefix)) {
-				return true;
+		for (List<String> prefixes : prefixGroups) {
+			if (prefixes == null || prefixes.isEmpty()) {
+				continue;
+			}
+			for (String prefix : prefixes) {
+				if (normalized.startsWith(prefix.toLowerCase(Locale.ROOT))) {
+					return true;
+				}
 			}
 		}
 		return false;

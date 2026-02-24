@@ -1,6 +1,25 @@
 # Changelog
 All notable changes to this project are documented in this file.
 
+## [1.3.3] - 2026-02-23
+
+### Added
+- Added shared IntelliJ IDEA run configurations for key ScamScreener workflows (StoneCutter source refresh, model version update, Modrinth/CurseForge publish, AI train, AI train+update).
+- Added root Gradle `scamScreener*` tasks that mirror the former VS Code task commands.
+- Added test coverage for TrendStore cleanup/limits, TrainingDataService cleanup/caps, and LocalAiModelConfig token pruning.
+
+### Changed
+- Bumped mod version from `1.3.2` to `1.3.3`.
+- Removed heuristic mixed-name scanning from AI anonymization to reduce regex backtracking risk and CPU overhead.
+- Reduced chat capture memory footprint by lowering default `capturedChatCacheSize` to `300` and tightening cache bounds.
+- Local AI model schema now uses version `10` and supports `maxTokenWeights` with deterministic pruning.
+- Training CSV migration now uses streaming I/O and skips automatic migration for very large CSV files.
+
+### Fixed
+- Added `StackOverflowError` guards around regex execution in text anonymization and mute pattern matching to prevent client crashes from pathological regex inputs.
+- Added TTL-based cleanup and player-map caps in TrendStore and TrainingDataService to prevent unbounded in-memory growth over long sessions.
+- Improved config-path fallback initialization for non-Fabric test/runtime contexts.
+
 ## [1.3.2] - 2026-02-23
 
 ### Changed

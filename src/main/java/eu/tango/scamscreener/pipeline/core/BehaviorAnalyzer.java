@@ -1,12 +1,15 @@
 package eu.tango.scamscreener.pipeline.core;
 
 import eu.tango.scamscreener.rules.ScamRules;
+import eu.tango.scamscreener.util.RegexSafety;
 import eu.tango.scamscreener.util.TextUtil;
-
 import eu.tango.scamscreener.pipeline.model.BehaviorAnalysis;
 import eu.tango.scamscreener.pipeline.model.MessageEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class BehaviorAnalyzer {
+	private static final Logger LOGGER = LoggerFactory.getLogger(BehaviorAnalyzer.class);
 	private final RuleConfig ruleConfig;
 	private String lastPlayerKey;
 	private int consecutiveCount;
@@ -60,8 +63,8 @@ public final class BehaviorAnalyzer {
 		lastPlayerKey = playerKey;
 
 		ScamRules.BehaviorPatternSet patterns = ruleConfig.behaviorPatterns();
-		boolean hasDiscordHandle = DISCORD_WORD_PATTERN.matcher(normalized).find()
-			&& DISCORD_HANDLE_PATTERN.matcher(normalized).find();
+		boolean hasDiscordHandle = RegexSafety.safeFind(DISCORD_WORD_PATTERN, normalized, LOGGER, "behavior discord keyword")
+			&& RegexSafety.safeFind(DISCORD_HANDLE_PATTERN, normalized, LOGGER, "behavior discord handle");
 		return new BehaviorAnalysis(
 			event.rawMessage(),
 			normalized,
@@ -91,6 +94,6 @@ public final class BehaviorAnalyzer {
 		if (pattern == null || text == null || text.isBlank()) {
 			return false;
 		}
-		return pattern.matcher(text).find();
+		return RegexSafety.safeFind(pattern, text, LOGGER, "behavior pattern matching");
 	}
 }

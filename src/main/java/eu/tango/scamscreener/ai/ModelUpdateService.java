@@ -135,7 +135,7 @@ public final class ModelUpdateService {
 			}
 			ensureModelShape(local);
 			ensureModelShape(incoming);
-			incoming.version = Math.max(9, Math.max(local.version, incoming.version));
+			incoming.version = Math.max(LocalAiModelConfig.MODEL_SCHEMA_VERSION, Math.max(local.version, incoming.version));
 			if (local.denseFeatureWeights != null) {
 				for (Map.Entry<String, Double> entry : local.denseFeatureWeights.entrySet()) {
 					incoming.denseFeatureWeights.putIfAbsent(entry.getKey(), entry.getValue());
@@ -286,7 +286,7 @@ public final class ModelUpdateService {
 		if (model == null) {
 			return;
 		}
-		model.version = Math.max(9, model.version);
+		model.version = Math.max(LocalAiModelConfig.MODEL_SCHEMA_VERSION, model.version);
 		if (model.denseFeatureWeights == null || model.denseFeatureWeights.isEmpty()) {
 			model.denseFeatureWeights = new LinkedHashMap<>(AiFeatureSpace.defaultDenseWeights());
 		} else {
@@ -294,9 +294,11 @@ public final class ModelUpdateService {
 				model.denseFeatureWeights.putIfAbsent(entry.getKey(), entry.getValue());
 			}
 		}
+		model.maxTokenWeights = LocalAiModelConfig.normalizeMaxTokenWeights(model.maxTokenWeights);
 		if (model.tokenWeights == null) {
 			model.tokenWeights = new LinkedHashMap<>();
 		}
+		model.tokenWeights = LocalAiModelConfig.pruneTokenWeights(model.tokenWeights, model.maxTokenWeights);
 		if (model.funnelHead == null) {
 			model.funnelHead = LocalAiModelConfig.DenseHeadConfig.fromMainHead(model.intercept, model.denseFeatureWeights);
 		} else {

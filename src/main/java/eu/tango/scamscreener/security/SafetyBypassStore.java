@@ -6,10 +6,14 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Pattern;
+import eu.tango.scamscreener.util.RegexSafety;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class SafetyBypassStore {
 	private static final int MAX_PENDING = 5;
 	private static final int MAX_ALLOW_ONCE = 5;
+	private static final Logger LOGGER = LoggerFactory.getLogger(SafetyBypassStore.class);
 
 	private final Kind kind;
 	private final Pattern pattern;
@@ -26,7 +30,7 @@ public final class SafetyBypassStore {
 		if (message == null || message.isBlank()) {
 			return null;
 		}
-		if (!pattern.matcher(message).find()) {
+		if (!RegexSafety.safeFind(pattern, message, LOGGER, "outgoing safety check")) {
 			return null;
 		}
 		String id = UUID.randomUUID().toString().replace("-", "");

@@ -5,15 +5,15 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Locale;
 import java.util.regex.Pattern;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class TextUtil {
+	private static final Logger LOGGER = LoggerFactory.getLogger(TextUtil.class);
 	private static final Pattern COLOR_CODE_PATTERN = Pattern.compile("\\u00A7.");
 	private static final Pattern AT_NAME_PATTERN = Pattern.compile("@[A-Za-z0-9_]{3,16}");
 	private static final Pattern COMMAND_TARGET_PATTERN = Pattern.compile(
-		"(?i)(\\b(?:/msg|/w|/tell|/party\\s+invite|/p\\s+invite|/f\\s+add|/coopadd|/visit)\\s+)([A-Za-z0-9_]{3,16})\\b"
-	);
-	private static final Pattern MIXED_NAME_TOKEN_PATTERN = Pattern.compile(
-		"\\b(?=[A-Za-z0-9_]{5,16}\\b)(?=(?:.*_.*|.*[A-Z].*|(?:.*\\d){2,}))[A-Za-z0-9_]+\\b"
+		"(?i)((?:/msg|/w|/tell|/party\\s+invite|/p\\s+invite|/f\\s+add|/coopadd|/visit)\\s+)([A-Za-z0-9_]{3,16})\\b"
 	);
 
 	private TextUtil() {
@@ -23,7 +23,8 @@ public final class TextUtil {
 		if (input == null) {
 			return "";
 		}
-		return input.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]+", " ").trim();
+		String lowered = input.toLowerCase(Locale.ROOT);
+		return RegexSafety.safeStringReplaceAll(lowered, "[^a-z0-9]+", " ", LOGGER, "normalizeForMatch").trim();
 	}
 
 	public static String normalizeCommand(String input, boolean isCommand) {
@@ -41,16 +42,16 @@ public final class TextUtil {
 		if (input == null || input.isBlank()) {
 			return "";
 		}
-		String sanitized = COLOR_CODE_PATTERN.matcher(input).replaceAll(" ");
-		sanitized = AT_NAME_PATTERN.matcher(sanitized).replaceAll("@player");
-		sanitized = COMMAND_TARGET_PATTERN.matcher(sanitized).replaceAll("$1player");
-		sanitized = MIXED_NAME_TOKEN_PATTERN.matcher(sanitized).replaceAll("player");
+		String sanitized = RegexSafety.safePatternReplaceAll(COLOR_CODE_PATTERN, input, " ", LOGGER, "color code stripping");
+		sanitized = RegexSafety.safePatternReplaceAll(AT_NAME_PATTERN, sanitized, "@player", LOGGER, "mention anonymization");
+		sanitized = RegexSafety.safePatternReplaceAll(COMMAND_TARGET_PATTERN, sanitized, "$1player", LOGGER, "command target anonymization");
 
 		if (playerNameHint != null && !playerNameHint.isBlank()) {
 			String escaped = Pattern.quote(playerNameHint.trim());
-			sanitized = sanitized.replaceAll("(?i)\\b" + escaped + "\\b", "player");
+			Pattern hintPattern = Pattern.compile("(?i)\\b" + escaped + "\\b");
+			sanitized = RegexSafety.safePatternReplaceAll(hintPattern, sanitized, "player", LOGGER, "speaker hint anonymization");
 		}
-		return sanitized.replaceAll("\\s+", " ").trim();
+		return RegexSafety.safeStringReplaceAll(sanitized, "\\s+", " ", LOGGER, "whitespace normalization").trim();
 	}
 
 	public static String anonymizedSpeakerKey(String playerName) {
@@ -75,4 +76,5 @@ public final class TextUtil {
 		}
 		return out.toString();
 	}
+
 }

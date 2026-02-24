@@ -201,16 +201,7 @@ public final class FunnelMetricsService {
 
 	private static double currentAlertThreshold() {
 		try {
-			ScamRules.ScamRiskLevel level = ScamRules.minimumAlertRiskLevel();
-			if (level == null) {
-				return 0.0;
-			}
-			return switch (level) {
-				case LOW -> 0.0;
-				case MEDIUM -> ScamRules.levelMediumThreshold();
-				case HIGH -> ScamRules.levelHighThreshold();
-				case CRITICAL -> ScamRules.levelCriticalThreshold();
-			};
+			return ScamRules.levelHighThreshold();
 		} catch (Throwable ignored) {
 			// Unit tests can run without FabricLoader config wiring.
 			return 40.0;

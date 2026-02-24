@@ -2,6 +2,8 @@ package eu.tango.scamscreener.security;
 
 import eu.tango.scamscreener.blacklist.BlacklistManager;
 import eu.tango.scamscreener.lookup.PlayerLookup;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -11,6 +13,7 @@ public final class CoopAddSafety {
 		"^coopadd\\s+([A-Za-z0-9_]{3,16})(?:\\s+.*)?$",
 		Pattern.CASE_INSENSITIVE
 	);
+	private static final Logger LOGGER = LoggerFactory.getLogger(CoopAddSafety.class);
 
 	private final BlacklistManager blacklist;
 	private final PlayerLookup playerLookup;
@@ -27,12 +30,7 @@ public final class CoopAddSafety {
 		}
 
 		String trimmed = normalizedCommand.trim();
-		Matcher matcher = COOP_ADD_PATTERN.matcher(trimmed);
-		if (!matcher.matches()) {
-			return null;
-		}
-
-		String playerName = matcher.group(1);
+		String playerName = extractPlayerName(trimmed);
 		if (playerName == null || playerName.isBlank()) {
 			return null;
 		}
@@ -46,6 +44,19 @@ public final class CoopAddSafety {
 			return null;
 		}
 		return new CoopBlockResult(playerName, blocked.id(), blacklisted);
+	}
+
+	private static String extractPlayerName(String trimmedCommand) {
+		try {
+			Matcher matcher = COOP_ADD_PATTERN.matcher(trimmedCommand);
+			if (!matcher.matches()) {
+				return null;
+			}
+			return matcher.group(1);
+		} catch (StackOverflowError error) {
+			LOGGER.warn("Skipped coop command regex due to StackOverflowError");
+			return null;
+		}
 	}
 
 	public SafetyBypassStore.Pending takePending(String id) {

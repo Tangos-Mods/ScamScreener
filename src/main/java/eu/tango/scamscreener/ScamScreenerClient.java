@@ -269,68 +269,82 @@ public class ScamScreenerClient implements ClientModInitializer {
 	}
 
 	private void handleHypixelMessage(Component message) {
-		if (message == null) {
-			return;
-		}
-		String plain = message.getString().trim();
-		long now = System.currentTimeMillis();
-		MessageEvent event = MessageEventParser.parse(plain, now);
-		int reviewScore = 0;
+		try {
+			if (message == null) {
+				return;
+			}
+			String plain = message.getString().trim();
+			long now = System.currentTimeMillis();
+			MessageEvent event = MessageEventParser.parse(plain, now);
+			int reviewScore = 0;
 
-		Minecraft client = Minecraft.getInstance();
-		if (client.player == null || client.getConnection() == null) {
+			Minecraft client = Minecraft.getInstance();
+			if (client.player == null || client.getConnection() == null) {
+				if (event != null) {
+					trainingDataService.recordChatEvent(event, reviewScore);
+				} else {
+					trainingDataService.recordChatLine(plain, reviewScore);
+				}
+				return;
+			}
+
+			if (event != null) {
+				final int[] scoreHolder = {0};
+				detectionPipeline.process(event, MessageDispatcher::reply, NotificationService::playWarningTone, evaluation -> {
+					funnelMetricsService.recordEvaluation(evaluation);
+					if (evaluation == null || evaluation.result() == null) {
+						scoreHolder[0] = 0;
+						return;
+					}
+					scoreHolder[0] = shouldAutoMarkScamInReview(evaluation.result()) ? toReviewScore(evaluation.result()) : 0;
+				})
+					.ifPresent(this::autoAddFlaggedMessageToTrainingData);
+				reviewScore = scoreHolder[0];
+			}
 			if (event != null) {
 				trainingDataService.recordChatEvent(event, reviewScore);
 			} else {
 				trainingDataService.recordChatLine(plain, reviewScore);
 			}
-			return;
-		}
+			if (BLACKLIST.isEmpty()) {
+				return;
+			}
 
-		if (event != null) {
-			final int[] scoreHolder = {0};
-			detectionPipeline.process(event, MessageDispatcher::reply, NotificationService::playWarningTone, evaluation -> {
-				funnelMetricsService.recordEvaluation(evaluation);
-				if (evaluation == null || evaluation.result() == null) {
-					scoreHolder[0] = 0;
-					return;
-				}
-				scoreHolder[0] = shouldAutoMarkScamInReview(evaluation.result()) ? toReviewScore(evaluation.result()) : 0;
-			})
-				.ifPresent(this::autoAddFlaggedMessageToTrainingData);
-			reviewScore = scoreHolder[0];
-		}
-		if (event != null) {
-			trainingDataService.recordChatEvent(event, reviewScore);
-		} else {
-			trainingDataService.recordChatLine(plain, reviewScore);
-		}
-		if (BLACKLIST.isEmpty()) {
-			return;
-		}
-
-		for (TriggerContext context : TriggerContext.values()) {
-			blacklistAlertService.checkTriggerAndWarn(plain, context);
+			for (TriggerContext context : TriggerContext.values()) {
+				blacklistAlertService.checkTriggerAndWarn(plain, context);
+			}
+		} catch (StackOverflowError error) {
+			LOGGER.warn("Skipped chat processing due to StackOverflowError");
 		}
 	}
 
 	private boolean handleOutgoingChat(String message) {
-		if (!outgoingMessageGuard.allowChat(message)) {
-			return false;
+		try {
+			if (!outgoingMessageGuard.allowChat(message)) {
+				return false;
+			}
+			trainingDataService.recordOutgoingChatLine(localPlayerName(), message, "public");
+			return true;
+		} catch (StackOverflowError error) {
+			LOGGER.warn("Skipped outgoing chat safety check due to StackOverflowError");
+			return true;
 		}
-		trainingDataService.recordOutgoingChatLine(localPlayerName(), message, "public");
-		return true;
 	}
 
 	private boolean handleOutgoingCommand(String command) {
-		if (!outgoingMessageGuard.allowCommand(command)) {
-			return false;
+		try {
+			if (!outgoingMessageGuard.allowCommand(command)) {
+				return false;
+			}
+			OutgoingChatCommandParser.ParsedOutgoingChat parsed = OutgoingChatCommandParser.parse(command);
+			if (parsed != null) {
+				trainingDataService.recordOutgoingChatLine(localPlayerName(), parsed.message(), parsed.channel());
+			}
+			return true;
+		} catch (StackOverflowError error) {
+			LOGGER.warn("Skipped outgoing command safety check due to StackOverflowError");
+			return true;
 		}
-		OutgoingChatCommandParser.ParsedOutgoingChat parsed = OutgoingChatCommandParser.parse(command);
-		if (parsed != null) {
-			trainingDataService.recordOutgoingChatLine(localPlayerName(), parsed.message(), parsed.channel());
-		}
-		return true;
 	}
 
 	private static String localPlayerName() {
@@ -345,30 +359,35 @@ public class ScamScreenerClient implements ClientModInitializer {
 	}
 
 	private boolean handleChatAllow(Component message) {
-		String plain = message == null ? "" : message.getString();
-		if (mutePatternManager.shouldBlock(plain)) {
-			debugReporter.debugMute("blocked chat: " + plain);
+		try {
+			String plain = message == null ? "" : message.getString();
+			if (mutePatternManager.shouldBlock(plain)) {
+				debugReporter.debugMute("blocked chat: " + plain);
+				return false;
+			}
+			ChatLineParser.ParsedPlayerLine parsed = ChatLineParser.parsePlayerLine(plain);
+			if (parsed == null) {
+				return true;
+			}
+
+			boolean blacklisted = BLACKLIST.isBlacklisted(parsed.playerName(), playerLookup::findUuidByName);
+			debugReporter.debugChatColor("line speaker=" + TextUtil.anonymizedSpeakerKey(parsed.playerName()) + " blacklisted=" + blacklisted);
+			Component decorated = ChatDecorator.decoratePlayerLine(message, parsed, blacklisted);
+			Minecraft client = Minecraft.getInstance();
+			if (client != null) {
+				AsyncDispatcher.onClient(client, () -> {
+					if (client.player != null) {
+						client.player.displayClientMessage(decorated, false);
+					}
+				});
+			}
+
+			handleHypixelMessage(message);
 			return false;
-		}
-		ChatLineParser.ParsedPlayerLine parsed = ChatLineParser.parsePlayerLine(plain);
-		if (parsed == null) {
+		} catch (StackOverflowError error) {
+			LOGGER.warn("Skipped incoming chat decoration due to StackOverflowError");
 			return true;
 		}
-
-		boolean blacklisted = BLACKLIST.isBlacklisted(parsed.playerName(), playerLookup::findUuidByName);
-		debugReporter.debugChatColor("line speaker=" + TextUtil.anonymizedSpeakerKey(parsed.playerName()) + " blacklisted=" + blacklisted);
-		Component decorated = ChatDecorator.decoratePlayerLine(message, parsed, blacklisted);
-		Minecraft client = Minecraft.getInstance();
-		if (client != null) {
-			AsyncDispatcher.onClient(client, () -> {
-				if (client.player != null) {
-					client.player.displayClientMessage(decorated, false);
-				}
-			});
-		}
-
-		handleHypixelMessage(message);
-		return false;
 	}
 
 	private void setAllDebug(boolean enabled) {

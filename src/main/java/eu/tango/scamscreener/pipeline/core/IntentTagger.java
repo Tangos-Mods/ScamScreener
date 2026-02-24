@@ -4,7 +4,10 @@ import eu.tango.scamscreener.pipeline.model.IntentTag;
 import eu.tango.scamscreener.pipeline.model.MessageEvent;
 import eu.tango.scamscreener.pipeline.model.Signal;
 import eu.tango.scamscreener.rules.ScamRules;
+import eu.tango.scamscreener.util.RegexSafety;
 import eu.tango.scamscreener.util.TextUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.EnumSet;
 import java.util.List;
@@ -12,6 +15,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 public final class IntentTagger {
+	private static final Logger LOGGER = LoggerFactory.getLogger(IntentTagger.class);
 	private static final Pattern CHANNEL_REDIRECT_PATTERN = Pattern.compile("\\b(?:go to|join) [a-z0-9 ]{2,40} channel\\b");
 
 	private final RuleConfig ruleConfig;
@@ -115,7 +119,7 @@ public final class IntentTagger {
 		if (pattern == null || text == null || text.isBlank()) {
 			return false;
 		}
-		return pattern.matcher(text).find();
+		return RegexSafety.safeFind(pattern, text, LOGGER, "intent pattern matching");
 	}
 
 	private static String foldCompact(String text) {
@@ -165,7 +169,7 @@ public final class IntentTagger {
 		if (normalized == null || normalized.isBlank()) {
 			return false;
 		}
-		return CHANNEL_REDIRECT_PATTERN.matcher(normalized).find();
+		return RegexSafety.safeFind(CHANNEL_REDIRECT_PATTERN, normalized, LOGGER, "channel redirect instruction");
 	}
 
 	private static boolean containsUpfrontPaymentPhrase(String normalized) {

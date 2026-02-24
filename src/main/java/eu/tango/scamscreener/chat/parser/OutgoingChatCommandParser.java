@@ -2,6 +2,7 @@ package eu.tango.scamscreener.chat.parser;
 
 import eu.tango.scamscreener.util.TextUtil;
 
+import java.util.ArrayList;
 import java.util.Locale;
 
 public final class OutgoingChatCommandParser {
@@ -14,7 +15,7 @@ public final class OutgoingChatCommandParser {
 			return null;
 		}
 
-		String[] tokens = normalized.trim().split("\\s+");
+		String[] tokens = tokenize(normalized);
 		if (tokens.length < 1) {
 			return null;
 		}
@@ -80,6 +81,31 @@ public final class OutgoingChatCommandParser {
 
 	private static boolean hasSecond(String[] tokens, String expected) {
 		return tokens.length >= 2 && expected.equalsIgnoreCase(tokens[1]);
+	}
+
+	private static String[] tokenize(String input) {
+		if (input == null || input.isBlank()) {
+			return new String[0];
+		}
+		ArrayList<String> tokens = new ArrayList<>();
+		int start = -1;
+		for (int i = 0; i < input.length(); i++) {
+			char c = input.charAt(i);
+			if (Character.isWhitespace(c)) {
+				if (start >= 0) {
+					tokens.add(input.substring(start, i));
+					start = -1;
+				}
+				continue;
+			}
+			if (start < 0) {
+				start = i;
+			}
+		}
+		if (start >= 0) {
+			tokens.add(input.substring(start));
+		}
+		return tokens.toArray(new String[0]);
 	}
 
 	public record ParsedOutgoingChat(String channel, String message) {

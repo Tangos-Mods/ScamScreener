@@ -1,13 +1,16 @@
 package eu.tango.scamscreener.chat.parser;
 
+import eu.tango.scamscreener.chat.IgnoredChatMessages;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import eu.tango.scamscreener.chat.IgnoredChatMessages;
-
 public final class ChatLineParser {
+	private static final Logger LOGGER = LoggerFactory.getLogger(ChatLineParser.class);
 	private static final String CHAT_PREFIX_PATTERN = "(?:(?:\\[[^\\]]+\\]|[^\\r\\n])\\s*)*";
 	private static final Pattern DIRECT_CHAT_PATTERN = Pattern.compile(
 		"^" + CHAT_PREFIX_PATTERN + "(?<![A-Za-z0-9_])([A-Za-z0-9_]{3,16})\\s*:\\s*(.+)$"
@@ -70,19 +73,32 @@ public final class ChatLineParser {
 	}
 
 	private static Matcher matchPlayerChat(String cleaned) {
-		Matcher direct = DIRECT_CHAT_PATTERN.matcher(cleaned);
-		if (direct.matches()) {
+		Matcher direct = matchPattern(DIRECT_CHAT_PATTERN, cleaned, "direct chat");
+		if (direct != null) {
 			return direct;
 		}
-		Matcher channel = CHANNEL_CHAT_PATTERN.matcher(cleaned);
-		if (channel.matches()) {
+		Matcher channel = matchPattern(CHANNEL_CHAT_PATTERN, cleaned, "channel chat");
+		if (channel != null) {
 			return channel;
 		}
-		Matcher whisper = WHISPER_CHAT_PATTERN.matcher(cleaned);
-		if (whisper.matches()) {
+		Matcher whisper = matchPattern(WHISPER_CHAT_PATTERN, cleaned, "whisper chat");
+		if (whisper != null) {
 			return whisper;
 		}
 		return null;
+	}
+
+	private static Matcher matchPattern(Pattern pattern, String input, String context) {
+		if (pattern == null || input == null || input.isBlank()) {
+			return null;
+		}
+		try {
+			Matcher matcher = pattern.matcher(input);
+			return matcher.matches() ? matcher : null;
+		} catch (StackOverflowError error) {
+			LOGGER.warn("Skipped {} regex due to StackOverflowError", context);
+			return null;
+		}
 	}
 
 	public record ParsedPlayerLine(String playerName, String message) {
