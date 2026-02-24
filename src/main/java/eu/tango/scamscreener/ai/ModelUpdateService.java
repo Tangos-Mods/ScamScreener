@@ -485,8 +485,9 @@ public final class ModelUpdateService {
 			return null;
 		}
 		try {
+			String requestUrl = withCacheBuster(url);
 			HttpRequest request = HttpRequest.newBuilder()
-				.uri(URI.create(url))
+				.uri(URI.create(requestUrl))
 				.GET()
 				.timeout(Duration.ofSeconds(8))
 				.header("User-Agent", "ScamScreener")
@@ -499,6 +500,18 @@ public final class ModelUpdateService {
 		} catch (Exception ignored) {
 			return null;
 		}
+	}
+
+	private static String withCacheBuster(String url) {
+		String trimmed = url == null ? "" : url.trim();
+		if (trimmed.isBlank()) {
+			return trimmed;
+		}
+		if (!trimmed.contains("raw.githubusercontent.com/")) {
+			return trimmed;
+		}
+		long now = System.currentTimeMillis();
+		return trimmed + (trimmed.contains("?") ? "&" : "?") + "_scs_ts=" + now;
 	}
 
 	private void debug(Consumer<Component> reply, String message) {
