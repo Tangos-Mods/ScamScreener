@@ -112,6 +112,10 @@ tasks.withType<Test>().configureEach {
 	}
 }
 
+val minecraftTargets = (property("mod.mc_targets") as String)
+	.split(Regex("\\s+"))
+	.filter(String::isNotBlank)
+
 publishMods {
 	val modrinthToken = providers.environmentVariable("MODRINTH_TOKEN")
 	val curseforgeToken = providers.environmentVariable("CURSEFORGE_TOKEN")
@@ -130,7 +134,7 @@ publishMods {
 		projectId = property("publish.modrinth") as String
 		accessToken = modrinthToken
 		projectDescription = rootProject.file("SPOTLIGHT.md").readText()
-		minecraftVersions.add(stonecutter.current.version)
+		minecraftTargets.forEach(minecraftVersions::add)
 		requires {
 			slug = "P7dR8mSH" // Fabric API
 		}
@@ -142,7 +146,7 @@ publishMods {
 	curseforge {
 		projectId = property("publish.curseforge") as String
 		accessToken = curseforgeToken
-		minecraftVersions.add(stonecutter.current.version)
+		minecraftTargets.forEach(minecraftVersions::add)
 		javaVersions.add(JavaVersion.VERSION_21)
 		clientRequired = true
 		serverRequired = false

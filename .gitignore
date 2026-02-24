@@ -52,4 +52,8 @@ scripts/scam-screener-training-data.csv
 
 #StoneCutter
 /versions
+!/versions/
+!/versions/*/
+/versions/*/**
+!/versions/*/gradle.properties
 funnel.csv

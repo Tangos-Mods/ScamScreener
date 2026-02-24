@@ -38,8 +38,15 @@ fun registerPowerShellTask(taskName: String, taskDescription: String, vararg tas
 
 tasks.register("scamScreenerRefreshStonecutterSources") {
 	group = "scamscreener"
-	description = "Refreshes Stonecutter generated sources and recompiles Java for 1.21.10 and 1.21.11."
-	dependsOn(":1.21.10:stonecutterGenerate", ":1.21.11:stonecutterGenerate", ":1.21.10:compileJava", ":1.21.11:compileJava")
+	description = "Refreshes Stonecutter generated sources and recompiles Java for 1.21.9, 1.21.10 and 1.21.11."
+	dependsOn(
+		":1.21.9:stonecutterGenerate",
+		":1.21.10:stonecutterGenerate",
+		":1.21.11:stonecutterGenerate",
+		":1.21.9:compileJava",
+		":1.21.10:compileJava",
+		":1.21.11:compileJava"
+	)
 }
 
 registerPowerShellTask(
