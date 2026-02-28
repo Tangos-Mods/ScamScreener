@@ -7,14 +7,24 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 public final class AiFeatureSpace {
+	private static final String REGEX_PREFIX = "re:";
 	private static final String[] PAYMENT_WORDS = {"pay", "payment", "vorkasse", "coins", "money", "btc", "crypto"};
-	private static final String[] ACCOUNT_WORDS = {"password", "passwort", "2fa", "code", "email", "login"};
+	private static final String[] ACCOUNT_WORDS = {
+		"password",
+		"passwort",
+		"2fa",
+		"re:\\b(?:give|gimme)\\b.*\\bcode\\b|\\bcode\\b.*\\b(?:give|gimme)\\b",
+		"email",
+		"login"
+	};
 	private static final String[] URGENCY_WORDS = {"now", "quick", "fast", "urgent", "sofort", "jetzt"};
 	private static final String[] TRUST_WORDS = {"trust", "legit", "safe", "trusted", "middleman"};
 	private static final String[] TOO_GOOD_WORDS = {"free", "100%", "guaranteed", "garantiert", "dupe", "rank"};
-	private static final String[] PLATFORM_WORDS = {"discord", "telegram", "t.me", "server", "dm", "vc", "voice"};
+	private static final String[] PLATFORM_WORDS = {"discord", "telegram", "t.me", "re:\\b(?:join|come on)\\b.*\\bserver\\b", "dm", "vc", "voice"};
 
 	public static final List<String> DENSE_FEATURE_NAMES = List.of(
 		"kw_payment",
@@ -193,11 +203,29 @@ public final class AiFeatureSpace {
 
 	private static boolean hasAny(String text, String[] words) {
 		for (String word : words) {
-			if (text.contains(word)) {
+			if (matchesWord(text, word)) {
 				return true;
 			}
 		}
 		return false;
+	}
+
+	private static boolean matchesWord(String text, String word) {
+		if (word == null || word.isEmpty()) {
+			return false;
+		}
+		if (!word.startsWith(REGEX_PREFIX)) {
+			return text.contains(word);
+		}
+		String regex = word.substring(REGEX_PREFIX.length());
+		if (regex.isEmpty()) {
+			return false;
+		}
+		try {
+			return Pattern.compile(regex).matcher(text).find();
+		} catch (PatternSyntaxException ignored) {
+			return text.contains(regex);
+		}
 	}
 
 	private static boolean hasLink(String text) {

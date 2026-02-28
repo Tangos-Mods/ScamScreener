@@ -3,6 +3,7 @@ package eu.tango.scamscreener.pipeline.core;
 import eu.tango.scamscreener.pipeline.model.IntentTag;
 import eu.tango.scamscreener.pipeline.model.MessageEvent;
 import eu.tango.scamscreener.pipeline.model.Signal;
+import eu.tango.scamscreener.rules.DefaultPatterns;
 import eu.tango.scamscreener.rules.ScamRules;
 import eu.tango.scamscreener.util.RegexSafety;
 import eu.tango.scamscreener.util.TextUtil;
@@ -16,7 +17,6 @@ import java.util.regex.Pattern;
 
 public final class IntentTagger {
 	private static final Logger LOGGER = LoggerFactory.getLogger(IntentTagger.class);
-	private static final Pattern CHANNEL_REDIRECT_PATTERN = Pattern.compile("\\b(?:go to|join) [a-z0-9 ]{2,40} channel\\b");
 
 	private final RuleConfig ruleConfig;
 
@@ -146,42 +146,37 @@ public final class IntentTagger {
 	}
 
 	private static boolean containsFoldedRedirect(String compact) {
-		if (compact == null || compact.isBlank()) {
-			return false;
-		}
-		return compact.contains("discord")
-			|| compact.contains("telegram")
-			|| compact.contains("teamspeak")
-			|| compact.contains("voicechat")
-			|| compact.contains("discgg");
+		return containsAny(compact, DefaultPatterns.FOLDED_PLATFORM_HINTS);
 	}
 
 	private static boolean containsLinkRedirectHint(String normalized, String compact) {
-		if (compact.contains("discord") || compact.contains("telegram")) {
+		if (containsAny(compact, DefaultPatterns.LINK_SIGNAL_PLATFORM_HINTS)) {
 			return true;
 		}
-		return normalized.contains("discord gg")
-			|| normalized.contains("discord com invite")
-			|| normalized.contains("t me");
+		return containsAny(normalized, DefaultPatterns.LINK_REDIRECT_HINTS);
 	}
 
 	private static boolean containsChannelRedirectInstruction(String normalized) {
 		if (normalized == null || normalized.isBlank()) {
 			return false;
 		}
-		return RegexSafety.safeFind(CHANNEL_REDIRECT_PATTERN, normalized, LOGGER, "channel redirect instruction");
+		return RegexSafety.safeFind(DefaultPatterns.CHANNEL_REDIRECT_PATTERN, normalized, LOGGER, "channel redirect instruction");
 	}
 
 	private static boolean containsUpfrontPaymentPhrase(String normalized) {
-		if (normalized == null || normalized.isBlank()) {
+		return containsAny(normalized, DefaultPatterns.UPFRONT_PAYMENT_HINTS);
+	}
+
+	private static boolean containsAny(String text, List<String> hints) {
+		if (text == null || text.isBlank() || hints == null || hints.isEmpty()) {
 			return false;
 		}
-		return normalized.contains("pay first")
-			|| normalized.contains("send first")
-			|| normalized.contains("you give me")
-			|| normalized.contains("give me first")
-			|| normalized.contains("before i give")
-			|| normalized.contains("before i send");
+		for (String hint : hints) {
+			if (text.contains(hint)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	public record TaggingResult(Set<IntentTag> tags, boolean negativeContext) {

@@ -2,6 +2,7 @@ package eu.tango.scamscreener.config;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import eu.tango.scamscreener.rules.DefaultPatterns;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -19,15 +20,6 @@ public final class ScamRulesConfig {
 	 * Warning: These thresholds and weights influence core detection behavior.
 	 * Changing them without care can destabilize or degrade the mod's results.
 	 */
-	public static final String DEFAULT_LINK_PATTERN = "(https?://|www\\.|discord\\.gg/|t\\.me/)";
-	public static final String DEFAULT_URGENCY_PATTERN = "\\b(now|quick|fast|urgent|sofort|jetzt)\\b";
-	public static final String DEFAULT_PAYMENT_FIRST_PATTERN = "\\b(pay first|first payment|vorkasse|send first)\\b";
-	public static final String DEFAULT_ACCOUNT_DATA_PATTERN = "\\b(password|passwort|2fa|code|email login)\\b";
-	public static final String DEFAULT_TOO_GOOD_PATTERN = "\\b(free coins|free rank|dupe|100% safe|garantiert)\\b";
-	public static final String DEFAULT_TRUST_BAIT_PATTERN = "\\b(trust me|vertrau mir|legit)\\b";
-	public static final String LEGACY_EXTERNAL_PLATFORM_PATTERN = "\\b(discord|telegram|t\\.me|dm me|add me)\\b";
-	public static final String DEFAULT_EXTERNAL_PLATFORM_PATTERN = "\\b(discord|telegram|t\\.me|dm me|add me|vc|voice chat|voice channel|call)\\b";
-	public static final String DEFAULT_MIDDLEMAN_PATTERN = "\\b(trusted middleman|legit middleman|middleman)\\b";
 	public static final boolean DEFAULT_LOCAL_AI_ENABLED = true;
 	public static final boolean DEFAULT_UPLOAD_TOS_ACCEPTED = false;
 	public static final int DEFAULT_LOCAL_AI_MAX_SCORE = 22;
@@ -57,15 +49,6 @@ public final class ScamRulesConfig {
 	public static final int DEFAULT_SIMILARITY_MAX_COMPARE_LENGTH = 160;
 	public static final int DEFAULT_SIMILARITY_MIN_MESSAGE_LENGTH = 6;
 	public static final int DEFAULT_CAPTURED_CHAT_CACHE_SIZE = 300;
-	public static final String DEFAULT_FUNNEL_SERVICE_OFFER_PATTERN = "\\b(carry|service|offer|offering|sell|selling|helping)\\b";
-	public static final String DEFAULT_FUNNEL_FREE_OFFER_PATTERN = "\\b(free|for free|giveaway|free carry)\\b";
-	public static final String DEFAULT_FUNNEL_REP_REQUEST_PATTERN = "\\b(rep|reputation|vouch|voucher|feedback|rep me|vouch me)\\b";
-	public static final String LEGACY_FUNNEL_PLATFORM_REDIRECT_PATTERN = "\\b(discord|telegram|t\\.me|vc|voice chat|call|join vc)\\b";
-	public static final String LEGACY_FUNNEL_PLATFORM_REDIRECT_PATTERN_V2 = "\\b(discord|telegram|t\\.me|vc|voice chat|call|join vc|(?:go to|join) [a-z0-9 ]{2,40} channel)\\b";
-	public static final String DEFAULT_FUNNEL_PLATFORM_REDIRECT_PATTERN = "\\b(discord|telegram|t\\.me|vc|voice chat|voice channel|call|join vc|(?:go to|join) [a-z0-9 ]{2,40} channel)\\b";
-	public static final String DEFAULT_FUNNEL_INSTRUCTION_INJECTION_PATTERN = "\\b(go to|type|do rep|copy this|run this|use command|join and)\\b";
-	public static final String DEFAULT_FUNNEL_COMMUNITY_ANCHOR_PATTERN = "\\b(sbz|hsb|sbm|skyblockz|hypixel skyblock)\\b";
-	public static final String DEFAULT_FUNNEL_NEGATIVE_INTENT_PATTERN = "\\b(guild recruit|guild req|guild only|looking for members|lf members|recruiting)\\b";
 	public static final int DEFAULT_FUNNEL_WINDOW_SIZE = 20;
 	public static final long DEFAULT_FUNNEL_WINDOW_MILLIS = 180_000L;
 	public static final long DEFAULT_FUNNEL_CONTEXT_TTL_MILLIS = 600_000L;
@@ -74,16 +57,16 @@ public final class ScamRulesConfig {
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
-	public String linkPattern = DEFAULT_LINK_PATTERN;
-	public String urgencyPattern = DEFAULT_URGENCY_PATTERN;
-	public String paymentFirstPattern = DEFAULT_PAYMENT_FIRST_PATTERN;
-	public String accountDataPattern = DEFAULT_ACCOUNT_DATA_PATTERN;
-	public String tooGoodPattern = DEFAULT_TOO_GOOD_PATTERN;
-	public String trustBaitPattern = DEFAULT_TRUST_BAIT_PATTERN;
-	public String externalPlatformPattern = DEFAULT_EXTERNAL_PLATFORM_PATTERN;
-	public String upfrontPaymentBehaviorPattern = DEFAULT_PAYMENT_FIRST_PATTERN;
-	public String accountDataBehaviorPattern = DEFAULT_ACCOUNT_DATA_PATTERN;
-	public String middlemanPattern = DEFAULT_MIDDLEMAN_PATTERN;
+	public String linkPattern = DefaultPatterns.LINK_PATTERN;
+	public String urgencyPattern = DefaultPatterns.URGENCY_PATTERN;
+	public String paymentFirstPattern = DefaultPatterns.PAYMENT_FIRST_PATTERN;
+	public String accountDataPattern = DefaultPatterns.ACCOUNT_DATA_PATTERN;
+	public String tooGoodPattern = DefaultPatterns.TOO_GOOD_PATTERN;
+	public String trustBaitPattern = DefaultPatterns.TRUST_BAIT_PATTERN;
+	public String externalPlatformPattern = DefaultPatterns.EXTERNAL_PLATFORM_PATTERN;
+	public String upfrontPaymentBehaviorPattern = DefaultPatterns.PAYMENT_FIRST_PATTERN;
+	public String accountDataBehaviorPattern = DefaultPatterns.ACCOUNT_DATA_PATTERN;
+	public String middlemanPattern = DefaultPatterns.MIDDLEMAN_PATTERN;
 	public boolean localAiEnabled = DEFAULT_LOCAL_AI_ENABLED;
 	public Boolean tos = DEFAULT_UPLOAD_TOS_ACCEPTED;
 	public int localAiMaxScore = DEFAULT_LOCAL_AI_MAX_SCORE;
@@ -113,13 +96,13 @@ public final class ScamRulesConfig {
 	public int similarityMaxCompareLength = DEFAULT_SIMILARITY_MAX_COMPARE_LENGTH;
 	public int similarityMinMessageLength = DEFAULT_SIMILARITY_MIN_MESSAGE_LENGTH;
 	public int capturedChatCacheSize = DEFAULT_CAPTURED_CHAT_CACHE_SIZE;
-	public String funnelServiceOfferPattern = DEFAULT_FUNNEL_SERVICE_OFFER_PATTERN;
-	public String funnelFreeOfferPattern = DEFAULT_FUNNEL_FREE_OFFER_PATTERN;
-	public String funnelRepRequestPattern = DEFAULT_FUNNEL_REP_REQUEST_PATTERN;
-	public String funnelPlatformRedirectPattern = DEFAULT_FUNNEL_PLATFORM_REDIRECT_PATTERN;
-	public String funnelInstructionInjectionPattern = DEFAULT_FUNNEL_INSTRUCTION_INJECTION_PATTERN;
-	public String funnelCommunityAnchorPattern = DEFAULT_FUNNEL_COMMUNITY_ANCHOR_PATTERN;
-	public String funnelNegativeIntentPattern = DEFAULT_FUNNEL_NEGATIVE_INTENT_PATTERN;
+	public String funnelServiceOfferPattern = DefaultPatterns.FUNNEL_SERVICE_OFFER_PATTERN;
+	public String funnelFreeOfferPattern = DefaultPatterns.FUNNEL_FREE_OFFER_PATTERN;
+	public String funnelRepRequestPattern = DefaultPatterns.FUNNEL_REP_REQUEST_PATTERN;
+	public String funnelPlatformRedirectPattern = DefaultPatterns.FUNNEL_PLATFORM_REDIRECT_PATTERN;
+	public String funnelInstructionInjectionPattern = DefaultPatterns.FUNNEL_INSTRUCTION_INJECTION_PATTERN;
+	public String funnelCommunityAnchorPattern = DefaultPatterns.FUNNEL_COMMUNITY_ANCHOR_PATTERN;
+	public String funnelNegativeIntentPattern = DefaultPatterns.FUNNEL_NEGATIVE_INTENT_PATTERN;
 	public int funnelWindowSize = DEFAULT_FUNNEL_WINDOW_SIZE;
 	public long funnelWindowMillis = DEFAULT_FUNNEL_WINDOW_MILLIS;
 	public long funnelContextTtlMillis = DEFAULT_FUNNEL_CONTEXT_TTL_MILLIS;
@@ -190,63 +173,63 @@ public final class ScamRulesConfig {
 
 	private ScamRulesConfig withDefaults() {
 		if (isBlank(linkPattern)) {
-			linkPattern = DEFAULT_LINK_PATTERN;
+			linkPattern = DefaultPatterns.LINK_PATTERN;
 		}
 		if (isBlank(urgencyPattern)) {
-			urgencyPattern = DEFAULT_URGENCY_PATTERN;
+			urgencyPattern = DefaultPatterns.URGENCY_PATTERN;
 		}
 		if (isBlank(paymentFirstPattern)) {
-			paymentFirstPattern = DEFAULT_PAYMENT_FIRST_PATTERN;
+			paymentFirstPattern = DefaultPatterns.PAYMENT_FIRST_PATTERN;
 		}
 		if (isBlank(accountDataPattern)) {
-			accountDataPattern = DEFAULT_ACCOUNT_DATA_PATTERN;
+			accountDataPattern = DefaultPatterns.ACCOUNT_DATA_PATTERN;
 		}
 		if (isBlank(tooGoodPattern)) {
-			tooGoodPattern = DEFAULT_TOO_GOOD_PATTERN;
+			tooGoodPattern = DefaultPatterns.TOO_GOOD_PATTERN;
 		}
 		if (isBlank(trustBaitPattern)) {
-			trustBaitPattern = DEFAULT_TRUST_BAIT_PATTERN;
+			trustBaitPattern = DefaultPatterns.TRUST_BAIT_PATTERN;
 		}
 		if (isBlank(externalPlatformPattern)) {
-			externalPlatformPattern = DEFAULT_EXTERNAL_PLATFORM_PATTERN;
-		} else if (LEGACY_EXTERNAL_PLATFORM_PATTERN.equals(externalPlatformPattern)) {
-			externalPlatformPattern = DEFAULT_EXTERNAL_PLATFORM_PATTERN;
+			externalPlatformPattern = DefaultPatterns.EXTERNAL_PLATFORM_PATTERN;
+		} else if (DefaultPatterns.LEGACY_EXTERNAL_PLATFORM_PATTERN.equals(externalPlatformPattern)) {
+			externalPlatformPattern = DefaultPatterns.EXTERNAL_PLATFORM_PATTERN;
 		}
 		if (isBlank(upfrontPaymentBehaviorPattern)) {
-			upfrontPaymentBehaviorPattern = DEFAULT_PAYMENT_FIRST_PATTERN;
+			upfrontPaymentBehaviorPattern = DefaultPatterns.PAYMENT_FIRST_PATTERN;
 		}
 		if (isBlank(accountDataBehaviorPattern)) {
-			accountDataBehaviorPattern = DEFAULT_ACCOUNT_DATA_PATTERN;
+			accountDataBehaviorPattern = DefaultPatterns.ACCOUNT_DATA_PATTERN;
 		}
 		if (isBlank(middlemanPattern)) {
-			middlemanPattern = DEFAULT_MIDDLEMAN_PATTERN;
+			middlemanPattern = DefaultPatterns.MIDDLEMAN_PATTERN;
 		}
 		if (tos == null) {
 			tos = DEFAULT_UPLOAD_TOS_ACCEPTED;
 		}
 		if (isBlank(funnelServiceOfferPattern)) {
-			funnelServiceOfferPattern = DEFAULT_FUNNEL_SERVICE_OFFER_PATTERN;
+			funnelServiceOfferPattern = DefaultPatterns.FUNNEL_SERVICE_OFFER_PATTERN;
 		}
 		if (isBlank(funnelFreeOfferPattern)) {
-			funnelFreeOfferPattern = DEFAULT_FUNNEL_FREE_OFFER_PATTERN;
+			funnelFreeOfferPattern = DefaultPatterns.FUNNEL_FREE_OFFER_PATTERN;
 		}
 		if (isBlank(funnelRepRequestPattern)) {
-			funnelRepRequestPattern = DEFAULT_FUNNEL_REP_REQUEST_PATTERN;
+			funnelRepRequestPattern = DefaultPatterns.FUNNEL_REP_REQUEST_PATTERN;
 		}
 		if (isBlank(funnelPlatformRedirectPattern)) {
-			funnelPlatformRedirectPattern = DEFAULT_FUNNEL_PLATFORM_REDIRECT_PATTERN;
-		} else if (LEGACY_FUNNEL_PLATFORM_REDIRECT_PATTERN.equals(funnelPlatformRedirectPattern)
-			|| LEGACY_FUNNEL_PLATFORM_REDIRECT_PATTERN_V2.equals(funnelPlatformRedirectPattern)) {
-			funnelPlatformRedirectPattern = DEFAULT_FUNNEL_PLATFORM_REDIRECT_PATTERN;
+			funnelPlatformRedirectPattern = DefaultPatterns.FUNNEL_PLATFORM_REDIRECT_PATTERN;
+		} else if (DefaultPatterns.LEGACY_FUNNEL_PLATFORM_REDIRECT_PATTERN.equals(funnelPlatformRedirectPattern)
+			|| DefaultPatterns.LEGACY_FUNNEL_PLATFORM_REDIRECT_PATTERN_V2.equals(funnelPlatformRedirectPattern)) {
+			funnelPlatformRedirectPattern = DefaultPatterns.FUNNEL_PLATFORM_REDIRECT_PATTERN;
 		}
 		if (isBlank(funnelInstructionInjectionPattern)) {
-			funnelInstructionInjectionPattern = DEFAULT_FUNNEL_INSTRUCTION_INJECTION_PATTERN;
+			funnelInstructionInjectionPattern = DefaultPatterns.FUNNEL_INSTRUCTION_INJECTION_PATTERN;
 		}
 		if (isBlank(funnelCommunityAnchorPattern)) {
-			funnelCommunityAnchorPattern = DEFAULT_FUNNEL_COMMUNITY_ANCHOR_PATTERN;
+			funnelCommunityAnchorPattern = DefaultPatterns.FUNNEL_COMMUNITY_ANCHOR_PATTERN;
 		}
 		if (isBlank(funnelNegativeIntentPattern)) {
-			funnelNegativeIntentPattern = DEFAULT_FUNNEL_NEGATIVE_INTENT_PATTERN;
+			funnelNegativeIntentPattern = DefaultPatterns.FUNNEL_NEGATIVE_INTENT_PATTERN;
 		}
 		localAiMaxScore = clampInt(localAiMaxScore, 0, 100, DEFAULT_LOCAL_AI_MAX_SCORE);
 		localAiTriggerProbability = clampDouble(localAiTriggerProbability, 0.0, 1.0, DEFAULT_LOCAL_AI_TRIGGER_PROBABILITY);

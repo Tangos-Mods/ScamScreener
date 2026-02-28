@@ -1,6 +1,7 @@
 package eu.tango.scamscreener.pipeline.stage;
 
 import eu.tango.scamscreener.rules.ScamRules;
+import eu.tango.scamscreener.rules.DefaultPatterns;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,59 +17,9 @@ import org.slf4j.LoggerFactory;
 
 public final class RuleSignalStage {
 	private static final Logger LOGGER = LoggerFactory.getLogger(RuleSignalStage.class);
-	private static final Pattern URGENCY_ALLOWLIST = Pattern.compile("\\b(auction|ah|flip|bin|bid|bidding)\\b");
-	private static final Pattern TRADE_CONTEXT_ALLOWLIST = Pattern.compile("\\b(sell|selling|buy|buying|trade|trading|price|coins?|payment|pay|lf|lb)\\b");
-	private static final Pattern COERCION_THREAT_PATTERN = Pattern.compile(
-		"\\b(?:you\\s+will\\s+not\\s+get\\s+(?:your|ur)\\s+(?:stuff|items?|armor|gear)\\s+back"
-			+ "|you\\s+won\\s+t\\s+get\\s+(?:your|ur)\\s+(?:stuff|items?|armor|gear)\\s+back"
-			+ "|well\\s+then\\s+you\\s+will\\s+not\\s+get\\s+(?:your|ur)\\s+(?:stuff|items?|armor|gear)\\s+back"
-			+ "|unless\\s+you\\s+(?:join|come)\\s+(?:vc|voice\\s+chat|voice\\s+channel|call))\\b"
-	);
-	private static final Pattern DISCORD_HANDLE_PATTERN = Pattern.compile("@[a-z0-9._-]{2,32}");
-	private static final Pattern DISCORD_WORD_PATTERN = Pattern.compile("\\bdiscord\\b");
 	private static final int ENTROPY_MIN_TOKENS = 4;
 	private static final int ENTROPY_MIN_LENGTH = 20;
 	private static final double ENTROPY_THRESHOLD = 2.5;
-	private static final List<String> URGENCY_KEYWORDS = List.of(
-		"now",
-		"quick",
-		"fast",
-		"urgent",
-		"asap",
-		"immediately",
-		"right",
-		"sofort",
-		"jetzt"
-	);
-	private static final List<String> URGENCY_PHRASES = List.of(
-		"right now",
-		"right away",
-		"as soon as possible",
-		"need it now",
-		"need this now",
-		"need this right now",
-		"fast fast",
-		"quick payment"
-	);
-	private static final List<String> TRUST_KEYWORDS = List.of(
-		"trust",
-		"trusted",
-		"legit",
-		"safe",
-		"verified",
-		"vouched",
-		"reputable",
-		"middleman"
-	);
-	private static final List<String> TRUST_PHRASES = List.of(
-		"trust me",
-		"i am legit",
-		"its legit",
-		"it's legit",
-		"safe trade",
-		"trusted middleman",
-		"legit middleman"
-	);
 	private static final int URGENCY_SCORE_THRESHOLD = 2;
 	private static final int TRUST_SCORE_THRESHOLD = 2;
 	private final RuleConfig ruleConfig;
@@ -107,9 +58,9 @@ public final class RuleSignalStage {
 		}
 
 		if (ruleConfig.isEnabled(ScamRules.ScamRule.PRESSURE_AND_URGENCY)) {
-			PhraseScore urgencyScore = scorePhrase(message, URGENCY_KEYWORDS, URGENCY_PHRASES);
+			PhraseScore urgencyScore = scorePhrase(message, DefaultPatterns.URGENCY_KEYWORDS, DefaultPatterns.URGENCY_PHRASES);
 			boolean hasSuspiciousContext = hasSuspiciousContext(message, patterns, behaviorPatterns);
-			String coercionMatch = firstMatch(COERCION_THREAT_PATTERN, message);
+			String coercionMatch = firstMatch(DefaultPatterns.COERCION_THREAT_PATTERN, message);
 			if (coercionMatch != null) {
 				signals.add(new Signal(
 					ScamRules.ScamRule.PRESSURE_AND_URGENCY.name(),
@@ -120,8 +71,8 @@ public final class RuleSignalStage {
 					List.of()
 				));
 			} else if (urgencyScore.score() >= URGENCY_SCORE_THRESHOLD
-				&& !(RegexSafety.safeFind(URGENCY_ALLOWLIST, message, LOGGER, "urgency allowlist") && !hasSuspiciousContext)
-				&& !(RegexSafety.safeFind(TRADE_CONTEXT_ALLOWLIST, message, LOGGER, "trade-context allowlist") && !hasSuspiciousContext)) {
+				&& !(RegexSafety.safeFind(DefaultPatterns.URGENCY_ALLOWLIST_PATTERN, message, LOGGER, "urgency allowlist") && !hasSuspiciousContext)
+				&& !(RegexSafety.safeFind(DefaultPatterns.TRADE_CONTEXT_ALLOWLIST_PATTERN, message, LOGGER, "trade-context allowlist") && !hasSuspiciousContext)) {
 				signals.add(new Signal(
 					ScamRules.ScamRule.PRESSURE_AND_URGENCY.name(),
 					SignalSource.RULE,
@@ -172,7 +123,7 @@ public final class RuleSignalStage {
 		}
 
 		if (ruleConfig.isEnabled(ScamRules.ScamRule.TRUST_MANIPULATION)) {
-			PhraseScore trustScore = scorePhrase(message, TRUST_KEYWORDS, TRUST_PHRASES);
+			PhraseScore trustScore = scorePhrase(message, DefaultPatterns.TRUST_KEYWORDS, DefaultPatterns.TRUST_PHRASES);
 			if (trustScore.score() >= TRUST_SCORE_THRESHOLD) {
 				signals.add(new Signal(
 					ScamRules.ScamRule.TRUST_MANIPULATION.name(),
@@ -203,8 +154,8 @@ public final class RuleSignalStage {
 		}
 
 		if (ruleConfig.isEnabled(ScamRules.ScamRule.DISCORD_HANDLE)) {
-			String handle = firstMatch(DISCORD_HANDLE_PATTERN, message);
-			if (RegexSafety.safeFind(DISCORD_WORD_PATTERN, message, LOGGER, "discord keyword")
+			String handle = firstMatch(DefaultPatterns.DISCORD_HANDLE_PATTERN, message);
+			if (RegexSafety.safeFind(DefaultPatterns.DISCORD_WORD_PATTERN, message, LOGGER, "discord keyword")
 				&& handle != null && !handle.isBlank()) {
 				signals.add(new Signal(
 					ScamRules.ScamRule.DISCORD_HANDLE.name(),

@@ -9,6 +9,7 @@ import eu.tango.scamscreener.pipeline.model.MessageContext;
 import eu.tango.scamscreener.pipeline.model.MessageEvent;
 import eu.tango.scamscreener.pipeline.model.Signal;
 import eu.tango.scamscreener.pipeline.model.SignalSource;
+import eu.tango.scamscreener.rules.DefaultPatterns;
 import eu.tango.scamscreener.rules.ScamRules;
 import org.junit.jupiter.api.Test;
 
@@ -168,27 +169,27 @@ class FunnelSignalStageTest {
 
 	private static final class EnabledRuleConfig implements RuleConfig {
 		private final ScamRules.PatternSet patterns = new ScamRules.PatternSet(
-			Pattern.compile(ScamRulesConfig.DEFAULT_LINK_PATTERN),
-			Pattern.compile(ScamRulesConfig.DEFAULT_URGENCY_PATTERN),
-			Pattern.compile(ScamRulesConfig.DEFAULT_PAYMENT_FIRST_PATTERN),
-			Pattern.compile(ScamRulesConfig.DEFAULT_ACCOUNT_DATA_PATTERN),
-			Pattern.compile(ScamRulesConfig.DEFAULT_TOO_GOOD_PATTERN),
-			Pattern.compile(ScamRulesConfig.DEFAULT_TRUST_BAIT_PATTERN)
+			Pattern.compile(DefaultPatterns.LINK_PATTERN),
+			Pattern.compile(DefaultPatterns.URGENCY_PATTERN),
+			Pattern.compile(DefaultPatterns.PAYMENT_FIRST_PATTERN),
+			Pattern.compile(DefaultPatterns.ACCOUNT_DATA_PATTERN),
+			Pattern.compile(DefaultPatterns.TOO_GOOD_PATTERN),
+			Pattern.compile(DefaultPatterns.TRUST_BAIT_PATTERN)
 		);
 		private final ScamRules.BehaviorPatternSet behaviorPatterns = new ScamRules.BehaviorPatternSet(
-			Pattern.compile(ScamRulesConfig.DEFAULT_EXTERNAL_PLATFORM_PATTERN),
-			Pattern.compile(ScamRulesConfig.DEFAULT_PAYMENT_FIRST_PATTERN),
-			Pattern.compile(ScamRulesConfig.DEFAULT_ACCOUNT_DATA_PATTERN),
-			Pattern.compile(ScamRulesConfig.DEFAULT_MIDDLEMAN_PATTERN)
+			Pattern.compile(DefaultPatterns.EXTERNAL_PLATFORM_PATTERN),
+			Pattern.compile(DefaultPatterns.PAYMENT_FIRST_PATTERN),
+			Pattern.compile(DefaultPatterns.ACCOUNT_DATA_PATTERN),
+			Pattern.compile(DefaultPatterns.MIDDLEMAN_PATTERN)
 		);
 		private final ScamRules.FunnelConfig funnelConfig = new ScamRules.FunnelConfig(
-			Pattern.compile(ScamRulesConfig.DEFAULT_FUNNEL_SERVICE_OFFER_PATTERN),
-			Pattern.compile(ScamRulesConfig.DEFAULT_FUNNEL_FREE_OFFER_PATTERN),
-			Pattern.compile(ScamRulesConfig.DEFAULT_FUNNEL_REP_REQUEST_PATTERN),
-			Pattern.compile(ScamRulesConfig.DEFAULT_FUNNEL_PLATFORM_REDIRECT_PATTERN),
-			Pattern.compile(ScamRulesConfig.DEFAULT_FUNNEL_INSTRUCTION_INJECTION_PATTERN),
-			Pattern.compile(ScamRulesConfig.DEFAULT_FUNNEL_COMMUNITY_ANCHOR_PATTERN),
-			Pattern.compile(ScamRulesConfig.DEFAULT_FUNNEL_NEGATIVE_INTENT_PATTERN),
+			Pattern.compile(DefaultPatterns.FUNNEL_SERVICE_OFFER_PATTERN),
+			Pattern.compile(DefaultPatterns.FUNNEL_FREE_OFFER_PATTERN),
+			Pattern.compile(DefaultPatterns.FUNNEL_REP_REQUEST_PATTERN),
+			Pattern.compile(DefaultPatterns.FUNNEL_PLATFORM_REDIRECT_PATTERN),
+			Pattern.compile(DefaultPatterns.FUNNEL_INSTRUCTION_INJECTION_PATTERN),
+			Pattern.compile(DefaultPatterns.FUNNEL_COMMUNITY_ANCHOR_PATTERN),
+			Pattern.compile(DefaultPatterns.FUNNEL_NEGATIVE_INTENT_PATTERN),
 			ScamRulesConfig.DEFAULT_FUNNEL_WINDOW_SIZE,
 			ScamRulesConfig.DEFAULT_FUNNEL_WINDOW_MILLIS,
 			ScamRulesConfig.DEFAULT_FUNNEL_CONTEXT_TTL_MILLIS,

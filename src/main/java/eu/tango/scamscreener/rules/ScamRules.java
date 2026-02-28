@@ -387,12 +387,12 @@ public class ScamRules {
 	) {
 		private static PatternSet from(ScamRulesConfig config) {
 			return new PatternSet(
-				compileOrDefault(config.linkPattern, ScamRulesConfig.DEFAULT_LINK_PATTERN),
-				compileOrDefault(config.urgencyPattern, ScamRulesConfig.DEFAULT_URGENCY_PATTERN),
-				compileOrDefault(config.paymentFirstPattern, ScamRulesConfig.DEFAULT_PAYMENT_FIRST_PATTERN),
-				compileOrDefault(config.accountDataPattern, ScamRulesConfig.DEFAULT_ACCOUNT_DATA_PATTERN),
-				compileOrDefault(config.tooGoodPattern, ScamRulesConfig.DEFAULT_TOO_GOOD_PATTERN),
-				compileOrDefault(config.trustBaitPattern, ScamRulesConfig.DEFAULT_TRUST_BAIT_PATTERN)
+				compileOrDefault(config.linkPattern, DefaultPatterns.LINK_PATTERN),
+				compileOrDefault(config.urgencyPattern, DefaultPatterns.URGENCY_PATTERN),
+				compileOrDefault(config.paymentFirstPattern, DefaultPatterns.PAYMENT_FIRST_PATTERN),
+				compileOrDefault(config.accountDataPattern, DefaultPatterns.ACCOUNT_DATA_PATTERN),
+				compileOrDefault(config.tooGoodPattern, DefaultPatterns.TOO_GOOD_PATTERN),
+				compileOrDefault(config.trustBaitPattern, DefaultPatterns.TRUST_BAIT_PATTERN)
 			);
 		}
 	}
@@ -405,10 +405,10 @@ public class ScamRules {
 	) {
 		private static BehaviorPatternSet from(ScamRulesConfig config) {
 			return new BehaviorPatternSet(
-				compileOrDefault(config.externalPlatformPattern, ScamRulesConfig.DEFAULT_EXTERNAL_PLATFORM_PATTERN),
-				compileOrDefault(config.upfrontPaymentBehaviorPattern, ScamRulesConfig.DEFAULT_PAYMENT_FIRST_PATTERN),
-				compileOrDefault(config.accountDataBehaviorPattern, ScamRulesConfig.DEFAULT_ACCOUNT_DATA_PATTERN),
-				compileOrDefault(config.middlemanPattern, ScamRulesConfig.DEFAULT_MIDDLEMAN_PATTERN)
+				compileOrDefault(config.externalPlatformPattern, DefaultPatterns.EXTERNAL_PLATFORM_PATTERN),
+				compileOrDefault(config.upfrontPaymentBehaviorPattern, DefaultPatterns.PAYMENT_FIRST_PATTERN),
+				compileOrDefault(config.accountDataBehaviorPattern, DefaultPatterns.ACCOUNT_DATA_PATTERN),
+				compileOrDefault(config.middlemanPattern, DefaultPatterns.MIDDLEMAN_PATTERN)
 			);
 		}
 	}
@@ -429,13 +429,13 @@ public class ScamRules {
 	) {
 		private static FunnelConfig from(ScamRulesConfig config) {
 			return new FunnelConfig(
-				compileOrDefault(config.funnelServiceOfferPattern, ScamRulesConfig.DEFAULT_FUNNEL_SERVICE_OFFER_PATTERN),
-				compileOrDefault(config.funnelFreeOfferPattern, ScamRulesConfig.DEFAULT_FUNNEL_FREE_OFFER_PATTERN),
-				compileOrDefault(config.funnelRepRequestPattern, ScamRulesConfig.DEFAULT_FUNNEL_REP_REQUEST_PATTERN),
-				compileOrDefault(config.funnelPlatformRedirectPattern, ScamRulesConfig.DEFAULT_FUNNEL_PLATFORM_REDIRECT_PATTERN),
-				compileOrDefault(config.funnelInstructionInjectionPattern, ScamRulesConfig.DEFAULT_FUNNEL_INSTRUCTION_INJECTION_PATTERN),
-				compileOrDefault(config.funnelCommunityAnchorPattern, ScamRulesConfig.DEFAULT_FUNNEL_COMMUNITY_ANCHOR_PATTERN),
-				compileOrDefault(config.funnelNegativeIntentPattern, ScamRulesConfig.DEFAULT_FUNNEL_NEGATIVE_INTENT_PATTERN),
+				compileOrDefault(config.funnelServiceOfferPattern, DefaultPatterns.FUNNEL_SERVICE_OFFER_PATTERN),
+				compileOrDefault(config.funnelFreeOfferPattern, DefaultPatterns.FUNNEL_FREE_OFFER_PATTERN),
+				compileOrDefault(config.funnelRepRequestPattern, DefaultPatterns.FUNNEL_REP_REQUEST_PATTERN),
+				compileOrDefault(config.funnelPlatformRedirectPattern, DefaultPatterns.FUNNEL_PLATFORM_REDIRECT_PATTERN),
+				compileOrDefault(config.funnelInstructionInjectionPattern, DefaultPatterns.FUNNEL_INSTRUCTION_INJECTION_PATTERN),
+				compileOrDefault(config.funnelCommunityAnchorPattern, DefaultPatterns.FUNNEL_COMMUNITY_ANCHOR_PATTERN),
+				compileOrDefault(config.funnelNegativeIntentPattern, DefaultPatterns.FUNNEL_NEGATIVE_INTENT_PATTERN),
 				config.funnelWindowSize,
 				config.funnelWindowMillis,
 				config.funnelContextTtlMillis,

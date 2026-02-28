@@ -1,6 +1,21 @@
 # Changelog
 All notable changes to this project are documented in this file.
 
+## [1.3.4] - 2026-02-28
+
+### Added
+- Added focused tests for regex-aware AI feature matching and centralized default account-data pattern matching.
+
+### Changed
+- Bumped mod version from `1.3.3` to `1.3.4`.
+- Centralized the shared default detection regexes, compiled patterns, and keyword hint lists in `DefaultPatterns`.
+- Rule config, rule fallback compilation, behavior analysis, rule scoring, and intent tagging now read their shared defaults from the same pattern source instead of duplicating definitions.
+- Account-data matching now only treats `code` as suspicious when it appears together with `give` or `gimme`, reducing context-free false positives.
+- AI account keyword matching now supports inline `re:` regex entries for context-sensitive checks in `AiFeatureSpace`.
+
+### Fixed
+- Fixed the default account-data regex so `re:` is no longer treated as a literal prefix when rule patterns are compiled.
+
 ## [1.3.3] - 2026-02-23
 
 ### Added

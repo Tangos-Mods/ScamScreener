@@ -1,5 +1,6 @@
 package eu.tango.scamscreener.pipeline.core;
 
+import eu.tango.scamscreener.rules.DefaultPatterns;
 import eu.tango.scamscreener.rules.ScamRules;
 import eu.tango.scamscreener.util.RegexSafety;
 import eu.tango.scamscreener.util.TextUtil;
@@ -14,8 +15,6 @@ public final class BehaviorAnalyzer {
 	private String lastPlayerKey;
 	private int consecutiveCount;
 	private final java.util.List<String> consecutiveMessages = new java.util.ArrayList<>();
-	private static final java.util.regex.Pattern DISCORD_HANDLE_PATTERN = java.util.regex.Pattern.compile("@[a-z0-9._-]{2,32}");
-	private static final java.util.regex.Pattern DISCORD_WORD_PATTERN = java.util.regex.Pattern.compile("\\bdiscord\\b");
 
 	/**
 	 * Extracts behavior flags from each chat line (e.g. external platform push).
@@ -63,8 +62,8 @@ public final class BehaviorAnalyzer {
 		lastPlayerKey = playerKey;
 
 		ScamRules.BehaviorPatternSet patterns = ruleConfig.behaviorPatterns();
-		boolean hasDiscordHandle = RegexSafety.safeFind(DISCORD_WORD_PATTERN, normalized, LOGGER, "behavior discord keyword")
-			&& RegexSafety.safeFind(DISCORD_HANDLE_PATTERN, normalized, LOGGER, "behavior discord handle");
+		boolean hasDiscordHandle = RegexSafety.safeFind(DefaultPatterns.DISCORD_WORD_PATTERN, normalized, LOGGER, "behavior discord keyword")
+			&& RegexSafety.safeFind(DefaultPatterns.DISCORD_HANDLE_PATTERN, normalized, LOGGER, "behavior discord handle");
 		return new BehaviorAnalysis(
 			event.rawMessage(),
 			normalized,

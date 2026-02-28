@@ -119,11 +119,12 @@ val minecraftTargets = (property("mod.mc_targets") as String)
 publishMods {
 	val modrinthToken = providers.environmentVariable("MODRINTH_TOKEN")
 	val curseforgeToken = providers.environmentVariable("CURSEFORGE_TOKEN")
+	val publishVersion = project.version.toString()
 
 	file = tasks.remapJar.map { it.archiveFile.get() }
 	additionalFiles.from(tasks.remapSourcesJar.map { it.archiveFile.get() })
 	displayName = "${property("mod.name")} ${property("mod.version")} for ${stonecutter.current.version}"
-	version = property("mod.version") as String
+	version = publishVersion
 	changelog = rootProject.file("MODRINTH.md").readText()
 	type = STABLE
 	modLoaders.add("fabric")
@@ -133,7 +134,7 @@ publishMods {
 	modrinth {
 		projectId = property("publish.modrinth") as String
 		accessToken = modrinthToken
-		projectDescription = rootProject.file("SPOTLIGHT.md").readText()
+		// projectDescription = rootProject.file("SPOTLIGHT.md").readText()
 		minecraftTargets.forEach(minecraftVersions::add)
 		requires {
 			slug = "P7dR8mSH" // Fabric API
