@@ -134,6 +134,34 @@ Place the mod JAR in your `mods/` folder and start the game.
 
 Artifact output: `build/libs/`
 
+## Mod API (Developer)
+
+Other mods can depend on ScamScreener and query its public API through the Fabric custom entrypoint `scamscreener-api`.
+
+Example:
+
+```java
+import eu.tango.scamscreener.api.ScamScreenerApi;
+import net.fabricmc.loader.api.FabricLoader;
+
+ScamScreenerApi api = FabricLoader.getInstance()
+	.getEntrypoints(ScamScreenerApi.ENTRYPOINT_KEY, ScamScreenerApi.class)
+	.stream()
+	.findFirst()
+	.orElseThrow();
+
+api.whitelist().addOrUpdate(uuid, "TrustedPlayer");
+api.blacklist().add(uuid, "KnownScammer", 75, "manual-entry");
+```
+
+Currently exposed:
+
+- `whitelist()` for reading/updating the live ScamScreener whitelist
+- `blacklist()` for reading/updating the live ScamScreener blacklist
+- `extension(Class<T>)` as a forward-compatible hook for future API surfaces
+
+If your mod only integrates optionally, check whether the `scam-screener` mod is loaded before requesting the entrypoint.
+
 ## Commands
 
 ### General

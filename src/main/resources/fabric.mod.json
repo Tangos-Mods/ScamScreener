@@ -22,6 +22,9 @@
 		"client": [
 			"eu.tango.scamscreener.ScamScreenerClient"
 		],
+		"scamscreener-api": [
+			"eu.tango.scamscreener.ScamScreenerApiEntrypoint"
+		],
 		"modmenu": [
 			"eu.tango.scamscreener.modmenu.ScamScreenerModMenuApi"
 		]

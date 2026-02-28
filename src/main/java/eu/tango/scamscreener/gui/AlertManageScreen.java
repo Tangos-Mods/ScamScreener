@@ -412,21 +412,6 @@ public final class AlertManageScreen extends ScamScreenerGUI {
 		return count;
 	}
 
-	private static List<ReviewRow> toLegacyRows(List<String> sourceMessages) {
-		if (sourceMessages == null || sourceMessages.isEmpty()) {
-			return List.of();
-		}
-		List<ReviewRow> out = new ArrayList<>();
-		for (int i = 0; i < sourceMessages.size(); i++) {
-			String message = normalizeReviewMessage(sourceMessages.get(i));
-			if (message.isBlank()) {
-				continue;
-			}
-			out.add(new ReviewRow("alert-" + i, message, -1, 0));
-		}
-		return out;
-	}
-
 	private static List<ReviewRow> sanitizeRows(List<ReviewRow> input) {
 		if (input == null || input.isEmpty()) {
 			return List.of();

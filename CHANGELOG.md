@@ -1,20 +1,26 @@
 # Changelog
 All notable changes to this project are documented in this file.
 
-## [1.3.4] - 2026-02-28
+## [1.4.0] - 2026-02-28
 
 ### Added
 - Added focused tests for regex-aware AI feature matching and centralized default account-data pattern matching.
+- Added a public Fabric custom entrypoint API (`scamscreener-api`) so other mods can access ScamScreener's live whitelist and blacklist.
 
 ### Changed
-- Bumped mod version from `1.3.3` to `1.3.4`.
+- Bumped mod version from `1.3.4` to `1.4.0`.
 - Centralized the shared default detection regexes, compiled patterns, and keyword hint lists in `DefaultPatterns`.
 - Rule config, rule fallback compilation, behavior analysis, rule scoring, and intent tagging now read their shared defaults from the same pattern source instead of duplicating definitions.
 - Account-data matching now only treats `code` as suspicious when it appears together with `give` or `gimme`, reducing context-free false positives.
 - AI account keyword matching now supports inline `re:` regex entries for context-sensitive checks in `AiFeatureSpace`.
+- README now documents how dependency mods can consume the new custom entrypoint API.
 
 ### Fixed
 - Fixed the default account-data regex so `re:` is no longer treated as a literal prefix when rule patterns are compiled.
+
+### Removed
+- Removed the old static API gateway and the unused internal API implementation leftover after switching to the custom entrypoint provider.
+- Removed the unused legacy review-row conversion helper from `AlertManageScreen`.
 
 ## [1.3.3] - 2026-02-23
 

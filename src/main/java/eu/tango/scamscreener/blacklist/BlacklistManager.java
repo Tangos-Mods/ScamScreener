@@ -2,6 +2,7 @@ package eu.tango.scamscreener.blacklist;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import eu.tango.scamscreener.api.BlacklistAccess;
 import eu.tango.scamscreener.config.ScamScreenerPaths;
 
 import java.io.IOException;
@@ -20,7 +21,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 
-public final class BlacklistManager {
+public final class BlacklistManager implements BlacklistAccess {
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 	private static final String DEFAULT_NAME = "unknown";
 	private static final String DEFAULT_REASON = "manual-entry";

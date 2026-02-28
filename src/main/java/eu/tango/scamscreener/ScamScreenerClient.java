@@ -1,5 +1,7 @@
 package eu.tango.scamscreener;
 
+import eu.tango.scamscreener.api.BlacklistAccess;
+import eu.tango.scamscreener.api.WhitelistAccess;
 import eu.tango.scamscreener.ai.LocalAiScorer;
 import eu.tango.scamscreener.ai.ModelUpdateService;
 import eu.tango.scamscreener.ai.TrainingDataService;
@@ -76,6 +78,7 @@ public class ScamScreenerClient implements ClientModInitializer {
 	private static final BlacklistManager BLACKLIST = new BlacklistManager();
 	private static final WhitelistManager WHITELIST = new WhitelistManager();
 	private static final Logger LOGGER = LoggerFactory.getLogger(ScamScreenerClient.class);
+	private static boolean sharedListsLoaded;
 	private static ScamScreenerClient INSTANCE;
 	private final PlayerLookup playerLookup = new PlayerLookup();
 	private final MojangProfileService mojangProfileService = new MojangProfileService();
@@ -114,8 +117,7 @@ public class ScamScreenerClient implements ClientModInitializer {
 	public void onInitializeClient() {
 		INSTANCE = this;
 		AsyncDispatcher.init();
-		BLACKLIST.load();
-		WHITELIST.load();
+		ensureSharedListsLoaded();
 		ScamRules.reloadConfig();
 		autoLeaveOnBlacklist = ScamRulesConfig.loadOrCreate().autoLeaveOnBlacklist;
 		mutePatternManager.load();
@@ -231,6 +233,25 @@ public class ScamScreenerClient implements ClientModInitializer {
 			return parent;
 		}
 		return instance.createMainSettingsScreen(parent);
+	}
+
+	static WhitelistAccess sharedWhitelistAccess() {
+		ensureSharedListsLoaded();
+		return WHITELIST;
+	}
+
+	static BlacklistAccess sharedBlacklistAccess() {
+		ensureSharedListsLoaded();
+		return BLACKLIST;
+	}
+
+	private static synchronized void ensureSharedListsLoaded() {
+		if (sharedListsLoaded) {
+			return;
+		}
+		BLACKLIST.load();
+		WHITELIST.load();
+		sharedListsLoaded = true;
 	}
 
 	private MainSettingsScreen createMainSettingsScreen(Screen parent) {

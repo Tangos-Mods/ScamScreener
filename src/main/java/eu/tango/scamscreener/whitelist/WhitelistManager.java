@@ -2,6 +2,7 @@ package eu.tango.scamscreener.whitelist;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import eu.tango.scamscreener.api.WhitelistAccess;
 import eu.tango.scamscreener.config.ScamScreenerPaths;
 
 import java.io.IOException;
@@ -21,7 +22,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 
-public final class WhitelistManager {
+public final class WhitelistManager implements WhitelistAccess {
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 	private static final String DEFAULT_NAME = "unknown";
 
