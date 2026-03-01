@@ -1,0 +1,59 @@
+# gradle
+
+.gradle/
+build/
+out/
+classes/
+
+# eclipse
+
+*.launch
+
+# idea
+
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# vscode
+
+.settings/
+.vscode/
+.fleet/
+.run/
+bin/
+.classpath
+.project
+
+# macos
+
+*.DS_Store
+Thumbs.db
+Desktop.ini
+
+# fabric
+
+run/
+logs/
+crash-reports/
+
+# java
+
+hs_err_*.log
+replay_*.log
+*.hprof
+*.jfr
+
+# local files
+
+.env
+.env.*
+*.local
+*.tmp
+*.temp
+*.bak
+*.orig
+*.rej
+*.swp
+*.swo

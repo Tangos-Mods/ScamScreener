@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "id": "${id}",
+  "version": "${version}",
+  "name": "${name}",
+  "description": "ScamScreener for Fabric.",
+  "authors": [
+    "Me!"
+  ],
+  "contact": {},
+  "license": "CC0-1.0",
+  "icon": "assets/scamscreener/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "eu.tango.scamscreener.ScamScreenerMod"
+    ],
+    "scamscreener-api": [
+      "eu.tango.scamscreener.api.ScamScreenerApiEntrypoint"
+    ],
+    "modmenu": [
+      "eu.tango.scamscreener.modmenu.ScamScreenerModMenuApi"
+    ]
+  },
+  "accessWidener": "scamscreener.accesswidener",
+  "depends": {
+    "fabricloader": ">=0.17",
+    "minecraft": "${minecraft}",
+    "fabric-message-api-v1": "*"
+  },
+  "suggests": {
+    "modmenu": "*"
+  }
+}
