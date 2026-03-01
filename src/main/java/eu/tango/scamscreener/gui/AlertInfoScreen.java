@@ -234,7 +234,7 @@ public final class AlertInfoScreen extends ScamScreenerGUI {
 		SIMILARITY("Similarity Stage", ChatFormatting.LIGHT_PURPLE),
 		TREND("Trend Stage", ChatFormatting.BLUE),
 		FUNNEL("Funnel Stage", ChatFormatting.DARK_AQUA),
-		AI("AI Stage", ChatFormatting.GREEN),
+		MODEL("Model Stage", ChatFormatting.GREEN),
 		OTHER("Other Stage", ChatFormatting.DARK_GRAY);
 
 		private final String label;
@@ -272,7 +272,7 @@ public final class AlertInfoScreen extends ScamScreenerGUI {
 				case MULTI_MESSAGE_PATTERN -> TREND;
 				case FUNNEL_SEQUENCE_PATTERN -> FUNNEL;
 				case LOCAL_AI_RISK_SIGNAL,
-					LOCAL_AI_FUNNEL_SIGNAL -> AI;
+					LOCAL_AI_FUNNEL_SIGNAL -> MODEL;
 			};
 		}
 	}

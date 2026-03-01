@@ -28,6 +28,7 @@ public final class Messages extends MessageBuilder {
 	private static final int PREFIX_LIGHT_RED = DEFAULT_PREFIX_COLOR;
 	private static final String FANDOM_WEBSITE_URL_SCAM = "https://hypixel-skyblock.fandom.com/wiki/Scams";
 	private static final String SKYBLOCK_ENHANCED_DISCORD_URL = "https://discord.gg/uzbJnXbfvA";
+	private static final String MODEL_COMMAND_ROOT = "/scamscreener model";
 
 	private Messages() {
 	}
@@ -239,7 +240,7 @@ public final class Messages extends MessageBuilder {
 
 	public static MutableComponent modelUpdateUpToDate() {
 		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
-			.append(Component.literal("AI model is already up to date.").withStyle(ChatFormatting.GRAY));
+			.append(Component.literal("Local model is already up to date.").withStyle(ChatFormatting.GRAY));
 	}
 
 	public static MutableComponent modelUpdateCheckFailed(String errorMessage) {
@@ -257,7 +258,7 @@ public final class Messages extends MessageBuilder {
 			.withColor(ChatFormatting.YELLOW)
 			.withClickEvent(new ClickEvent.RunCommand(command == null ? "" : command))
 			.withHoverEvent(new HoverEvent.ShowText(Component.literal("Download model update")));
-		return Component.literal("A new AI Model is available. Click to update your local model.")
+		return Component.literal("A new model update is available. Click to download it.")
 			.setStyle(style);
 	}
 
@@ -315,18 +316,18 @@ public final class Messages extends MessageBuilder {
 
 	public static MutableComponent aiUpdateJoinNotifyStatus(boolean enabled) {
 		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
-			.append(Component.literal("AI up-to-date message on server join: ").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal("Model up-to-date message on server join: ").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal(enabled ? "ON" : "OFF").withStyle(enabled ? ChatFormatting.GOLD : ChatFormatting.YELLOW));
 	}
 
 	public static MutableComponent aiUpdateJoinNotifyEnabled() {
 		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
-			.append(Component.literal("AI up-to-date message on server join enabled.").withStyle(ChatFormatting.GRAY));
+			.append(Component.literal("Model up-to-date message on server join enabled.").withStyle(ChatFormatting.GRAY));
 	}
 
 	public static MutableComponent aiUpdateJoinNotifyDisabled() {
 		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
-			.append(Component.literal("AI up-to-date message on server join disabled.").withStyle(ChatFormatting.GRAY));
+			.append(Component.literal("Model up-to-date message on server join disabled.").withStyle(ChatFormatting.GRAY));
 	}
 
 	public static MutableComponent trainingUploadJoinDiscordPrompt(String path) {
@@ -386,9 +387,10 @@ public final class Messages extends MessageBuilder {
 			.append(Component.literal("\n- /scamscreener unmute <pattern>").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener autoleave [on|off]").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener upload").withStyle(ChatFormatting.GRAY))
-			.append(Component.literal("\n- /scamscreener ai reset").withStyle(ChatFormatting.GRAY))
-			.append(Component.literal("\n- /scamscreener ai metrics [reset]").withStyle(ChatFormatting.GRAY))
-			.append(Component.literal("\n- /scamscreener ai autocapture [off|low|medium|high|critical]").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal("\n- " + MODEL_COMMAND_ROOT).withStyle(ChatFormatting.GRAY))
+			.append(Component.literal("\n- " + MODEL_COMMAND_ROOT + " reset").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal("\n- " + MODEL_COMMAND_ROOT + " metrics [reset]").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal("\n- " + MODEL_COMMAND_ROOT + " autocapture [off|low|medium|high|critical]").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener rules <list|disable|enable> [rule]").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener alertlevel [low|medium|high|critical]").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener review <manage|info> <alertId>").withStyle(ChatFormatting.GRAY))
@@ -558,21 +560,24 @@ public final class Messages extends MessageBuilder {
 		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
 			.append(Component.literal("Mod Version: ").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal(modVersion == null ? "unknown" : modVersion).withStyle(ChatFormatting.GOLD))
-			.append(Component.literal(" | AI Model Version: ").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal(" | Model Version: ").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal(String.valueOf(aiVersion)).withStyle(ChatFormatting.AQUA));
 	}
 
 	public static MutableComponent aiCommandHelp() {
 		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
-			.append(Component.literal("AI Commands:").withStyle(ChatFormatting.GRAY))
-			.append(Component.literal("\n- /scamscreener ai flag <messageId> <legit|scam>").withStyle(ChatFormatting.GRAY))
-			.append(Component.literal("\n- /scamscreener ai migrate").withStyle(ChatFormatting.GRAY))
-			.append(Component.literal("\n- /scamscreener ai update notify [on|off]").withStyle(ChatFormatting.GRAY))
-			.append(Component.literal("\n- /scamscreener ai model <download|accept|merge|ignore> <id>").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal("Model Commands:").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal("\n- " + MODEL_COMMAND_ROOT).withStyle(ChatFormatting.GRAY))
+			.append(Component.literal("\n- " + MODEL_COMMAND_ROOT + " flag <messageId> <legit|scam>").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal("\n- " + MODEL_COMMAND_ROOT + " migrate").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal("\n- " + MODEL_COMMAND_ROOT + " update").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal("\n- " + MODEL_COMMAND_ROOT + " update force").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal("\n- " + MODEL_COMMAND_ROOT + " update notify [on|off]").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal("\n- " + MODEL_COMMAND_ROOT + " <download|accept|merge|ignore> <id>").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal("\n- /scamscreener upload").withStyle(ChatFormatting.GRAY))
-			.append(Component.literal("\n- /scamscreener ai reset").withStyle(ChatFormatting.GRAY))
-			.append(Component.literal("\n- /scamscreener ai metrics [reset]").withStyle(ChatFormatting.GRAY))
-			.append(Component.literal("\n- /scamscreener ai autocapture [off|low|medium|high|critical]").withStyle(ChatFormatting.GRAY));
+			.append(Component.literal("\n- " + MODEL_COMMAND_ROOT + " reset").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal("\n- " + MODEL_COMMAND_ROOT + " metrics [reset]").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal("\n- " + MODEL_COMMAND_ROOT + " autocapture [off|low|medium|high|critical]").withStyle(ChatFormatting.GRAY));
 	}
 
 	public static MutableComponent reviewCommandHelp() {
@@ -785,7 +790,7 @@ public final class Messages extends MessageBuilder {
 	public static MutableComponent aiCaptureCommandHelp() {
 		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
 			.append(Component.literal("Usage: ").withStyle(ChatFormatting.GRAY))
-			.append(Component.literal("/scamscreener ai flag <messageId> <legit|scam>").withStyle(ChatFormatting.GRAY));
+			.append(Component.literal(MODEL_COMMAND_ROOT + " flag <messageId> <legit|scam>").withStyle(ChatFormatting.GRAY));
 	}
 
 	public static MutableComponent ruleCommandHelp() {
@@ -841,7 +846,7 @@ public final class Messages extends MessageBuilder {
 
 	public static MutableComponent localAiModelReset() {
 		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
-			.append(Component.literal("Local AI model was reset to default weights.").withStyle(ChatFormatting.GRAY));
+			.append(Component.literal("Local model was reset to default weights.").withStyle(ChatFormatting.GRAY));
 	}
 
 	public static MutableComponent funnelMetricsSummary(FunnelMetricsService.Snapshot snapshot) {
@@ -892,13 +897,13 @@ public final class Messages extends MessageBuilder {
 
 	public static MutableComponent currentAutoCaptureAlertLevel(String level) {
 		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
-			.append(Component.literal("Auto-capture on alerts: ").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal("Review auto-capture on alerts: ").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal(level == null ? "HIGH" : level).withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD));
 	}
 
 	public static MutableComponent updatedAutoCaptureAlertLevel(String level) {
 		return prefixedMessage(PREFIX, PREFIX_LIGHT_RED)
-			.append(Component.literal("Auto-capture level updated to ").withStyle(ChatFormatting.GRAY))
+			.append(Component.literal("Review auto-capture level updated to ").withStyle(ChatFormatting.GRAY))
 			.append(Component.literal(level == null ? "HIGH" : level).withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD))
 			.append(Component.literal(".").withStyle(ChatFormatting.GRAY));
 	}
@@ -907,8 +912,8 @@ public final class Messages extends MessageBuilder {
 		return buildError(
 			PREFIX,
 			PREFIX_LIGHT_RED,
-			"Invalid auto-capture level.",
-			"AI-CAPTURE-001",
+			"Invalid review auto-capture level.",
+			"AUTO-CAPTURE-001",
 			"Use: off, low, medium, high, critical."
 		);
 	}

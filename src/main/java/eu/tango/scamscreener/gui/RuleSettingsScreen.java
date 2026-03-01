@@ -1,6 +1,7 @@
 package eu.tango.scamscreener.gui;
 
 import eu.tango.scamscreener.rules.ScamRules;
+import eu.tango.scamscreener.ui.MessageBuilder;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -53,27 +54,7 @@ final class RuleSettingsScreen extends ScamScreenerGUI {
 		for (Map.Entry<ScamRules.ScamRule, Button> entry : ruleButtons.entrySet()) {
 			ScamRules.ScamRule rule = entry.getKey();
 			boolean enabled = ScamRules.isRuleEnabled(rule);
-			entry.getValue().setMessage(Component.literal(readableRuleName(rule) + ": ").append(onOffComponent(enabled)));
+			entry.getValue().setMessage(Component.literal(MessageBuilder.readableRuleName(rule) + ": ").append(onOffComponent(enabled)));
 		}
-	}
-
-	private static String readableRuleName(ScamRules.ScamRule rule) {
-		return switch (rule) {
-			case SUSPICIOUS_LINK -> "Suspicious Link";
-			case PRESSURE_AND_URGENCY -> "Pressure/Urgency";
-			case UPFRONT_PAYMENT -> "Upfront Payment";
-			case ACCOUNT_DATA_REQUEST -> "Account Data";
-			case EXTERNAL_PLATFORM_PUSH -> "External Platform";
-			case DISCORD_HANDLE -> "Discord Handle";
-			case FAKE_MIDDLEMAN_CLAIM -> "Fake Middleman";
-			case TOO_GOOD_TO_BE_TRUE -> "Too Good To Be True";
-			case TRUST_MANIPULATION -> "Trust Manipulation";
-			case SPAMMY_CONTACT_PATTERN -> "Spam Contact";
-			case MULTI_MESSAGE_PATTERN -> "Multi Message";
-			case FUNNEL_SEQUENCE_PATTERN -> "Funnel Sequence";
-			case SIMILARITY_MATCH -> "Similarity Match";
-			case LOCAL_AI_RISK_SIGNAL -> "Local AI Signal";
-			case LOCAL_AI_FUNNEL_SIGNAL -> "Local AI Funnel Signal";
-		};
 	}
 }

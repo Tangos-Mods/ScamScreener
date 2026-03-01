@@ -19,6 +19,15 @@ final class AiCommand {
 	private AiCommand() {
 	}
 
+	private static LiteralArgumentBuilder<FabricClientCommandSource> modelAction(
+		String action,
+		ScamScreenerCommands.ModelUpdateHandler modelUpdateHandler
+	) {
+		return ClientCommandManager.literal(action)
+			.then(ClientCommandManager.argument("id", StringArgumentType.word())
+				.executes(context -> modelUpdateHandler.handle(action, StringArgumentType.getString(context, "id"))));
+	}
+
 	static LiteralArgumentBuilder<FabricClientCommandSource> build(
 		ScamScreenerCommands.CaptureByMessageHandler captureByMessageHandler,
 		ScamScreenerCommands.MigrateTrainingHandler migrateTrainingHandler,
@@ -38,20 +47,6 @@ final class AiCommand {
 
 		LiteralArgumentBuilder<FabricClientCommandSource> migrate = ClientCommandManager.literal("migrate")
 			.executes(context -> migrateTrainingHandler.migrate());
-
-		LiteralArgumentBuilder<FabricClientCommandSource> model = ClientCommandManager.literal("model")
-			.then(ClientCommandManager.literal("download")
-				.then(ClientCommandManager.argument("id", StringArgumentType.word())
-					.executes(context -> modelUpdateHandler.handle("download", StringArgumentType.getString(context, "id")))))
-			.then(ClientCommandManager.literal("accept")
-				.then(ClientCommandManager.argument("id", StringArgumentType.word())
-					.executes(context -> modelUpdateHandler.handle("accept", StringArgumentType.getString(context, "id")))))
-			.then(ClientCommandManager.literal("merge")
-				.then(ClientCommandManager.argument("id", StringArgumentType.word())
-					.executes(context -> modelUpdateHandler.handle("merge", StringArgumentType.getString(context, "id")))))
-			.then(ClientCommandManager.literal("ignore")
-				.then(ClientCommandManager.argument("id", StringArgumentType.word())
-					.executes(context -> modelUpdateHandler.handle("ignore", StringArgumentType.getString(context, "id")))));
 
 		LiteralArgumentBuilder<FabricClientCommandSource> update = ClientCommandManager.literal("update")
 			.executes(context -> updateCheckHandler.check(false))
@@ -79,15 +74,18 @@ final class AiCommand {
 			.then(ClientCommandManager.literal("reset")
 				.executes(context -> funnelMetricsResetHandler.getAsInt()));
 
-		return ClientCommandManager.literal("ai")
+		return ClientCommandManager.literal("model")
 			.executes(context -> {
 				reply.accept(Messages.aiCommandHelp());
 				return 1;
 			})
 			.then(flag)
 			.then(migrate)
-			.then(model)
 			.then(update)
+			.then(modelAction("download", modelUpdateHandler))
+			.then(modelAction("accept", modelUpdateHandler))
+			.then(modelAction("merge", modelUpdateHandler))
+			.then(modelAction("ignore", modelUpdateHandler))
 			.then(metrics)
 			.then(ClientCommandManager.literal("reset").executes(context -> resetAiHandler.getAsInt()))
 			.then(ClientCommandManager.literal("autocapture")
@@ -109,7 +107,7 @@ final class AiCommand {
 						String input = StringArgumentType.getString(context, "level");
 						String updated = ScamRules.setAutoCaptureAlertLevelSetting(input);
 						if (updated == null) {
-							// Code: AI-CAPTURE-001
+							// Code: AUTO-CAPTURE-001
 							reply.accept(Messages.invalidAutoCaptureAlertLevel());
 							return 0;
 						}

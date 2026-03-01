@@ -51,13 +51,13 @@ Open `/ss` and configure these first:
 
 1. `Alert Threshold`
    - Start with `MEDIUM` for balanced warnings.
-2. `AI Auto-Capture`
+2. `Review Auto-Capture`
    - Start with `OFF` or `HIGH` if you want conservative automatic sample capture.
 3. `Auto /p leave on blacklist`
    - Enable if you want instant party leave when a blacklisted player is detected.
 4. `Mute Filter`
    - Enable only if you already use mute patterns.
-5. `Local AI Signal`
+5. `Local Model Signal`
    - Keep enabled unless you are troubleshooting.
 
 ---
@@ -174,7 +174,7 @@ You can create labels through:
 - alert manage review
 - `/ss review` (logged unsaved lines)
 - training CSV review screen
-- advanced command path: `/ss ai flag <messageId> <legit|scam>`
+- advanced command path: `/ss model flag <messageId> <legit|scam>`
 
 ### 6.3 Upload flow
 
@@ -212,17 +212,17 @@ Open with:
 ### 7.1 Main buttons
 
 - `Alert Threshold`
-- `AI Auto-Capture`
+- `Review Auto-Capture`
 - `Auto /p leave on blacklist`
 - `Mute Filter`
-- `Local AI Signal`
+- `Local Model Signal`
 
 ### 7.2 Secondary screens
 
 - `Rule Settings`: enable/disable individual detection rules
 - `Message Settings`: toggle warning messages/sounds
 - `Blacklist`: edit entries, score, reason, remove, paging
-- `AI Update`: check/download and apply model update (`Accept`, `Merge`, `Ignore`)
+- `Model Update`: check/download and apply model update (`Accept`, `Merge`, `Ignore`)
 - `Metrics`: local funnel metrics summary + copy button
 - `Debug Settings`: advanced diagnostics (usually keep off)
 
@@ -262,18 +262,18 @@ You can use either `/ss ...` or `/scamscreener ...`.
 - `/ss unmute [pattern]`
 - `/ss bypass <id>`
 
-### 8.4 AI and maintenance commands
+### 8.4 Model and maintenance commands
 
-- `/ss ai`
-- `/ss ai flag <messageId> <legit|scam>`
-- `/ss ai migrate`
-- `/ss ai update`
-- `/ss ai update force`
-- `/ss ai update notify [on|off]`
-- `/ss ai model <download|accept|merge|ignore> <id>`
-- `/ss ai metrics [reset]`
-- `/ss ai reset`
-- `/ss ai autocapture [off|low|medium|high|critical]`
+- `/ss model`
+- `/ss model flag <messageId> <legit|scam>`
+- `/ss model migrate`
+- `/ss model update`
+- `/ss model update force`
+- `/ss model update notify [on|off]`
+- `/ss model <download|accept|merge|ignore> <id>`
+- `/ss model metrics [reset]`
+- `/ss model reset`
+- `/ss model autocapture [off|low|medium|high|critical]`
 
 ### 8.5 Utility commands
 
@@ -317,7 +317,7 @@ You can use either `/ss ...` or `/scamscreener ...`.
 ### "Not enough warnings"
 
 - Lower alert threshold (`/ss alertlevel low` or `medium`).
-- Ensure `Local AI Signal` is enabled in settings.
+- Ensure `Local Model Signal` is enabled in settings.
 - Confirm message warnings are enabled in `Message Settings`.
 
 ---
@@ -336,7 +336,7 @@ Local by default:
 Network is only used for optional features:
 
 - Mojang name/UUID lookups
-- AI model update check/download
+- Model update check/download
 - training data upload when you explicitly trigger it
 
 ---

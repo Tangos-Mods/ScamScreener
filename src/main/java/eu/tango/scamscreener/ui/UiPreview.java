@@ -229,7 +229,7 @@ public final class UiPreview {
 				EnumSet.of(ScamRules.ScamRule.FAKE_MIDDLEMAN_CLAIM, ScamRules.ScamRule.LOCAL_AI_RISK_SIGNAL),
 				Map.of(
 					ScamRules.ScamRule.FAKE_MIDDLEMAN_CLAIM, "Behavior flag claimsTrustedMiddlemanWithoutProof=true (+20)",
-						ScamRules.ScamRule.LOCAL_AI_RISK_SIGNAL, "Local AI probability=0.812, threshold=0.620 (+22)"
+						ScamRules.ScamRule.LOCAL_AI_RISK_SIGNAL, "Local model probability=0.812, threshold=0.620 (+22)"
 				),
 				"this is legit middleman trust me and pay first",
 				List.of("this is legit middleman trust me and pay first")

@@ -104,7 +104,7 @@ public final class AiScorer {
 			if (result.triggered() && result.score() > 0) {
 				String probability = String.format(Locale.ROOT, "%.3f", result.probability());
 				String threshold = String.format(Locale.ROOT, "%.3f", ScamRules.localAiTriggerProbability());
-				String evidence = "Local AI probability=" + probability + ", threshold=" + threshold + " (+" + result.score() + ")\n" + result.explanation();
+				String evidence = "Local model probability=" + probability + ", threshold=" + threshold + " (+" + result.score() + ")\n" + result.explanation();
 				out.add(new Signal(
 					ScamRules.ScamRule.LOCAL_AI_RISK_SIGNAL.name(),
 					SignalSource.AI,
@@ -127,7 +127,7 @@ public final class AiScorer {
 				String probability = String.format(Locale.ROOT, "%.3f", funnelResult.probability());
 				String threshold = String.format(Locale.ROOT, "%.3f", trigger);
 				String sequence = String.format(Locale.ROOT, "%.1f", context.funnelSequenceScore());
-				String evidence = "Funnel AI probability=" + probability
+				String evidence = "Funnel model probability=" + probability
 					+ ", threshold=" + threshold
 					+ " (+" + funnelResult.score() + ")"
 					+ ", step=" + context.funnelStepIndex()

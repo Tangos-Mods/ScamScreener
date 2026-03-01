@@ -1,17 +1,17 @@
 # ScamScreener
 
-[![Build](https://github.com/Tangos-Mods/ScamScreener/actions/workflows/build.yml/badge.svg)](https://github.com/Tangos-Mods/ScamScreener/actions/workflows/build.yml) [![Modrinth Downloads](https://img.shields.io/modrinth/dt/scamscreener?logo=modrinth&label=Modrinth%20downloads)](https://modrinth.com/mod/scamscreener) [![Version](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Tangos-Mods/ScamScreener/main/.github/badges/version.json)](gradle.properties) [![AI Model](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Tangos-Mods/ScamScreener/main/.github/badges/ai-model.json)](scripts/model-version.json)
+[![Build](https://github.com/Tangos-Mods/ScamScreener/actions/workflows/build.yml/badge.svg)](https://github.com/Tangos-Mods/ScamScreener/actions/workflows/build.yml) [![Modrinth Downloads](https://img.shields.io/modrinth/dt/scamscreener?logo=modrinth&label=Modrinth%20downloads)](https://modrinth.com/mod/scamscreener) [![Version](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Tangos-Mods/ScamScreener/main/.github/badges/version.json)](gradle.properties) [![Model](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Tangos-Mods/ScamScreener/main/.github/badges/ai-model.json)](scripts/model-version.json)
 
 Client-side Fabric mod for **Minecraft 1.21.9 / 1.21.10 / 1.21.11** that analyzes Hypixel SkyBlock chat for scam risk.
 
-Includes a UUID-backed whitelist flow (`/scamscreener whitelist`) and review preselection that follows the configured AI auto-capture level.
+Includes a UUID-backed whitelist flow (`/scamscreener whitelist`) and review preselection that follows the configured review auto-capture level.
 
 **ScamScreener combines:**
 
 - manual blacklist alerts
 - rule-based detection (regex + behavior signals)
 - Levenshtein similarity matching (rule phrases + training samples)
-- local AI scoring (no required cloud AI service) with updateable model and community training-data upload flow
+- local model scoring (no required cloud service) with updateable model and community training-data upload flow
 - message muting with custom patterns
 - outgoing safety guard for email addresses and Discord invite links
 
@@ -72,14 +72,14 @@ When thresholds are reached:
 - Training samples are stored in CSV.
 - `/scamscreener upload` archives the active training CSV (after ToS consent), opens the archive folder, and asks whether you want to join the Discord server for manual upload.
 - Existing training/model files are archived under `old/`.
-- Supports sample labeling via message id (`ai flag`) and via review flows (`review`, `review player`, `review manage`).
-- Reviewer auto `[S]` preselection follows the configured AI auto-capture threshold (`OFF|LOW|MEDIUM|HIGH|CRITICAL`).
-- Includes training data migration (`/scamscreener ai migrate`) for older CSV headers.
+- Supports sample labeling via message id (`model flag`) and via review flows (`review`, `review player`, `review manage`).
+- Reviewer auto `[S]` preselection follows the configured review auto-capture threshold (`OFF|LOW|MEDIUM|HIGH|CRITICAL`).
+- Includes training data migration (`/scamscreener model migrate`) for older CSV headers.
 
-### 4) AI update workflow (optional online check)
+### 4) Model update workflow (optional online check)
 
 - Automatic update check once per session when connected.
-- Manual checks via command or GUI (`AI Update` screen).
+- Manual checks via command or GUI (`Model Update` screen).
 - Supports update download and actions: `accept`, `merge`, `ignore`.
 - Uses SHA-256 verification before applying downloaded model payload.
 
@@ -106,13 +106,13 @@ If `ModMenu` is installed, the same settings screen is available via the mod men
 
 Screens available:
 
-- main settings (alert threshold, auto-capture level, auto-leave, mute filter, local AI signal)
+- main settings (alert threshold, auto-capture level, auto-leave, mute filter, local model signal)
 - rule settings
 - debug settings
 - message settings
 - blacklist management
 - whitelist management
-- AI update controls
+- model update controls
 
 ## Requirements
 
@@ -190,18 +190,18 @@ If your mod only integrates optionally, check whether the `scam-screener` mod is
 - `/scamscreener version`
 - `/scamscreener preview` (dry-run preview output)
 
-### AI
+### Model
 
-- `/scamscreener ai` (help)
-- `/scamscreener ai flag <messageId> <legit|scam>`
-- `/scamscreener ai migrate`
-- `/scamscreener ai update`
-- `/scamscreener ai update force`
-- `/scamscreener ai update notify [on|off]` (no args = status)
-- `/scamscreener ai model <download|accept|merge|ignore> <id>`
-- `/scamscreener ai reset`
-- `/scamscreener ai metrics [reset]`
-- `/scamscreener ai autocapture [off|low|medium|high|critical]`
+- `/scamscreener model` (help)
+- `/scamscreener model flag <messageId> <legit|scam>`
+- `/scamscreener model migrate`
+- `/scamscreener model update`
+- `/scamscreener model update force`
+- `/scamscreener model update notify [on|off]` (no args = status)
+- `/scamscreener model <download|accept|merge|ignore> <id>`
+- `/scamscreener model reset`
+- `/scamscreener model metrics [reset]`
+- `/scamscreener model autocapture [off|low|medium|high|critical]`
 
 ### Mute and safety
 
@@ -235,7 +235,7 @@ Archive folders:
 
 ## Training quick guide
 
-1. Collect labeled samples with `ai flag` and in-game review flows (`review`, `review player`, `review manage`).
+1. Collect labeled samples with `model flag` and in-game review flows (`review`, `review player`, `review manage`).
 2. (Optional) Refine labels in the reviewer and save selected scam/legit lines.
 3. Run `/scamscreener upload`.
 4. Training CSV is archived and the mod asks whether you want to join Discord to upload the file manually.
@@ -254,14 +254,14 @@ Tips:
 - Optional network calls are used for:
   - Mojang profile lookup (name/UUID resolution and whitelist name refresh)
   - opening the Discord invite link for manual training-data upload (`/scamscreener upload`)
-  - AI model update check/download (GitHub raw URL)
+  - model update check/download (GitHub raw URL)
 
 ## Limitations
 
 - Rule/keyword/similarity systems have limited semantic understanding.
 - Sarcasm and ambiguous context can cause false positives.
 - Aggressive mute patterns can hide legitimate chat.
-- Local AI quality depends strongly on training data quality.
+- Local model quality depends strongly on training data quality.
 
 ## License
 

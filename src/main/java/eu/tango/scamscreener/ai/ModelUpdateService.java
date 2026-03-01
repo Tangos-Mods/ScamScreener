@@ -227,7 +227,7 @@ public final class ModelUpdateService {
 			return;
 		}
 		reply.accept(Messages.modelUpdateAvailable(Messages.modelUpdateDownloadLink(
-			"/scamscreener ai model download " + id
+			"/scamscreener model download " + id
 		)));
 		debug(reply, "update available id=" + id);
 	}
@@ -533,17 +533,17 @@ public final class ModelUpdateService {
 		MutableComponent line = Component.empty()
 			.append(Component.literal("[Accept]").withStyle(Style.EMPTY
 				.withColor(ChatFormatting.GREEN)
-				.withClickEvent(new ClickEvent.RunCommand("/scamscreener ai model accept " + id))
+				.withClickEvent(new ClickEvent.RunCommand("/scamscreener model accept " + id))
 				.withHoverEvent(new HoverEvent.ShowText(Component.literal("Replace with new model")))))
 			.append(Component.literal(" "))
 			.append(Component.literal("[Merge]").withStyle(Style.EMPTY
 				.withColor(ChatFormatting.GOLD)
-				.withClickEvent(new ClickEvent.RunCommand("/scamscreener ai model merge " + id))
+				.withClickEvent(new ClickEvent.RunCommand("/scamscreener model merge " + id))
 				.withHoverEvent(new HoverEvent.ShowText(Component.literal("Merge with local model")))))
 			.append(Component.literal(" "))
 			.append(Component.literal("[Ignore]").withStyle(Style.EMPTY
 				.withColor(ChatFormatting.RED)
-				.withClickEvent(new ClickEvent.RunCommand("/scamscreener ai model ignore " + id))
+				.withClickEvent(new ClickEvent.RunCommand("/scamscreener model ignore " + id))
 				.withHoverEvent(new HoverEvent.ShowText(Component.literal("Ignore this update")))));
 		return line;
 	}

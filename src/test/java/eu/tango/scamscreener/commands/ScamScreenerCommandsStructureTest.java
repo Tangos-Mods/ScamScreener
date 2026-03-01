@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 class ScamScreenerCommandsStructureTest {
 	@Test
-	void buildRootRegistersUploadAndRemovesAiTrain() throws Exception {
+	void buildRootRegistersUploadAndModelCommands() throws Exception {
 		ScamScreenerCommands commands = new ScamScreenerCommands(
 			null,
 			null,
@@ -67,17 +67,20 @@ class ScamScreenerCommandsStructureTest {
 		assertNotNull(root);
 		assertNotNull(root.getChild("help"));
 		assertNotNull(root.getChild("upload"));
-		assertNotNull(root.getChild("ai"));
+		assertNotNull(root.getChild("model"));
 		assertNotNull(root.getChild("whitelist"));
+		assertNull(root.getChild("ai"));
 		assertNull(root.getChild("train"));
 
-		CommandNode<FabricClientCommandSource> ai = root.getChild("ai");
-		assertNull(ai.getChild("train"));
-		assertNotNull(ai.getChild("reset"));
-		assertNotNull(ai.getChild("metrics"));
-		assertNotNull(ai.getChild("flag"));
-		assertNull(ai.getChild("capture"));
-		assertNull(ai.getChild("capturebulk"));
+		CommandNode<FabricClientCommandSource> model = root.getChild("model");
+		assertNull(model.getChild("train"));
+		assertNotNull(model.getChild("reset"));
+		assertNotNull(model.getChild("metrics"));
+		assertNotNull(model.getChild("flag"));
+		assertNotNull(model.getChild("download"));
+		assertNotNull(model.getChild("update"));
+		assertNull(model.getChild("capture"));
+		assertNull(model.getChild("capturebulk"));
 
 		CommandNode<FabricClientCommandSource> review = root.getChild("review");
 		assertNotNull(review);
@@ -93,8 +96,9 @@ class ScamScreenerCommandsStructureTest {
 		assertNotNull(aliasRoot);
 		assertNotNull(aliasRoot.getChild("help"));
 		assertNotNull(aliasRoot.getChild("upload"));
-		assertNotNull(aliasRoot.getChild("ai"));
+		assertNotNull(aliasRoot.getChild("model"));
 		assertNotNull(aliasRoot.getChild("whitelist"));
+		assertNull(aliasRoot.getChild("ai"));
 		assertNull(aliasRoot.getChild("train"));
 	}
 }

@@ -3,7 +3,7 @@
 	"id": "scam-screener",
 	"version": "${version}",
 	"name": "Scam Screener",
-	"description": "Client-side Scam detection for Hypixel SkyBlock trades, with blacklist alerts and local AI-assisted risk scoring.",
+	"description": "Client-side Scam detection for Hypixel SkyBlock trades, with blacklist alerts and local model-based risk scoring.",
 	"authors": [
 		"Pankraz01",
 		"",

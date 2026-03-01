@@ -236,8 +236,8 @@ public abstract class MessageBuilder {
 			case MULTI_MESSAGE_PATTERN -> "Multi-Message Pattern";
 			case FUNNEL_SEQUENCE_PATTERN -> "Funnel Sequence Pattern";
 			case SIMILARITY_MATCH -> "Similarity Match";
-			case LOCAL_AI_RISK_SIGNAL -> "Local AI Risk Signal";
-			case LOCAL_AI_FUNNEL_SIGNAL -> "Local AI Funnel Signal";
+			case LOCAL_AI_RISK_SIGNAL -> "Local Model Signal";
+			case LOCAL_AI_FUNNEL_SIGNAL -> "Local Funnel Model Signal";
 		};
 	}
 

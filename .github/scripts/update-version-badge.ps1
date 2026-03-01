@@ -63,7 +63,7 @@ if ([string]::IsNullOrWhiteSpace($modelVersion)) {
 $modelVersion = $modelVersion.Trim()
 
 Write-BadgeFile -Path $versionBadgePath -Payload (New-BadgePayload -Label "version" -Message $version -Color "blue")
-Write-BadgeFile -Path $aiBadgePath -Payload (New-BadgePayload -Label "AI Model" -Message "v$modelVersion" -Color "5555ff")
+Write-BadgeFile -Path $aiBadgePath -Payload (New-BadgePayload -Label "Model" -Message "v$modelVersion" -Color "5555ff")
 
 Write-Host "Updated version badge: $version"
-Write-Host "Updated AI model badge: v$modelVersion"
+Write-Host "Updated model badge: v$modelVersion"

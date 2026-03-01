@@ -63,10 +63,10 @@ class MessagesTest {
 
 	@Test
 	void modelUpdateDownloadLinkContainsRunCommand() {
-		MutableComponent link = Messages.modelUpdateDownloadLink("/scamscreener ai model download 123");
+		MutableComponent link = Messages.modelUpdateDownloadLink("/scamscreener model download 123");
 
-		assertTrue(link.getString().contains("A new AI Model is available."));
-		assertTrue(hasRunCommand(link, "/scamscreener ai model download 123"));
+		assertTrue(link.getString().contains("A new model update is available."));
+		assertTrue(hasRunCommand(link, "/scamscreener model download 123"));
 	}
 
 	@Test
@@ -86,19 +86,23 @@ class MessagesTest {
 	}
 
 	@Test
-	void helpMessagesListUploadCommandInsteadOfAiTrain() {
+	void helpMessagesListUploadCommandInsteadOfLegacyAiTrain() {
 		String commandHelp = Messages.commandHelp().getString();
 		String aiHelp = Messages.aiCommandHelp().getString();
 
 		assertTrue(commandHelp.contains("/scamscreener upload"));
+		assertTrue(commandHelp.contains("/scamscreener model"));
 		assertTrue(commandHelp.contains("/scamscreener whitelist"));
 		assertTrue(commandHelp.contains("/scamscreener whitelist add <player>"));
 		assertTrue(commandHelp.contains("/scamscreener whitelist remove <player>"));
-		assertFalse(commandHelp.contains("/scamscreener ai train"));
-		assertTrue(commandHelp.contains("/scamscreener ai metrics"));
+		assertFalse(commandHelp.contains("/scamscreener ai"));
+		assertFalse(commandHelp.contains("/scamscreener model train"));
+		assertTrue(commandHelp.contains("/scamscreener model metrics"));
 		assertTrue(aiHelp.contains("/scamscreener upload"));
-		assertFalse(aiHelp.contains("/scamscreener ai train"));
-		assertTrue(aiHelp.contains("/scamscreener ai metrics"));
+		assertFalse(aiHelp.contains("/scamscreener ai"));
+		assertFalse(aiHelp.contains("/scamscreener model train"));
+		assertTrue(aiHelp.contains("/scamscreener model metrics"));
+		assertTrue(aiHelp.contains("/scamscreener model <download|accept|merge|ignore> <id>"));
 	}
 
 	@Test

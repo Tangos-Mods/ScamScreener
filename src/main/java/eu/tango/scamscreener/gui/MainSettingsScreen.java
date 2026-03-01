@@ -152,7 +152,7 @@ public final class MainSettingsScreen extends ScamScreenerGUI {
 		}).bounds(secondColumnX, y + ROW_HEIGHT, thirdWidth, 20).build());
 		metricsButton.active = metricsSnapshotSupplier != null;
 
-		this.addRenderableWidget(Button.builder(Component.literal("AI Update"), button -> {
+		this.addRenderableWidget(Button.builder(Component.literal("Model Update"), button -> {
 			openScreen(new AiUpdateSettingsScreen(
 				this,
 				triggerAiUpdateHandler,
@@ -199,7 +199,7 @@ public final class MainSettingsScreen extends ScamScreenerGUI {
 		if (autoCaptureButton != null) {
 			String level = normalizeLevel(ScamRules.autoCaptureAlertLevelSetting());
 			boolean enabled = !"OFF".equals(level);
-			var message = Component.literal("AI Auto-Capture: ").append(onOffComponent(enabled));
+			var message = Component.literal("Review Auto-Capture: ").append(onOffComponent(enabled));
 			if (enabled) {
 				message = message.append(Component.literal(" (" + level + ")"));
 			}
@@ -212,7 +212,7 @@ public final class MainSettingsScreen extends ScamScreenerGUI {
 			muteFilterButton.setMessage(onOffLine("Mute Filter: ", mutePatternManager.isEnabled()));
 		}
 		if (localAiButton != null) {
-			localAiButton.setMessage(onOffLine("Local AI Signal: ", ScamRules.localAiEnabled()));
+			localAiButton.setMessage(onOffLine("Local Model Signal: ", ScamRules.localAiEnabled()));
 		}
 	}
 

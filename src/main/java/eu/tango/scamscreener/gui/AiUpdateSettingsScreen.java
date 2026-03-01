@@ -30,7 +30,7 @@ final class AiUpdateSettingsScreen extends ScamScreenerGUI {
 		Supplier<ModelUpdateService.PendingUpdateSnapshot> aiUpdateSnapshotSupplier,
 		BiFunction<String, String, Integer> aiUpdateActionHandler
 	) {
-		super(Component.literal("ScamScreener AI Update"), parent);
+		super(Component.literal("ScamScreener Model Update"), parent);
 		this.triggerAiUpdateHandler = triggerAiUpdateHandler;
 		this.triggerForceAiUpdateHandler = triggerForceAiUpdateHandler;
 		this.aiUpdateSnapshotSupplier = aiUpdateSnapshotSupplier;
