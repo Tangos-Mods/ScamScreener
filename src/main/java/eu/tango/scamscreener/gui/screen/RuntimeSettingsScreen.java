@@ -60,6 +60,20 @@ public final class RuntimeSettingsScreen extends BaseScreen {
                 .dimensions(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
+        y += ROW_HEIGHT;
+
+        addDrawableChild(
+            ButtonWidget.builder(Text.literal("Rules Settings"), button -> this.client.setScreen(new RulesSettingsScreen(this)))
+                .dimensions(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
+                .build()
+        );
+        y += ROW_HEIGHT;
+
+        addDrawableChild(
+            ButtonWidget.builder(Text.literal("Review Settings"), button -> this.client.setScreen(new ReviewSettingsScreen(this)))
+                .dimensions(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
+                .build()
+        );
 
         addCloseButton(contentWidth);
         refreshButtons();

@@ -4,30 +4,43 @@ import eu.tango.scamscreener.ScamScreenerRuntime;
 import eu.tango.scamscreener.gui.base.BaseListScreen;
 import eu.tango.scamscreener.gui.data.ReviewRow;
 import eu.tango.scamscreener.gui.widget.SelectableListWidget;
+import eu.tango.scamscreener.review.ReviewActionHandler;
 import eu.tango.scamscreener.review.ReviewEntry;
 import eu.tango.scamscreener.review.ReviewVerdict;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.text.Text;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Review list screen modeled after the dense v1 review presentation.
- *
- * <p>The current version is a UI groundwork screen. It already supports row
- * cycling and summary counts, while the real review store can be connected
- * later without changing the interaction model.
  */
 public final class ReviewScreen extends BaseListScreen {
     private static final int LIST_ROW_HEIGHT = 28;
+    private static final int FILTER_BUTTON_WIDTH = 120;
+    private static final int ACTION_COLUMNS = 4;
+    private static final int ACTION_AREA_HEIGHT = (DEFAULT_BUTTON_HEIGHT * 3) + 22;
 
     private final List<ReviewRow> rows = new ArrayList<>();
+
+    private ReviewFilter activeFilter = ReviewFilter.ALL;
     private SelectableListWidget<ReviewRow> listWidget;
-    private ButtonWidget resetButton;
-    private ButtonWidget clearButton;
+    private TextFieldWidget searchField;
+    private ButtonWidget filterButton;
+    private ButtonWidget markRiskButton;
+    private ButtonWidget markSafeButton;
+    private ButtonWidget ignoreButton;
+    private ButtonWidget resetVisibleButton;
+    private ButtonWidget blacklistButton;
+    private ButtonWidget whitelistButton;
+    private ButtonWidget removeButton;
+    private ButtonWidget clearVisibleButton;
+    private ButtonWidget detailsButton;
 
     /**
      * Creates a review screen backed by the shared runtime review queue.
@@ -45,9 +58,29 @@ public final class ReviewScreen extends BaseListScreen {
     protected void init() {
         int contentWidth = Math.min(560, Math.max(320, this.width - 40));
         int contentX = centeredX(contentWidth);
-        int listY = CONTENT_TOP + 24;
-        int listHeight = Math.max(120, footerY() - listY - 36);
+        int controlsY = CONTENT_TOP + 24;
+        int searchWidth = Math.max(140, contentWidth - FILTER_BUTTON_WIDTH - DEFAULT_SPLIT_GAP);
 
+        filterButton = addDrawableChild(
+            ButtonWidget.builder(Text.empty(), button -> cycleFilter())
+                .dimensions(contentX, controlsY, FILTER_BUTTON_WIDTH, DEFAULT_BUTTON_HEIGHT)
+                .build()
+        );
+        searchField = addDrawableChild(
+            new TextFieldWidget(
+                this.textRenderer,
+                contentX + FILTER_BUTTON_WIDTH + DEFAULT_SPLIT_GAP,
+                controlsY,
+                searchWidth,
+                DEFAULT_BUTTON_HEIGHT,
+                Text.literal("Review Search")
+            )
+        );
+        searchField.setMaxLength(64);
+        searchField.setChangedListener(value -> reloadRows());
+
+        int listY = controlsY + ROW_HEIGHT;
+        int listHeight = Math.max(120, footerY() - listY - ACTION_AREA_HEIGHT - 10);
         listWidget = new SelectableListWidget<>(
             contentX,
             listY,
@@ -57,25 +90,68 @@ public final class ReviewScreen extends BaseListScreen {
             this::renderRow
         );
 
-        int buttonWidth = splitWidth(contentWidth, 3, DEFAULT_SPLIT_GAP);
+        int buttonWidth = splitWidth(contentWidth, ACTION_COLUMNS, DEFAULT_SPLIT_GAP);
         int buttonY = listY + listHeight + 10;
 
-        resetButton = addDrawableChild(
-            ButtonWidget.builder(Text.literal("Reset Labels"), button -> resetChoices())
+        markRiskButton = addDrawableChild(
+            ButtonWidget.builder(Text.literal("Mark Risk"), button -> setSelectedVerdict(ReviewVerdict.RISK))
                 .dimensions(contentX, buttonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
-        clearButton = addDrawableChild(
-            ButtonWidget.builder(Text.literal("Clear Queue"), button -> clearQueue())
+        markSafeButton = addDrawableChild(
+            ButtonWidget.builder(Text.literal("Mark Safe"), button -> setSelectedVerdict(ReviewVerdict.SAFE))
                 .dimensions(columnX(contentX, buttonWidth, DEFAULT_SPLIT_GAP, 1), buttonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
-        addDrawableChild(
-            ButtonWidget.builder(Text.literal("Close"), button -> close())
+        ignoreButton = addDrawableChild(
+            ButtonWidget.builder(Text.literal("Ignore"), button -> setSelectedVerdict(ReviewVerdict.IGNORED))
                 .dimensions(columnX(contentX, buttonWidth, DEFAULT_SPLIT_GAP, 2), buttonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
+        resetVisibleButton = addDrawableChild(
+            ButtonWidget.builder(Text.literal("Reset Visible"), button -> resetVisibleChoices())
+                .dimensions(columnX(contentX, buttonWidth, DEFAULT_SPLIT_GAP, 3), buttonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
+                .build()
+        );
 
+        buttonY += DEFAULT_BUTTON_HEIGHT + 4;
+        blacklistButton = addDrawableChild(
+            ButtonWidget.builder(Text.literal("To Blacklist"), button -> addSelectedToBlacklist())
+                .dimensions(contentX, buttonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
+                .build()
+        );
+        whitelistButton = addDrawableChild(
+            ButtonWidget.builder(Text.literal("To Whitelist"), button -> addSelectedToWhitelist())
+                .dimensions(columnX(contentX, buttonWidth, DEFAULT_SPLIT_GAP, 1), buttonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
+                .build()
+        );
+        removeButton = addDrawableChild(
+            ButtonWidget.builder(Text.literal("Remove"), button -> removeSelectedEntry())
+                .dimensions(columnX(contentX, buttonWidth, DEFAULT_SPLIT_GAP, 2), buttonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
+                .build()
+        );
+        clearVisibleButton = addDrawableChild(
+            ButtonWidget.builder(Text.literal("Clear Visible"), button -> clearVisible())
+                .dimensions(columnX(contentX, buttonWidth, DEFAULT_SPLIT_GAP, 3), buttonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
+                .build()
+        );
+
+        buttonY += DEFAULT_BUTTON_HEIGHT + 4;
+        detailsButton = addDrawableChild(
+            ButtonWidget.builder(Text.literal("Details"), button -> openDetails())
+                .dimensions(contentX, buttonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
+                .build()
+        );
+
+        int footerButtonWidth = splitWidth(contentWidth, 2, DEFAULT_SPLIT_GAP);
+        addFooterButton(contentX, footerButtonWidth, Text.literal("Review Settings"), button -> this.client.setScreen(new ReviewSettingsScreen(this)));
+        addFooterButton(
+            columnX(contentX, footerButtonWidth, DEFAULT_SPLIT_GAP, 1),
+            footerButtonWidth,
+            Text.literal("Close"),
+            button -> close()
+        );
+        refreshFilterButton();
         reloadRows();
         updateActionState();
     }
@@ -103,6 +179,14 @@ public final class ReviewScreen extends BaseListScreen {
                 + " | Safe " + count(ReviewVerdict.SAFE)
                 + " | Ignored " + count(ReviewVerdict.IGNORED)
         );
+        drawLine(
+            context,
+            left,
+            CONTENT_TOP + 24,
+            "Showing " + rows.size() + " of " + ScamScreenerRuntime.getInstance().reviewStore().entries().size()
+                + " | Filter " + activeFilter.label()
+                + " | Search " + searchSummary()
+        );
 
         if (listWidget != null) {
             listWidget.render(context, this.textRenderer, mouseX, mouseY);
@@ -115,12 +199,7 @@ public final class ReviewScreen extends BaseListScreen {
             return false;
         }
 
-        ReviewRow selectedRow = listWidget.selectedRow().orElse(null);
-        if (selectedRow != null) {
-            ScamScreenerRuntime.getInstance().reviewStore().setVerdict(selectedRow.rowId(), nextVerdict(selectedRow.verdict()));
-            reloadRows();
-        }
-
+        updateActionState();
         return true;
     }
 
@@ -129,24 +208,110 @@ public final class ReviewScreen extends BaseListScreen {
         return listWidget != null && listWidget.mouseScrolled(mouseX, mouseY, verticalAmount);
     }
 
-    private void resetChoices() {
+    private void cycleFilter() {
+        activeFilter = activeFilter.next();
+        refreshFilterButton();
+        reloadRows();
+    }
+
+    private void setSelectedVerdict(ReviewVerdict verdict) {
+        ReviewEntry entry = selectedEntry().orElse(null);
+        if (entry == null) {
+            return;
+        }
+
+        ReviewActionHandler.setVerdict(entry, verdict);
+        reloadRows();
+    }
+
+    private void resetVisibleChoices() {
         for (ReviewRow row : rows) {
             ScamScreenerRuntime.getInstance().reviewStore().setVerdict(row.rowId(), ReviewVerdict.PENDING);
         }
         reloadRows();
     }
 
-    private void clearQueue() {
-        ScamScreenerRuntime.getInstance().reviewStore().clear();
+    private void clearVisible() {
+        List<String> entryIds = new ArrayList<>();
+        for (ReviewRow row : rows) {
+            entryIds.add(row.rowId());
+        }
+        for (String entryId : entryIds) {
+            ScamScreenerRuntime.getInstance().reviewStore().remove(entryId);
+        }
         reloadRows();
     }
 
-    private void updateActionState() {
-        if (resetButton != null) {
-            resetButton.active = !rows.isEmpty();
+    private void addSelectedToBlacklist() {
+        ReviewEntry entry = selectedEntry().orElse(null);
+        if (!ReviewActionHandler.hasPlayerTarget(entry)) {
+            return;
         }
-        if (clearButton != null) {
-            clearButton.active = !rows.isEmpty();
+
+        ReviewActionHandler.addToBlacklist(entry);
+        reloadRows();
+    }
+
+    private void addSelectedToWhitelist() {
+        ReviewEntry entry = selectedEntry().orElse(null);
+        if (!ReviewActionHandler.hasPlayerTarget(entry)) {
+            return;
+        }
+
+        ReviewActionHandler.addToWhitelist(entry);
+        reloadRows();
+    }
+
+    private void removeSelectedEntry() {
+        ReviewEntry entry = selectedEntry().orElse(null);
+        if (entry == null) {
+            return;
+        }
+
+        ReviewActionHandler.remove(entry);
+        reloadRows();
+    }
+
+    private void openDetails() {
+        ReviewEntry entry = selectedEntry().orElse(null);
+        if (entry == null || this.client == null) {
+            return;
+        }
+
+        this.client.setScreen(new ReviewDetailScreen(this, entry));
+    }
+
+    private void updateActionState() {
+        boolean hasVisibleRows = !rows.isEmpty();
+        boolean hasSelection = selectedEntry().isPresent();
+        boolean hasSelectionTarget = ReviewActionHandler.hasPlayerTarget(selectedEntry().orElse(null));
+
+        if (markRiskButton != null) {
+            markRiskButton.active = hasSelection;
+        }
+        if (markSafeButton != null) {
+            markSafeButton.active = hasSelection;
+        }
+        if (ignoreButton != null) {
+            ignoreButton.active = hasSelection;
+        }
+        if (resetVisibleButton != null) {
+            resetVisibleButton.active = hasVisibleRows;
+        }
+        if (blacklistButton != null) {
+            blacklistButton.active = hasSelectionTarget;
+        }
+        if (whitelistButton != null) {
+            whitelistButton.active = hasSelectionTarget;
+        }
+        if (removeButton != null) {
+            removeButton.active = hasSelection;
+        }
+        if (clearVisibleButton != null) {
+            clearVisibleButton.active = hasVisibleRows;
+        }
+        if (detailsButton != null) {
+            detailsButton.active = hasSelection;
         }
     }
 
@@ -162,12 +327,13 @@ public final class ReviewScreen extends BaseListScreen {
 
     private void reloadRows() {
         rows.clear();
-        for (ReviewEntry entry : ScamScreenerRuntime.getInstance().reviewStore().entries()) {
+        for (ReviewEntry entry : ScamScreenerRuntime.getInstance().reviewStore().entries(activeFilter.verdict(), currentSearch())) {
             rows.add(ReviewRow.fromEntry(entry));
         }
 
         if (listWidget != null) {
             listWidget.setRows(rows);
+            listWidget.clearSelection();
         }
 
         updateActionState();
@@ -190,19 +356,6 @@ public final class ReviewScreen extends BaseListScreen {
         context.drawTextWithShadow(textRenderer, Text.literal(row.compactMessage()), x, y + 11, 0xFFFFFF);
     }
 
-    private ReviewVerdict nextVerdict(ReviewVerdict current) {
-        if (current == null) {
-            return ReviewVerdict.RISK;
-        }
-
-        return switch (current) {
-            case PENDING -> ReviewVerdict.RISK;
-            case RISK -> ReviewVerdict.SAFE;
-            case SAFE -> ReviewVerdict.IGNORED;
-            case IGNORED -> ReviewVerdict.PENDING;
-        };
-    }
-
     private String marker(ReviewVerdict verdict) {
         return switch (verdict == null ? ReviewVerdict.PENDING : verdict) {
             case PENDING -> "P";
@@ -219,5 +372,71 @@ public final class ReviewScreen extends BaseListScreen {
             case SAFE -> 0x99FF99;
             case IGNORED -> 0xB8B8B8;
         };
+    }
+
+    private void refreshFilterButton() {
+        if (filterButton != null) {
+            filterButton.setMessage(Text.literal("Filter: " + activeFilter.label()));
+        }
+    }
+
+    private Optional<ReviewEntry> selectedEntry() {
+        if (listWidget == null) {
+            return Optional.empty();
+        }
+
+        ReviewRow row = listWidget.selectedRow().orElse(null);
+        if (row == null) {
+            return Optional.empty();
+        }
+
+        return ScamScreenerRuntime.getInstance().reviewStore().find(row.rowId());
+    }
+
+    private String currentSearch() {
+        if (searchField == null) {
+            return "";
+        }
+
+        return searchField.getText();
+    }
+
+    private String searchSummary() {
+        String currentSearch = currentSearch().trim();
+        if (currentSearch.isEmpty()) {
+            return "-";
+        }
+
+        return currentSearch;
+    }
+
+    private enum ReviewFilter {
+        ALL("All", null),
+        PENDING("Pending", ReviewVerdict.PENDING),
+        RISK("Risk", ReviewVerdict.RISK),
+        SAFE("Safe", ReviewVerdict.SAFE),
+        IGNORED("Ignored", ReviewVerdict.IGNORED);
+
+        private final String label;
+        private final ReviewVerdict verdict;
+
+        ReviewFilter(String label, ReviewVerdict verdict) {
+            this.label = label;
+            this.verdict = verdict;
+        }
+
+        public String label() {
+            return label;
+        }
+
+        public ReviewVerdict verdict() {
+            return verdict;
+        }
+
+        public ReviewFilter next() {
+            ReviewFilter[] values = values();
+            int nextIndex = (ordinal() + 1) % values.length;
+            return values[nextIndex];
+        }
     }
 }

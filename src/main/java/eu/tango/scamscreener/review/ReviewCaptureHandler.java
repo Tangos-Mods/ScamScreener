@@ -27,6 +27,11 @@ public final class ReviewCaptureHandler {
     }
 
     private static void onPipelineDecision(ChatEvent chatEvent, PipelineDecision decision) {
-        ScamScreenerRuntime.getInstance().reviewStore().capture(chatEvent, decision);
+        ScamScreenerRuntime runtime = ScamScreenerRuntime.getInstance();
+        if (!runtime.config().review().isCaptureEnabled()) {
+            return;
+        }
+
+        runtime.reviewStore().capture(chatEvent, decision);
     }
 }

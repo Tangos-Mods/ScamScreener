@@ -5,105 +5,67 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="149ec1db-0155-4512-9f54-12439716da78" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.gitattributes" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/CHANGELOG.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/LICENSE" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/TODO.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build.gradle.kts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/gradle.properties" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/gradle/wrapper/gradle-wrapper.jar" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/gradle/wrapper/gradle-wrapper.properties" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/gradlew" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/gradlew.bat" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/settings.gradle.kts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/ScamScreenerMod.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/ScamScreenerRuntime.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/api/BlacklistAccess.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/api/PipelineContributor.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/api/ScamScreenerApi.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/api/ScamScreenerApiEntrypoint.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/api/ScamScreenerPipelineApi.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/api/StageContribution.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/api/StageSlot.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/api/WhitelistAccess.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/api/event/BlacklistEvent.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/api/event/PipelineDecisionEvent.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/api/event/PlayerListChangeType.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/api/event/WhitelistEvent.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/chat/ChatLineClassifier.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/chat/ChatPipelineListener.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/command/ScamScreenerCommandHandler.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/config/data/BlacklistConfig.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/config/data/RuntimeConfig.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/config/data/WhitelistConfig.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/config/store/BaseConfig.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/config/store/BlacklistConfigStore.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/config/store/ConfigPaths.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/config/store/RuntimeConfigStore.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/config/store/WhitelistConfigStore.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/gui/ScamScreenerScreens.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/gui/base/BaseListScreen.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/gui/base/BaseScreen.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/gui/data/BlacklistRow.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/gui/data/ReviewRow.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/gui/data/WhitelistRow.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/gui/screen/BlacklistScreen.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/gui/screen/MessageSettingsScreen.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/gui/screen/ReviewScreen.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/gui/screen/RuntimeSettingsScreen.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/gui/screen/ScamScreenerMainScreen.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/gui/screen/WhitelistScreen.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/gui/widget/SelectableListWidget.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/lists/Blacklist.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/lists/BlacklistEntry.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/lists/BlacklistSource.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/lists/PlayerList.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/lists/Whitelist.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/lists/WhitelistEntry.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/message/DecisionMessageHandler.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/message/DecisionMessages.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/message/MessageDispatcher.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/message/NotificationService.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/modmenu/ScamScreenerModMenuApi.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/core/PipelineEngine.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/core/ScamScreenerPipelineFactory.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/core/Stage.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/data/ChatEvent.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/data/ChatSourceType.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/data/PipelineDecision.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/data/StageResult.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/stage/BehaviorStage.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/stage/FunnelStage.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/stage/LevenshteinStage.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/stage/ModelStage.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/stage/MuteStage.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/stage/PlayerListStage.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/stage/RuleStage.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/stage/TrendStage.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/review/ReviewCaptureHandler.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/review/ReviewEntry.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/review/ReviewStore.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/review/ReviewVerdict.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/resources/assets/scamscreener/icon.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/resources/fabric.mod.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/resources/scamscreener.accesswidener" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/eu/tango/scamscreener/chat/ChatLineClassifierTest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/eu/tango/scamscreener/lists/PlayerListApiTest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/eu/tango/scamscreener/pipeline/core/PipelineEngineTest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/eu/tango/scamscreener/review/ReviewStoreTest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stonecutter.gradle.kts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/versions/1.20.1/gradle.properties" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/versions/1.21.1/gradle.properties" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/versions/1.21.10/gradle.properties" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/versions/1.21.11/gradle.properties" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/GAP_LIST.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/V1_RULE_AUDIT.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/chat/TextNormalization.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/config/data/ReviewConfig.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/config/data/RulesConfig.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/config/store/ReviewConfigStore.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/config/store/RulesConfigStore.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/gui/screen/ReviewDetailScreen.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/gui/screen/ReviewSettingsScreen.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/gui/screen/RulesSettingsScreen.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/rule/BehaviorRules.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/rule/FunnelRules.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/rule/MuteRules.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/rule/Rule.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/rule/RuleCatalog.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/rule/SimilarityRule.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/rule/TrendRules.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/state/BehaviorStore.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/state/FunnelStore.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/state/PipelineStateStore.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/state/StateStoreSupport.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/state/TrendStore.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/review/ReviewActionHandler.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/eu/tango/scamscreener/pipeline/stage/BehaviorStageTest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/eu/tango/scamscreener/pipeline/stage/FunnelStageTest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/eu/tango/scamscreener/pipeline/stage/LevenshteinStageTest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/eu/tango/scamscreener/pipeline/stage/MuteStageTest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/eu/tango/scamscreener/pipeline/stage/RuleStageTest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/eu/tango/scamscreener/pipeline/stage/TrendStageTest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/eu/tango/scamscreener/pipeline/state/BehaviorStoreTest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/eu/tango/scamscreener/pipeline/state/FunnelStoreTest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/eu/tango/scamscreener/pipeline/state/TrendStoreTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/ScamScreenerRuntime.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/ScamScreenerRuntime.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/command/ScamScreenerCommandHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/command/ScamScreenerCommandHandler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/config/data/RuntimeConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/config/data/RuntimeConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/config/store/ConfigPaths.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/config/store/ConfigPaths.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/gui/screen/ReviewScreen.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/gui/screen/ReviewScreen.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/gui/screen/RuntimeSettingsScreen.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/gui/screen/RuntimeSettingsScreen.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/gui/screen/ScamScreenerMainScreen.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/gui/screen/ScamScreenerMainScreen.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/gui/widget/SelectableListWidget.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/gui/widget/SelectableListWidget.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/core/ScamScreenerPipelineFactory.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/core/ScamScreenerPipelineFactory.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/stage/BehaviorStage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/stage/BehaviorStage.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/stage/FunnelStage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/stage/FunnelStage.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/stage/LevenshteinStage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/stage/LevenshteinStage.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/stage/MuteStage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/stage/MuteStage.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/stage/RuleStage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/stage/RuleStage.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/stage/TrendStage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/stage/TrendStage.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/review/ReviewCaptureHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/review/ReviewCaptureHandler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/review/ReviewEntry.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/review/ReviewEntry.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/review/ReviewStore.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/review/ReviewStore.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/eu/tango/scamscreener/review/ReviewStoreTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/eu/tango/scamscreener/review/ReviewStoreTest.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="EmbeddingIndexingInfo">
+    <option name="cachedIndexableFilesCount" value="401" />
   </component>
   <component name="ExternalProjectsData">
     <projectState path="$PROJECT_DIR$">
@@ -153,29 +115,29 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Gradle.ScamScreener [build].executor": "Run",
-    "Gradle.ScamScreener: Publish CurseForge (all StoneCutter versions).executor": "Run",
-    "Gradle.ScamScreener: Publish Modrinth (all StoneCutter versions).executor": "Run",
-    "Gradle.ScamScreener: Train + Update AI Model.executor": "Run",
-    "Gradle.build all.executor": "Run",
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.MCP Project settings loaded": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "deflation",
-    "ignore.virus.scanning.warn.message": "true",
-    "kotlin-language-version-configured": "true",
-    "settings.editor.selected.configurable": "preferences.pluginManager"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Gradle.ScamScreener [build].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ScamScreener: Publish CurseForge (all StoneCutter versions).executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ScamScreener: Publish Modrinth (all StoneCutter versions).executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ScamScreener: Train + Update AI Model.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.build all.executor&quot;: &quot;Run&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.MCP Project settings loaded&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;deflation&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;
   },
-  "keyToStringList": {
-    "dev.kikugie.stonecutter.projects": [
-      "C:/Users/mine6/Documents/GitHub/ScamScreener#:"
+  &quot;keyToStringList&quot;: {
+    &quot;dev.kikugie.stonecutter.projects&quot;: [
+      &quot;C:/Users/mine6/Documents/GitHub/ScamScreener#:&quot;
     ]
   }
-}]]></component>
+}</component>
   <component name="RunManager" selected="Gradle.build all">
     <configuration name="build all" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>

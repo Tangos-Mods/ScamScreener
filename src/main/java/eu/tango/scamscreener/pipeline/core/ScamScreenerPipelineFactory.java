@@ -1,7 +1,12 @@
 package eu.tango.scamscreener.pipeline.core;
 
+import eu.tango.scamscreener.config.data.RulesConfig;
 import eu.tango.scamscreener.lists.Blacklist;
 import eu.tango.scamscreener.lists.Whitelist;
+import eu.tango.scamscreener.pipeline.rule.RuleCatalog;
+import eu.tango.scamscreener.pipeline.state.BehaviorStore;
+import eu.tango.scamscreener.pipeline.state.FunnelStore;
+import eu.tango.scamscreener.pipeline.state.TrendStore;
 import eu.tango.scamscreener.pipeline.stage.BehaviorStage;
 import eu.tango.scamscreener.pipeline.stage.FunnelStage;
 import eu.tango.scamscreener.pipeline.stage.LevenshteinStage;
@@ -27,18 +32,31 @@ public class ScamScreenerPipelineFactory {
      *
      * @param whitelist the runtime whitelist shared by the pipeline
      * @param blacklist the runtime blacklist shared by the pipeline
+     * @param rulesConfig the loaded rule configuration shared by rule-driven stages
+     * @param behaviorStore the shared sender-local behavior store
+     * @param trendStore the shared cross-sender trend store
+     * @param funnelStore the shared sender-local funnel store
      * @return the built-in ScamScreener v2 stage order
      */
-    public List<Stage> createDefaultStages(Whitelist whitelist, Blacklist blacklist) {
+    public List<Stage> createDefaultStages(
+        Whitelist whitelist,
+        Blacklist blacklist,
+        RulesConfig rulesConfig,
+        BehaviorStore behaviorStore,
+        TrendStore trendStore,
+        FunnelStore funnelStore
+    ) {
+        RuleCatalog ruleCatalog = new RuleCatalog(rulesConfig);
+
         // Keep the order aligned with the public API contract and design docs.
         return List.of(
-            new MuteStage(),
+            new MuteStage(ruleCatalog),
             new PlayerListStage(whitelist, blacklist),
-            new RuleStage(),
-            new LevenshteinStage(),
-            new BehaviorStage(),
-            new TrendStage(),
-            new FunnelStage(),
+            new RuleStage(ruleCatalog),
+            new LevenshteinStage(ruleCatalog),
+            new BehaviorStage(behaviorStore, ruleCatalog),
+            new TrendStage(trendStore, ruleCatalog),
+            new FunnelStage(funnelStore, ruleCatalog),
             new ModelStage()
         );
     }
@@ -48,11 +66,29 @@ public class ScamScreenerPipelineFactory {
      *
      * @param whitelist the runtime whitelist shared by the pipeline
      * @param blacklist the runtime blacklist shared by the pipeline
+     * @param rulesConfig the loaded rule configuration shared by rule-driven stages
+     * @param behaviorStore the shared sender-local behavior store
+     * @param trendStore the shared cross-sender trend store
+     * @param funnelStore the shared sender-local funnel store
      * @return a pipeline engine ready to execute the core stage sequence
      */
-    public PipelineEngine createDefaultEngine(Whitelist whitelist, Blacklist blacklist) {
+    public PipelineEngine createDefaultEngine(
+        Whitelist whitelist,
+        Blacklist blacklist,
+        RulesConfig rulesConfig,
+        BehaviorStore behaviorStore,
+        TrendStore trendStore,
+        FunnelStore funnelStore
+    ) {
         // Use the engine defaults until the dedicated v2 config object exists.
-        return new PipelineEngine(createDefaultStages(whitelist, blacklist));
+        return new PipelineEngine(createDefaultStages(
+            whitelist,
+            blacklist,
+            rulesConfig,
+            behaviorStore,
+            trendStore,
+            funnelStore
+        ));
     }
 
     /**
@@ -60,11 +96,30 @@ public class ScamScreenerPipelineFactory {
      *
      * @param whitelist the runtime whitelist shared by the pipeline
      * @param blacklist the runtime blacklist shared by the pipeline
+     * @param rulesConfig the loaded rule configuration shared by rule-driven stages
+     * @param behaviorStore the shared sender-local behavior store
+     * @param trendStore the shared cross-sender trend store
+     * @param funnelStore the shared sender-local funnel store
      * @param reviewThreshold the score needed for a review outcome
      * @return a pipeline engine with the configured review threshold
      */
-    public PipelineEngine createDefaultEngine(Whitelist whitelist, Blacklist blacklist, int reviewThreshold) {
+    public PipelineEngine createDefaultEngine(
+        Whitelist whitelist,
+        Blacklist blacklist,
+        RulesConfig rulesConfig,
+        BehaviorStore behaviorStore,
+        TrendStore trendStore,
+        FunnelStore funnelStore,
+        int reviewThreshold
+    ) {
         // Allow callers to override the default threshold without rebuilding the stage list.
-        return new PipelineEngine(createDefaultStages(whitelist, blacklist), reviewThreshold);
+        return new PipelineEngine(createDefaultStages(
+            whitelist,
+            blacklist,
+            rulesConfig,
+            behaviorStore,
+            trendStore,
+            funnelStore
+        ), reviewThreshold);
     }
 }

@@ -13,6 +13,7 @@ import eu.tango.scamscreener.gui.ScamScreenerScreens;
 import eu.tango.scamscreener.gui.screen.BlacklistScreen;
 import eu.tango.scamscreener.gui.screen.MessageSettingsScreen;
 import eu.tango.scamscreener.gui.screen.ReviewScreen;
+import eu.tango.scamscreener.gui.screen.RulesSettingsScreen;
 import eu.tango.scamscreener.gui.screen.RuntimeSettingsScreen;
 import eu.tango.scamscreener.gui.screen.WhitelistScreen;
 import eu.tango.scamscreener.lists.BlacklistEntry;
@@ -66,6 +67,7 @@ public final class ScamScreenerCommandHandler {
             .then(buildWhitelistCommand())
             .then(buildBlacklistCommand())
             .then(literal("review").executes(context -> openReview(context.getSource())))
+            .then(literal("rules").executes(context -> openRules(context.getSource())))
             .then(literal("settings").executes(context -> openSettings(context.getSource())))
             .then(literal("messages").executes(context -> openMessages(context.getSource())));
     }
@@ -131,6 +133,10 @@ public final class ScamScreenerCommandHandler {
 
     private static int openReview(FabricClientCommandSource source) {
         return queueScreen(source, () -> source.getClient().setScreen(new ReviewScreen(null)));
+    }
+
+    private static int openRules(FabricClientCommandSource source) {
+        return queueScreen(source, () -> source.getClient().setScreen(new RulesSettingsScreen(null)));
     }
 
     private static int openSettings(FabricClientCommandSource source) {

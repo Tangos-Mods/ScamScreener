@@ -3,14 +3,21 @@ package eu.tango.scamscreener;
 import eu.tango.scamscreener.api.event.BlacklistEvent;
 import eu.tango.scamscreener.api.event.PlayerListChangeType;
 import eu.tango.scamscreener.api.event.WhitelistEvent;
+import eu.tango.scamscreener.config.data.RulesConfig;
 import eu.tango.scamscreener.config.data.RuntimeConfig;
 import eu.tango.scamscreener.lists.Blacklist;
 import eu.tango.scamscreener.lists.Whitelist;
 import eu.tango.scamscreener.config.store.BlacklistConfigStore;
+import eu.tango.scamscreener.config.store.ReviewConfigStore;
+import eu.tango.scamscreener.config.store.RulesConfigStore;
 import eu.tango.scamscreener.config.store.RuntimeConfigStore;
 import eu.tango.scamscreener.config.store.WhitelistConfigStore;
 import eu.tango.scamscreener.pipeline.core.PipelineEngine;
 import eu.tango.scamscreener.pipeline.core.ScamScreenerPipelineFactory;
+import eu.tango.scamscreener.pipeline.rule.RuleCatalog;
+import eu.tango.scamscreener.pipeline.state.BehaviorStore;
+import eu.tango.scamscreener.pipeline.state.FunnelStore;
+import eu.tango.scamscreener.pipeline.state.TrendStore;
 import eu.tango.scamscreener.review.ReviewStore;
 import lombok.Getter;
 import lombok.experimental.Accessors;
@@ -27,6 +34,8 @@ public final class ScamScreenerRuntime {
     private final WhitelistConfigStore whitelistConfigStore;
     private final BlacklistConfigStore blacklistConfigStore;
     private final RuntimeConfigStore runtimeConfigStore;
+    private final RulesConfigStore rulesConfigStore;
+    private final ReviewConfigStore reviewConfigStore;
     @Getter
     @Accessors(fluent = true)
     private final Whitelist whitelist;
@@ -36,7 +45,17 @@ public final class ScamScreenerRuntime {
     @Getter
     @Accessors(fluent = true)
     private final ReviewStore reviewStore;
+    @Getter
+    @Accessors(fluent = true)
+    private final BehaviorStore behaviorStore;
+    @Getter
+    @Accessors(fluent = true)
+    private final TrendStore trendStore;
+    @Getter
+    @Accessors(fluent = true)
+    private final FunnelStore funnelStore;
     private volatile RuntimeConfig runtimeConfig;
+    private volatile RulesConfig rulesConfig;
     @Getter
     @Accessors(fluent = true)
     private volatile PipelineEngine pipelineEngine;
@@ -45,15 +64,28 @@ public final class ScamScreenerRuntime {
         whitelistConfigStore = new WhitelistConfigStore();
         blacklistConfigStore = new BlacklistConfigStore();
         runtimeConfigStore = new RuntimeConfigStore();
+        rulesConfigStore = new RulesConfigStore();
+        reviewConfigStore = new ReviewConfigStore();
         runtimeConfig = runtimeConfigStore.loadOrCreate();
+        rulesConfig = rulesConfigStore.loadOrCreate();
         whitelist = new Whitelist(this::saveWhitelist);
         blacklist = new Blacklist(this::saveBlacklist);
-        reviewStore = new ReviewStore();
+        reviewStore = new ReviewStore(this::saveReviewStore);
+        reviewStore.setMaxEntries(runtimeConfig.review().maxEntries());
+        behaviorStore = new BehaviorStore();
+        trendStore = new TrendStore();
+        funnelStore = new FunnelStore();
+        applyRuleStoreSettings();
         whitelistConfigStore.loadInto(whitelist);
         blacklistConfigStore.loadInto(blacklist);
+        reviewConfigStore.loadInto(reviewStore);
         pipelineEngine = ScamScreenerPipelineFactory.createDefaultEngine(
             whitelist,
             blacklist,
+            rulesConfig,
+            behaviorStore,
+            trendStore,
+            funnelStore,
             runtimeConfig.pipeline().reviewThreshold()
         );
     }
@@ -77,10 +109,22 @@ public final class ScamScreenerRuntime {
     }
 
     /**
+     * Returns the shared rule config.
+     *
+     * @return the loaded deterministic and similarity rule config
+     */
+    public RulesConfig rules() {
+        return rulesConfig;
+    }
+
+    /**
      * Reloads runtime config and persisted list contents from disk.
      */
     public synchronized void reload() {
         runtimeConfig = runtimeConfigStore.reload();
+        rulesConfig = rulesConfigStore.reload();
+        applyRuleStoreSettings();
+        resetDetectionState();
         whitelistConfigStore.reload();
         whitelistConfigStore.loadInto(whitelist);
         WhitelistEvent.EVENT.invoker().onWhitelistChanged(PlayerListChangeType.RELOADED, null);
@@ -88,6 +132,10 @@ public final class ScamScreenerRuntime {
         blacklistConfigStore.reload();
         blacklistConfigStore.loadInto(blacklist);
         BlacklistEvent.EVENT.invoker().onBlacklistChanged(PlayerListChangeType.RELOADED, null);
+
+        reviewConfigStore.reload();
+        reviewConfigStore.loadInto(reviewStore);
+        reviewStore.setMaxEntries(runtimeConfig.review().maxEntries());
 
         rebuildPipelineEngine();
     }
@@ -97,7 +145,27 @@ public final class ScamScreenerRuntime {
      */
     public synchronized void saveConfig() {
         runtimeConfigStore.save(runtimeConfig);
+        reviewStore.setMaxEntries(runtimeConfig.review().maxEntries());
         rebuildPipelineEngine();
+    }
+
+    /**
+     * Saves the current in-memory rules config and reapplies the pipeline.
+     */
+    public synchronized void saveRules() {
+        rulesConfigStore.save(rulesConfig);
+        applyRuleStoreSettings();
+        resetDetectionState();
+        rebuildPipelineEngine();
+    }
+
+    /**
+     * Clears the shared state used by the stateful detection stages.
+     */
+    public synchronized void resetDetectionState() {
+        behaviorStore.reset();
+        trendStore.reset();
+        funnelStore.reset();
     }
 
     private void saveWhitelist() {
@@ -108,10 +176,25 @@ public final class ScamScreenerRuntime {
         blacklistConfigStore.saveFrom(blacklist);
     }
 
+    private void saveReviewStore() {
+        reviewConfigStore.saveFrom(reviewStore);
+    }
+
+    private void applyRuleStoreSettings() {
+        RuleCatalog ruleCatalog = new RuleCatalog(rulesConfig);
+        behaviorStore.configure(ruleCatalog.behavior().windowMs(), ruleCatalog.behavior().maxHistory());
+        trendStore.configure(ruleCatalog.trend().windowMs(), ruleCatalog.trend().maxHistory());
+        funnelStore.configure(ruleCatalog.funnel().windowMs(), ruleCatalog.funnel().maxHistory());
+    }
+
     private void rebuildPipelineEngine() {
         pipelineEngine = ScamScreenerPipelineFactory.createDefaultEngine(
             whitelist,
             blacklist,
+            rulesConfig,
+            behaviorStore,
+            trendStore,
+            funnelStore,
             runtimeConfig.pipeline().reviewThreshold()
         );
     }

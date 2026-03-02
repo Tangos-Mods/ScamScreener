@@ -90,6 +90,13 @@ public final class SelectableListWidget<T> {
     }
 
     /**
+     * Clears the current selection.
+     */
+    public void clearSelection() {
+        selectedIndex = -1;
+    }
+
+    /**
      * Indicates whether the list is empty.
      *
      * @return {@code true} when there are no rows

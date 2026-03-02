@@ -17,6 +17,7 @@ import lombok.Setter;
 public final class RuntimeConfig {
     private PipelineSettings pipeline = new PipelineSettings();
     private OutputSettings output = new OutputSettings();
+    private ReviewSettings review = new ReviewSettings();
     private StageSettings stages = new StageSettings();
 
     /**
@@ -43,6 +44,19 @@ public final class RuntimeConfig {
         }
 
         return output;
+    }
+
+    /**
+     * Returns the normalized review settings.
+     *
+     * @return non-null review settings
+     */
+    public ReviewSettings review() {
+        if (review == null) {
+            review = new ReviewSettings();
+        }
+
+        return review;
     }
 
     /**
@@ -89,6 +103,26 @@ public final class RuntimeConfig {
         private boolean showBlacklistWarningMessage = true;
         private boolean pingOnBlacklistWarning = true;
         private boolean debugLogging = false;
+    }
+
+    /**
+     * Review queue settings.
+     */
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    public static final class ReviewSettings {
+        private boolean captureEnabled = true;
+        private int maxEntries = 200;
+
+        /**
+         * Returns the normalized review queue capacity.
+         *
+         * @return a bounded review queue size
+         */
+        public int maxEntries() {
+            return Math.max(25, Math.min(500, maxEntries));
+        }
     }
 
     /**

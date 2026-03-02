@@ -57,3 +57,4 @@ replay_*.log
 *.rej
 *.swp
 *.swo
+/.idea
