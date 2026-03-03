@@ -9,7 +9,7 @@ import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.text.Text;
 
 /**
- * Review queue behavior and maintenance settings screen.
+ * Review queue behavior and maintenance screen using the classic v1 single-column layout.
  */
 public final class ReviewSettingsScreen extends BaseScreen {
     private static final int MIN_REVIEW_CAPACITY = 25;
@@ -27,7 +27,7 @@ public final class ReviewSettingsScreen extends BaseScreen {
      * @param parent the parent screen to return to
      */
     public ReviewSettingsScreen(Screen parent) {
-        super(Text.literal("Review Settings"), parent);
+        super(Text.literal("ScamScreener Review"), parent);
     }
 
     /**
@@ -35,9 +35,10 @@ public final class ReviewSettingsScreen extends BaseScreen {
      */
     @Override
     protected void init() {
-        int contentWidth = defaultContentWidth();
-        int x = centeredX(contentWidth);
-        int y = CONTENT_TOP + 8;
+        ColumnState column = defaultColumnState();
+        int contentWidth = column.buttonWidth();
+        int x = column.x();
+        int y = column.y() + 24;
 
         captureEnabledButton = addDrawableChild(
             ButtonWidget.builder(Text.empty(), button -> toggleCaptureEnabled())
@@ -80,7 +81,7 @@ public final class ReviewSettingsScreen extends BaseScreen {
                 .build()
         );
 
-        addCloseButton(contentWidth);
+        addBackButton(contentWidth);
         refreshButtons();
     }
 
@@ -97,7 +98,7 @@ public final class ReviewSettingsScreen extends BaseScreen {
         super.render(context, mouseX, mouseY, deltaTicks);
 
         ScamScreenerRuntime runtime = ScamScreenerRuntime.getInstance();
-        int left = centeredX(defaultContentWidth());
+        int left = centeredX(defaultButtonWidth());
         int y = CONTENT_TOP - 18;
 
         drawSectionTitle(context, left, y, "Review Queue");

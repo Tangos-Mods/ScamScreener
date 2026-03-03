@@ -6,7 +6,6 @@ import lombok.experimental.Accessors;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -129,16 +128,7 @@ public final class Rule {
      * @return the first regex match, or {@code null} when none matched
      */
     public String firstPatternMatch(String message) {
-        if (pattern == null || message == null || message.isBlank()) {
-            return null;
-        }
-
-        Matcher matcher = pattern.matcher(message);
-        if (!matcher.find()) {
-            return null;
-        }
-
-        return matcher.group();
+        return SafeRegex.firstMatch(pattern, message);
     }
 
     /**

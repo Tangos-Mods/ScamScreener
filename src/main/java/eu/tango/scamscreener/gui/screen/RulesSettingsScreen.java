@@ -41,7 +41,7 @@ public final class RulesSettingsScreen extends BaseScreen {
     }
 
     private RulesSettingsScreen(Screen parent, Section section) {
-        super(Text.literal("Rules Settings"), parent);
+        super(Text.literal("ScamScreener Rules"), parent);
         navigationParent = parent;
         this.section = section == null ? Section.RULE_STAGE : section;
     }
@@ -92,7 +92,7 @@ public final class RulesSettingsScreen extends BaseScreen {
         addFooterButton(
             columnX(x, footerWidth, DEFAULT_SPLIT_GAP, 3),
             footerWidth,
-            Text.literal("Close"),
+            Text.literal("Back"),
             button -> close()
         );
     }

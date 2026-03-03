@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Review list screen modeled after the dense v1 review presentation.
+ * Review list screen using the dense v1 review workflow.
  */
 public final class ReviewScreen extends BaseListScreen {
     private static final int LIST_ROW_HEIGHT = 28;
@@ -56,9 +56,9 @@ public final class ReviewScreen extends BaseListScreen {
      */
     @Override
     protected void init() {
-        int contentWidth = Math.min(560, Math.max(320, this.width - 40));
+        int contentWidth = Math.min(620, Math.max(360, this.width - 40));
         int contentX = centeredX(contentWidth);
-        int controlsY = CONTENT_TOP + 24;
+        int controlsY = CONTENT_TOP + 40;
         int searchWidth = Math.max(140, contentWidth - FILTER_BUTTON_WIDTH - DEFAULT_SPLIT_GAP);
 
         filterButton = addDrawableChild(
@@ -80,7 +80,7 @@ public final class ReviewScreen extends BaseListScreen {
         searchField.setChangedListener(value -> reloadRows());
 
         int listY = controlsY + ROW_HEIGHT;
-        int listHeight = Math.max(120, footerY() - listY - ACTION_AREA_HEIGHT - 10);
+        int listHeight = Math.max(80, footerY() - listY - ACTION_AREA_HEIGHT - 10);
         listWidget = new SelectableListWidget<>(
             contentX,
             listY,
@@ -148,7 +148,7 @@ public final class ReviewScreen extends BaseListScreen {
         addFooterButton(
             columnX(contentX, footerButtonWidth, DEFAULT_SPLIT_GAP, 1),
             footerButtonWidth,
-            Text.literal("Close"),
+            Text.literal("Back"),
             button -> close()
         );
         refreshFilterButton();
@@ -168,7 +168,7 @@ public final class ReviewScreen extends BaseListScreen {
     public void render(DrawContext context, int mouseX, int mouseY, float deltaTicks) {
         super.render(context, mouseX, mouseY, deltaTicks);
 
-        int left = centeredX(Math.min(560, Math.max(320, this.width - 40)));
+        int left = centeredX(Math.min(620, Math.max(360, this.width - 40)));
         drawSectionTitle(context, left, CONTENT_TOP, "Review Summary");
         drawLine(
             context,
@@ -187,6 +187,7 @@ public final class ReviewScreen extends BaseListScreen {
                 + " | Filter " + activeFilter.label()
                 + " | Search " + searchSummary()
         );
+        drawLine(context, left, CONTENT_TOP + 36, "Click a selected row again to cycle P/R/S/I like v1.");
 
         if (listWidget != null) {
             listWidget.render(context, this.textRenderer, mouseX, mouseY);
@@ -195,8 +196,18 @@ public final class ReviewScreen extends BaseListScreen {
 
     @Override
     protected boolean handleListClick(double mouseX, double mouseY, int button) {
-        if (button != 0 || listWidget == null || !listWidget.mouseClicked(mouseX, mouseY, button)) {
+        if (button != 0 || listWidget == null) {
             return false;
+        }
+
+        int previousSelection = listWidget.selectedIndex();
+        if (!listWidget.mouseClicked(mouseX, mouseY, button)) {
+            return false;
+        }
+
+        if (previousSelection >= 0 && previousSelection == listWidget.selectedIndex()) {
+            cycleSelectedVerdict();
+            return true;
         }
 
         updateActionState();
@@ -221,14 +232,25 @@ public final class ReviewScreen extends BaseListScreen {
         }
 
         ReviewActionHandler.setVerdict(entry, verdict);
-        reloadRows();
+        reloadRows(entry.getId());
+    }
+
+    private void cycleSelectedVerdict() {
+        ReviewEntry entry = selectedEntry().orElse(null);
+        if (entry == null) {
+            return;
+        }
+
+        ReviewActionHandler.setVerdict(entry, nextVerdict(entry.getVerdict()));
+        reloadRows(entry.getId());
     }
 
     private void resetVisibleChoices() {
+        String selectedRowId = selectedRowId();
         for (ReviewRow row : rows) {
             ScamScreenerRuntime.getInstance().reviewStore().setVerdict(row.rowId(), ReviewVerdict.PENDING);
         }
-        reloadRows();
+        reloadRows(selectedRowId);
     }
 
     private void clearVisible() {
@@ -239,7 +261,7 @@ public final class ReviewScreen extends BaseListScreen {
         for (String entryId : entryIds) {
             ScamScreenerRuntime.getInstance().reviewStore().remove(entryId);
         }
-        reloadRows();
+        reloadRows(null);
     }
 
     private void addSelectedToBlacklist() {
@@ -249,7 +271,7 @@ public final class ReviewScreen extends BaseListScreen {
         }
 
         ReviewActionHandler.addToBlacklist(entry);
-        reloadRows();
+        reloadRows(entry.getId());
     }
 
     private void addSelectedToWhitelist() {
@@ -259,7 +281,7 @@ public final class ReviewScreen extends BaseListScreen {
         }
 
         ReviewActionHandler.addToWhitelist(entry);
-        reloadRows();
+        reloadRows(entry.getId());
     }
 
     private void removeSelectedEntry() {
@@ -269,7 +291,7 @@ public final class ReviewScreen extends BaseListScreen {
         }
 
         ReviewActionHandler.remove(entry);
-        reloadRows();
+        reloadRows(null);
     }
 
     private void openDetails() {
@@ -326,6 +348,10 @@ public final class ReviewScreen extends BaseListScreen {
     }
 
     private void reloadRows() {
+        reloadRows(selectedRowId());
+    }
+
+    private void reloadRows(String selectedRowId) {
         rows.clear();
         for (ReviewEntry entry : ScamScreenerRuntime.getInstance().reviewStore().entries(activeFilter.verdict(), currentSearch())) {
             rows.add(ReviewRow.fromEntry(entry));
@@ -333,10 +359,24 @@ public final class ReviewScreen extends BaseListScreen {
 
         if (listWidget != null) {
             listWidget.setRows(rows);
-            listWidget.clearSelection();
+            listWidget.setSelectedIndex(indexOfRow(selectedRowId));
         }
 
         updateActionState();
+    }
+
+    private int indexOfRow(String rowId) {
+        if (rowId == null || rowId.isBlank()) {
+            return -1;
+        }
+
+        for (int index = 0; index < rows.size(); index++) {
+            if (rowId.equals(rows.get(index).rowId())) {
+                return index;
+            }
+        }
+
+        return -1;
     }
 
     private void renderRow(
@@ -380,6 +420,15 @@ public final class ReviewScreen extends BaseListScreen {
         }
     }
 
+    private ReviewVerdict nextVerdict(ReviewVerdict verdict) {
+        return switch (verdict == null ? ReviewVerdict.PENDING : verdict) {
+            case PENDING -> ReviewVerdict.RISK;
+            case RISK -> ReviewVerdict.SAFE;
+            case SAFE -> ReviewVerdict.IGNORED;
+            case IGNORED -> ReviewVerdict.PENDING;
+        };
+    }
+
     private Optional<ReviewEntry> selectedEntry() {
         if (listWidget == null) {
             return Optional.empty();
@@ -399,6 +448,19 @@ public final class ReviewScreen extends BaseListScreen {
         }
 
         return searchField.getText();
+    }
+
+    private String selectedRowId() {
+        if (listWidget == null) {
+            return null;
+        }
+
+        ReviewRow row = listWidget.selectedRow().orElse(null);
+        if (row == null || row.rowId().isBlank()) {
+            return null;
+        }
+
+        return row.rowId();
     }
 
     private String searchSummary() {

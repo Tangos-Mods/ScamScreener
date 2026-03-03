@@ -3,6 +3,7 @@ package eu.tango.scamscreener.chat;
 import eu.tango.scamscreener.ScamScreenerMod;
 import eu.tango.scamscreener.ScamScreenerRuntime;
 import eu.tango.scamscreener.api.event.PipelineDecisionEvent;
+import eu.tango.scamscreener.message.MessageDispatcher;
 import eu.tango.scamscreener.pipeline.data.ChatEvent;
 import eu.tango.scamscreener.pipeline.data.ChatSourceType;
 import eu.tango.scamscreener.pipeline.data.PipelineDecision;
@@ -43,7 +44,7 @@ public final class ChatPipelineListener {
         );
         ClientReceiveMessageEvents.GAME.register((message, overlay) -> {
             if (!overlay) {
-                onChatMessage(ChatEvent.fromGameMessage(message, MAX_CHAT_LENGTH));
+                onChatMessage(classifyGameMessage(message, MAX_CHAT_LENGTH));
             }
         });
         ScamScreenerMod.LOGGER.info("ChatPipelineListener is listening for inbound chat messages.");
@@ -95,6 +96,10 @@ public final class ChatPipelineListener {
      */
     private static void onChatMessage(ChatEvent chatEvent) {
         ChatEvent safeEvent = chatEvent == null ? ChatEvent.messageOnly("") : chatEvent;
+        if (MessageDispatcher.consumeLocalEcho(safeEvent.getRawMessage())) {
+            return;
+        }
+
         lastChatEvent = safeEvent;
         lastPipelineDecision = ScamScreenerRuntime.getInstance().pipelineEngine().evaluate(safeEvent);
         PipelineDecisionEvent.EVENT.invoker().onPipelineDecision(safeEvent, lastPipelineDecision);
@@ -111,5 +116,25 @@ public final class ChatPipelineListener {
             lastPipelineDecision.getTotalScore(),
             lastPipelineDecision.getDecidedByStage()
         );
+    }
+
+    static ChatEvent classifyGameMessage(net.minecraft.text.Text message, int maxChatLength) {
+        String rawLine = message == null ? "" : message.asTruncatedString(maxChatLength);
+        ChatLineClassifier.ParsedPlayerLine parsedPlayerLine = ChatLineClassifier.parsePlayerMessage(rawLine).orElse(null);
+        if (parsedPlayerLine != null) {
+            return new ChatEvent(
+                parsedPlayerLine.message(),
+                null,
+                parsedPlayerLine.senderName(),
+                System.currentTimeMillis(),
+                ChatSourceType.PLAYER
+            );
+        }
+
+        if (ChatLineClassifier.classify(rawLine) == ChatLineClassifier.ChatLineType.SYSTEM) {
+            return ChatEvent.fromGameMessage(message, maxChatLength);
+        }
+
+        return ChatEvent.messageOnly(rawLine, ChatSourceType.UNKNOWN);
     }
 }

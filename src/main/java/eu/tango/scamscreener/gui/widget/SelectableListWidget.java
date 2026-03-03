@@ -90,6 +90,32 @@ public final class SelectableListWidget<T> {
     }
 
     /**
+     * Selects a specific row index.
+     *
+     * @param selectedIndex the target row index, or {@code -1} to clear it
+     */
+    public void setSelectedIndex(int selectedIndex) {
+        if (rows.isEmpty()) {
+            this.selectedIndex = -1;
+            this.scrollOffsetRows = 0;
+            return;
+        }
+
+        if (selectedIndex < 0 || selectedIndex >= rows.size()) {
+            this.selectedIndex = -1;
+            return;
+        }
+
+        this.selectedIndex = selectedIndex;
+        if (this.selectedIndex < scrollOffsetRows) {
+            scrollOffsetRows = this.selectedIndex;
+        } else if (this.selectedIndex >= scrollOffsetRows + visibleRows()) {
+            scrollOffsetRows = this.selectedIndex - visibleRows() + 1;
+        }
+        scrollOffsetRows = clamp(scrollOffsetRows, 0, maxScrollOffset());
+    }
+
+    /**
      * Clears the current selection.
      */
     public void clearSelection() {

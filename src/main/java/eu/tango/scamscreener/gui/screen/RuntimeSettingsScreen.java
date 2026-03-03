@@ -9,7 +9,7 @@ import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.text.Text;
 
 /**
- * Runtime and pipeline settings screen.
+ * Runtime and pipeline settings screen using the classic v1 single-column layout.
  */
 public final class RuntimeSettingsScreen extends BaseScreen {
     private ButtonWidget reviewThresholdButton;
@@ -22,7 +22,7 @@ public final class RuntimeSettingsScreen extends BaseScreen {
      * @param parent the parent screen to return to
      */
     public RuntimeSettingsScreen(Screen parent) {
-        super(Text.literal("Runtime Settings"), parent);
+        super(Text.literal("ScamScreener Runtime"), parent);
     }
 
     /**
@@ -30,9 +30,10 @@ public final class RuntimeSettingsScreen extends BaseScreen {
      */
     @Override
     protected void init() {
-        int contentWidth = defaultContentWidth();
-        int x = centeredX(contentWidth);
-        int y = CONTENT_TOP + 8;
+        ColumnState column = defaultColumnState();
+        int contentWidth = column.buttonWidth();
+        int x = column.x();
+        int y = column.y() + 12;
 
         reviewThresholdButton = addDrawableChild(
             ButtonWidget.builder(Text.empty(), button -> cycleReviewThreshold())
@@ -75,7 +76,7 @@ public final class RuntimeSettingsScreen extends BaseScreen {
                 .build()
         );
 
-        addCloseButton(contentWidth);
+        addBackButton(contentWidth);
         refreshButtons();
     }
 
@@ -91,9 +92,9 @@ public final class RuntimeSettingsScreen extends BaseScreen {
     public void render(DrawContext context, int mouseX, int mouseY, float deltaTicks) {
         super.render(context, mouseX, mouseY, deltaTicks);
 
-        int left = centeredX(defaultContentWidth());
+        int left = centeredX(defaultButtonWidth());
         drawSectionTitle(context, left, CONTENT_TOP - 18, "Pipeline");
-        drawLine(context, left, CONTENT_TOP - 6, "Changes save immediately and rebuild the engine.");
+        drawLine(context, left, CONTENT_TOP - 6, "Classic v1 layout, current v2 runtime controls.");
     }
 
     private void cycleReviewThreshold() {

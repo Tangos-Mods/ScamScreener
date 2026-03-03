@@ -9,7 +9,7 @@ import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.text.Text;
 
 /**
- * User-facing output settings screen.
+ * User-facing output settings screen using the classic v1 single-column layout.
  */
 public final class MessageSettingsScreen extends BaseScreen {
     private ButtonWidget riskMessageButton;
@@ -23,7 +23,7 @@ public final class MessageSettingsScreen extends BaseScreen {
      * @param parent the parent screen to return to
      */
     public MessageSettingsScreen(Screen parent) {
-        super(Text.literal("Message Settings"), parent);
+        super(Text.literal("ScamScreener Messages"), parent);
     }
 
     /**
@@ -31,9 +31,10 @@ public final class MessageSettingsScreen extends BaseScreen {
      */
     @Override
     protected void init() {
-        int contentWidth = defaultContentWidth();
-        int x = centeredX(contentWidth);
-        int y = CONTENT_TOP + 8;
+        ColumnState column = defaultColumnState();
+        int contentWidth = column.buttonWidth();
+        int x = column.x();
+        int y = column.y() + 12;
 
         riskMessageButton = addDrawableChild(
             ButtonWidget.builder(Text.empty(), button -> toggleRiskMessage())
@@ -62,7 +63,7 @@ public final class MessageSettingsScreen extends BaseScreen {
                 .build()
         );
 
-        addCloseButton(contentWidth);
+        addBackButton(contentWidth);
         refreshButtons();
     }
 
@@ -78,7 +79,7 @@ public final class MessageSettingsScreen extends BaseScreen {
     public void render(DrawContext context, int mouseX, int mouseY, float deltaTicks) {
         super.render(context, mouseX, mouseY, deltaTicks);
 
-        int left = centeredX(defaultContentWidth());
+        int left = centeredX(defaultButtonWidth());
         drawSectionTitle(context, left, CONTENT_TOP - 18, "Warnings");
         drawLine(context, left, CONTENT_TOP - 6, "These toggles control local risk and blacklist alerts.");
     }

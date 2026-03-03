@@ -1,7 +1,5 @@
 package eu.tango.scamscreener.pipeline.rule;
 
-import java.util.Locale;
-
 /**
  * One normalized similarity rule entry shared by fuzzy matching stages.
  *
@@ -27,6 +25,18 @@ public record SimilarityRule(
      * @return the formatted reason text
      */
     public String reason(double similarity) {
-        return String.format(Locale.ROOT, "%s matched \"%s\" at %.2f", category, rawPhrase, similarity);
+        long scaled = Math.round(similarity * 100.0);
+        long whole = scaled / 100;
+        long fraction = Math.abs(scaled % 100);
+        String fractionText = fraction < 10 ? "0" + fraction : Long.toString(fraction);
+        return safe(category) + " matched \"" + safe(rawPhrase) + "\" at " + whole + "." + fractionText;
+    }
+
+    private static String safe(String value) {
+        if (value == null) {
+            return "";
+        }
+
+        return value;
     }
 }

@@ -18,12 +18,12 @@ import eu.tango.scamscreener.gui.screen.RuntimeSettingsScreen;
 import eu.tango.scamscreener.gui.screen.WhitelistScreen;
 import eu.tango.scamscreener.lists.BlacklistEntry;
 import eu.tango.scamscreener.lists.WhitelistEntry;
+import eu.tango.scamscreener.message.ClientMessages;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.text.Text;
 
 import java.util.Locale;
 import java.util.UUID;
@@ -150,7 +150,7 @@ public final class ScamScreenerCommandHandler {
     private static int queueScreen(FabricClientCommandSource source, Runnable action) {
         MinecraftClient client = source.getClient();
         if (client == null) {
-            source.sendError(Text.literal("ScamScreener UI is not available right now."));
+            source.sendError(ClientMessages.uiUnavailable());
             return 0;
         }
 
@@ -178,12 +178,12 @@ public final class ScamScreenerCommandHandler {
         WhitelistAccess whitelist = ScamScreenerRuntime.getInstance().whitelist();
         boolean stored = whitelist.add(target.playerUuid(), target.playerName());
         if (!stored) {
-            source.sendError(Text.literal("Whitelist update failed. Provide a valid player name or UUID."));
+            source.sendError(ClientMessages.whitelistUpdateFailed());
             return 0;
         }
 
         refreshCommandCompletions();
-        source.sendFeedback(Text.literal("Whitelist updated: " + target.displayValue() + "."));
+        source.sendFeedback(ClientMessages.whitelistUpdated(target.displayValue()));
         return 1;
     }
 
@@ -191,19 +191,19 @@ public final class ScamScreenerCommandHandler {
         WhitelistAccess whitelist = ScamScreenerRuntime.getInstance().whitelist();
         boolean removed = removeFromWhitelist(whitelist, target);
         if (!removed) {
-            source.sendError(Text.literal("No whitelist entry found for " + target.displayValue() + "."));
+            source.sendError(ClientMessages.whitelistEntryMissing(target.displayValue()));
             return 0;
         }
 
         refreshCommandCompletions();
-        source.sendFeedback(Text.literal("Whitelist entry removed: " + target.displayValue() + "."));
+        source.sendFeedback(ClientMessages.whitelistRemoved(target.displayValue()));
         return 1;
     }
 
     private static int clearWhitelist(FabricClientCommandSource source) {
         ScamScreenerRuntime.getInstance().whitelist().clear();
         refreshCommandCompletions();
-        source.sendFeedback(Text.literal("Whitelist cleared."));
+        source.sendFeedback(ClientMessages.whitelistCleared());
         return 1;
     }
 
@@ -211,12 +211,12 @@ public final class ScamScreenerCommandHandler {
         BlacklistAccess blacklist = ScamScreenerRuntime.getInstance().blacklist();
         boolean stored = blacklist.add(target.playerUuid(), target.playerName(), score, normalizeReason(reason));
         if (!stored) {
-            source.sendError(Text.literal("Blacklist update failed. Provide a valid player name or UUID."));
+            source.sendError(ClientMessages.blacklistUpdateFailed());
             return 0;
         }
 
         refreshCommandCompletions();
-        source.sendFeedback(Text.literal("Blacklist updated: " + target.displayValue() + " (score " + score + ")."));
+        source.sendFeedback(ClientMessages.blacklistUpdated(target.displayValue(), score));
         return 1;
     }
 
@@ -224,19 +224,19 @@ public final class ScamScreenerCommandHandler {
         BlacklistAccess blacklist = ScamScreenerRuntime.getInstance().blacklist();
         boolean removed = removeFromBlacklist(blacklist, target);
         if (!removed) {
-            source.sendError(Text.literal("No blacklist entry found for " + target.displayValue() + "."));
+            source.sendError(ClientMessages.blacklistEntryMissing(target.displayValue()));
             return 0;
         }
 
         refreshCommandCompletions();
-        source.sendFeedback(Text.literal("Blacklist entry removed: " + target.displayValue() + "."));
+        source.sendFeedback(ClientMessages.blacklistRemoved(target.displayValue()));
         return 1;
     }
 
     private static int clearBlacklist(FabricClientCommandSource source) {
         ScamScreenerRuntime.getInstance().blacklist().clear();
         refreshCommandCompletions();
-        source.sendFeedback(Text.literal("Blacklist cleared."));
+        source.sendFeedback(ClientMessages.blacklistCleared());
         return 1;
     }
 

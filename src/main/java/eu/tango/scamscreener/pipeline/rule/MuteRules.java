@@ -37,7 +37,7 @@ public record MuteRules(
             return false;
         }
 
-        return harmlessMessagePattern != null && harmlessMessagePattern.matcher(normalizedMessage).matches();
+        return SafeRegex.matches(harmlessMessagePattern, normalizedMessage);
     }
 
     /**

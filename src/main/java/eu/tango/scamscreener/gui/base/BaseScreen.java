@@ -69,6 +69,25 @@ public abstract class BaseScreen extends Screen {
     }
 
     /**
+     * Returns the classic v1 button width used by the compact settings pages.
+     *
+     * @return a centered, bounded button width
+     */
+    protected int defaultButtonWidth() {
+        return Math.min(320, Math.max(180, this.width - 40));
+    }
+
+    /**
+     * Returns the shared single-column layout used by the v1 settings screens.
+     *
+     * @return the default button width, x position and start y position
+     */
+    protected ColumnState defaultColumnState() {
+        int buttonWidth = defaultButtonWidth();
+        return new ColumnState(buttonWidth, centeredX(buttonWidth), CONTENT_TOP);
+    }
+
+    /**
      * Returns the x coordinate for a centered widget.
      *
      * @param widgetWidth the width of the widget
@@ -124,6 +143,16 @@ public abstract class BaseScreen extends Screen {
      */
     protected ButtonWidget addCloseButton(int width) {
         return addCenteredFooterButton(width, Text.literal("Close"), button -> close());
+    }
+
+    /**
+     * Adds a standard back button.
+     *
+     * @param width the button width
+     * @return the created button widget
+     */
+    protected ButtonWidget addBackButton(int width) {
+        return addCenteredFooterButton(width, Text.literal("Back"), button -> close());
     }
 
     /**
@@ -188,5 +217,15 @@ public abstract class BaseScreen extends Screen {
         int safeIndex = Math.max(0, columnIndex);
         int safeGap = Math.max(0, gap);
         return startX + ((columnWidth + safeGap) * safeIndex);
+    }
+
+    /**
+     * Small layout state for one centered button column.
+     *
+     * @param buttonWidth the shared button width
+     * @param x the shared x position
+     * @param y the initial y position
+     */
+    protected record ColumnState(int buttonWidth, int x, int y) {
     }
 }
