@@ -37,6 +37,7 @@ public final class ChatPipelineListener {
             onChatMessage(ChatEvent.fromInboundChat(
                 message,
                 sender,
+                params,
                 receptionTimestamp,
                 MAX_CHAT_LENGTH,
                 ChatSourceType.PLAYER

@@ -2,39 +2,42 @@ package eu.tango.scamscreener.gui.screen;
 
 import eu.tango.scamscreener.ScamScreenerRuntime;
 import eu.tango.scamscreener.api.WhitelistAccess;
-import eu.tango.scamscreener.gui.base.BaseListScreen;
-import eu.tango.scamscreener.gui.data.WhitelistRow;
-import eu.tango.scamscreener.gui.widget.SelectableListWidget;
+import eu.tango.scamscreener.gui.base.BaseScreen;
 import eu.tango.scamscreener.lists.WhitelistEntry;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.text.Text;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
+import java.util.UUID;
 
 /**
- * First concrete v2 GUI screen built on the shared GUI foundation.
- *
- * <p>This screen intentionally focuses on list rendering and shared actions so
- * it can validate the new GUI base before the full settings tree is added.
+ * Restored v1-style whitelist management screen.
  */
-public final class WhitelistScreen extends BaseListScreen {
-    private static final int LIST_ROW_HEIGHT = 28;
+public final class WhitelistScreen extends BaseScreen {
+    private static final int ENTRIES_PER_PAGE = 8;
 
     private final WhitelistAccess whitelist;
+    private final List<ButtonWidget> entryButtons = new ArrayList<>();
+    private final List<WhitelistEntry> pageEntries = new ArrayList<>();
 
-    private SelectableListWidget<WhitelistRow> listWidget;
-    private ButtonWidget reloadButton;
+    private ButtonWidget previousPageButton;
+    private ButtonWidget nextPageButton;
     private ButtonWidget removeButton;
-    private ButtonWidget clearButton;
+    private TextFieldWidget addInput;
+    private int page;
+    private int totalPages = 1;
+    private UUID selectedUuid;
+    private String selectedName = "";
 
     /**
      * Creates the whitelist screen using the shared runtime whitelist.
      *
-     * @param parent the parent screen to return to
+     * @param parent the parent screen
      */
     public WhitelistScreen(Screen parent) {
         this(parent, ScamScreenerRuntime.getInstance().whitelist());
@@ -43,168 +46,252 @@ public final class WhitelistScreen extends BaseListScreen {
     /**
      * Creates the whitelist screen.
      *
-     * @param parent the parent screen to return to
-     * @param whitelist the whitelist access to present and edit
+     * @param parent the parent screen
+     * @param whitelist the whitelist access to manage
      */
     public WhitelistScreen(Screen parent, WhitelistAccess whitelist) {
-        super(Text.literal("Whitelist"), parent);
+        super(Text.literal("ScamScreener Whitelist"), parent);
         this.whitelist = whitelist;
     }
 
-    /**
-     * Builds the list layout and footer actions.
-     */
     @Override
     protected void init() {
-        int contentWidth = Math.min(460, Math.max(260, this.width - 40));
-        int contentX = centeredX(contentWidth);
-        int listY = CONTENT_TOP + 16;
-        int listHeight = Math.max(100, footerY() - listY - 36);
+        entryButtons.clear();
+        pageEntries.clear();
 
-        listWidget = new SelectableListWidget<>(
-            contentX,
-            listY,
-            contentWidth,
-            listHeight,
-            LIST_ROW_HEIGHT,
-            this::renderRow
+        int buttonWidth = Math.min(420, Math.max(220, this.width - 30));
+        int x = centeredX(buttonWidth);
+        int y = 34;
+
+        for (int index = 0; index < ENTRIES_PER_PAGE; index++) {
+            final int indexOnPage = index;
+            ButtonWidget rowButton = addDrawableChild(
+                ButtonWidget.builder(Text.literal("-"), button -> selectEntry(indexOnPage))
+                    .dimensions(x, y, buttonWidth, DEFAULT_BUTTON_HEIGHT)
+                    .build()
+            );
+            entryButtons.add(rowButton);
+            y += ROW_HEIGHT;
+        }
+
+        int halfWidth = splitWidth(buttonWidth, 2, DEFAULT_SPLIT_GAP);
+        previousPageButton = addDrawableChild(
+            ButtonWidget.builder(Text.literal("< Previous"), button -> {
+                page = Math.max(0, page - 1);
+                refreshList();
+            }).dimensions(x, y, halfWidth, DEFAULT_BUTTON_HEIGHT).build()
         );
+        nextPageButton = addDrawableChild(
+            ButtonWidget.builder(Text.literal("Next >"), button -> {
+                page = Math.min(Math.max(0, totalPages - 1), page + 1);
+                refreshList();
+            }).dimensions(columnX(x, halfWidth, DEFAULT_SPLIT_GAP, 1), y, halfWidth, DEFAULT_BUTTON_HEIGHT).build()
+        );
+        y += ROW_HEIGHT;
 
-        int buttonWidth = splitWidth(contentWidth, 4, DEFAULT_SPLIT_GAP);
-        int buttonY = listY + listHeight + 10;
-        int reloadX = contentX;
-        int removeX = columnX(contentX, buttonWidth, DEFAULT_SPLIT_GAP, 1);
-        int clearX = columnX(contentX, buttonWidth, DEFAULT_SPLIT_GAP, 2);
-        int closeX = columnX(contentX, buttonWidth, DEFAULT_SPLIT_GAP, 3);
-
-        reloadButton = addDrawableChild(
-            ButtonWidget.builder(Text.literal("Reload"), button -> reloadRows())
-                .dimensions(reloadX, buttonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
+        int addButtonWidth = 72;
+        int addInputWidth = Math.max(80, buttonWidth - addButtonWidth - DEFAULT_SPLIT_GAP);
+        addInput = addDrawableChild(
+            new TextFieldWidget(
+                this.textRenderer,
+                x,
+                y,
+                addInputWidth,
+                DEFAULT_BUTTON_HEIGHT,
+                Text.literal("Player Name")
+            )
+        );
+        addInput.setMaxLength(36);
+        addDrawableChild(
+            ButtonWidget.builder(Text.literal("Add"), button -> addEntryFromInput())
+                .dimensions(x + addInputWidth + DEFAULT_SPLIT_GAP, y, addButtonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
+        y += ROW_HEIGHT;
+
         removeButton = addDrawableChild(
             ButtonWidget.builder(Text.literal("Remove Selected"), button -> removeSelected())
-                .dimensions(removeX, buttonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
-                .build()
-        );
-        clearButton = addDrawableChild(
-            ButtonWidget.builder(Text.literal("Clear All"), button -> clearWhitelist())
-                .dimensions(clearX, buttonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
-                .build()
-        );
-        addDrawableChild(
-            ButtonWidget.builder(Text.literal("Close"), button -> close())
-                .dimensions(closeX, buttonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
+                .dimensions(x, y, buttonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
 
-        reloadRows();
+        addBackButton(buttonWidth);
+        refreshList();
     }
 
-    /**
-     * Draws the screen summary and the reusable list widget.
-     *
-     * @param context the current draw context
-     * @param mouseX the current mouse x position
-     * @param mouseY the current mouse y position
-     * @param deltaTicks partial tick delta
-     */
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float deltaTicks) {
         super.render(context, mouseX, mouseY, deltaTicks);
 
-        int left = centeredX(Math.min(460, Math.max(260, this.width - 40)));
-        drawSectionTitle(context, left, CONTENT_TOP, "Trusted Players");
-        drawLine(context, left, CONTENT_TOP + 12, "Entries: " + whitelist.allEntries().size());
+        context.drawCenteredTextWithShadow(
+            this.textRenderer,
+            Text.literal("Page " + (totalPages == 0 ? 0 : page + 1) + "/" + Math.max(1, totalPages)),
+            this.width / 2,
+            TITLE_Y + 12,
+            opaqueColor(0xAAAAAA)
+        );
 
-        if (listWidget != null) {
-            listWidget.render(context, this.textRenderer, mouseX, mouseY);
+        String selectedText = selectedUuid == null && selectedName.isBlank()
+            ? "Selected: none"
+            : "Selected: " + displayName(selectedUuid, selectedName);
+        context.drawCenteredTextWithShadow(
+            this.textRenderer,
+            Text.literal(selectedText),
+            this.width / 2,
+            this.height - 42,
+            opaqueColor(0xCCCCCC)
+        );
+    }
+
+    private void selectEntry(int indexOnPage) {
+        if (indexOnPage < 0 || indexOnPage >= pageEntries.size()) {
+            return;
+        }
+
+        WhitelistEntry entry = pageEntries.get(indexOnPage);
+        selectedUuid = entry == null ? null : entry.playerUuid();
+        selectedName = entry == null ? "" : safeName(entry.playerName());
+        refreshList();
+    }
+
+    private void refreshList() {
+        List<WhitelistEntry> allEntries = new ArrayList<>(whitelist.allEntries());
+        allEntries.sort((left, right) -> displayName(left.playerUuid(), left.playerName())
+            .toLowerCase(Locale.ROOT)
+            .compareTo(displayName(right.playerUuid(), right.playerName()).toLowerCase(Locale.ROOT)));
+
+        totalPages = Math.max(1, (int) Math.ceil(allEntries.size() / (double) ENTRIES_PER_PAGE));
+        page = Math.max(0, Math.min(page, totalPages - 1));
+
+        if (!hasSelection(allEntries)) {
+            selectedUuid = null;
+            selectedName = "";
+        }
+
+        pageEntries.clear();
+        int start = page * ENTRIES_PER_PAGE;
+        for (int index = 0; index < ENTRIES_PER_PAGE; index++) {
+            int absoluteIndex = start + index;
+            ButtonWidget button = entryButtons.get(index);
+            if (absoluteIndex >= allEntries.size()) {
+                button.active = false;
+                button.setMessage(Text.literal("-"));
+                continue;
+            }
+
+            WhitelistEntry entry = allEntries.get(absoluteIndex);
+            pageEntries.add(entry);
+            button.active = true;
+            button.setMessage(Text.literal(formatEntry(entry, matchesSelection(entry))));
+        }
+
+        if ((selectedUuid == null && selectedName.isBlank()) && !allEntries.isEmpty()) {
+            WhitelistEntry firstEntry = allEntries.get(0);
+            selectedUuid = firstEntry.playerUuid();
+            selectedName = safeName(firstEntry.playerName());
+            refreshList();
+            return;
+        }
+
+        previousPageButton.active = page > 0;
+        nextPageButton.active = page < totalPages - 1;
+        removeButton.active = selectedUuid != null || !selectedName.isBlank();
+    }
+
+    private void addEntryFromInput() {
+        if (addInput == null) {
+            return;
+        }
+
+        String rawValue = addInput.getText();
+        if (rawValue == null || rawValue.isBlank()) {
+            return;
+        }
+
+        String trimmedValue = rawValue.trim();
+        UUID playerUuid = tryParseUuid(trimmedValue);
+        String playerName = playerUuid == null ? trimmedValue : "";
+        if (!whitelist.add(playerUuid, playerName)) {
+            return;
+        }
+
+        selectedUuid = playerUuid;
+        selectedName = playerName;
+        addInput.setText("");
+        refreshList();
+    }
+
+    private void removeSelected() {
+        if (selectedUuid != null && whitelist.remove(selectedUuid)) {
+            selectedUuid = null;
+            selectedName = "";
+            refreshList();
+            return;
+        }
+
+        if (!selectedName.isBlank()) {
+            whitelist.removeByName(selectedName);
+            selectedUuid = null;
+            selectedName = "";
+            refreshList();
         }
     }
 
-    @Override
-    protected boolean handleListClick(double mouseX, double mouseY, int button) {
-        if (listWidget != null && listWidget.mouseClicked(mouseX, mouseY, button)) {
-            updateActionState();
-            return true;
+    private boolean hasSelection(List<WhitelistEntry> entries) {
+        for (WhitelistEntry entry : entries) {
+            if (matchesSelection(entry)) {
+                return true;
+            }
         }
 
         return false;
     }
 
-    @Override
-    protected boolean handleListScroll(double mouseX, double mouseY, double verticalAmount) {
-        return listWidget != null && listWidget.mouseScrolled(mouseX, mouseY, verticalAmount);
+    private boolean matchesSelection(WhitelistEntry entry) {
+        if (entry == null) {
+            return false;
+        }
+
+        if (selectedUuid != null && selectedUuid.equals(entry.playerUuid())) {
+            return true;
+        }
+
+        String entryName = safeName(entry.playerName());
+        return !selectedName.isBlank() && selectedName.equalsIgnoreCase(entryName);
     }
 
-    private void reloadRows() {
-        List<WhitelistRow> rows = new ArrayList<>();
-        for (WhitelistEntry entry : whitelist.allEntries()) {
-            rows.add(WhitelistRow.fromEntry(entry));
-        }
-        rows.sort(
-            Comparator.comparing(
-                row -> row.displayName().toLowerCase(java.util.Locale.ROOT)
-            )
-        );
-
-        if (listWidget != null) {
-            listWidget.setRows(rows);
+    private static String formatEntry(WhitelistEntry entry, boolean selected) {
+        if (entry == null) {
+            return "-";
         }
 
-        updateActionState();
+        return (selected ? "> " : "  ")
+            + displayName(entry.playerUuid(), entry.playerName())
+            + " | "
+            + (entry.playerUuid() == null ? "-" : entry.playerUuid());
     }
 
-    private void updateActionState() {
-        if (reloadButton != null) {
-            reloadButton.active = true;
-        }
-        if (removeButton != null) {
-            removeButton.active = listWidget != null && listWidget.selectedRow().isPresent();
-        }
-        if (clearButton != null) {
-            clearButton.active = !whitelist.isEmpty();
+    private static UUID tryParseUuid(String value) {
+        try {
+            return UUID.fromString(value);
+        } catch (IllegalArgumentException ignored) {
+            return null;
         }
     }
 
-    private void removeSelected() {
-        if (listWidget == null) {
-            return;
+    private static String displayName(UUID playerUuid, String playerName) {
+        String normalizedName = safeName(playerName);
+        if (!normalizedName.isBlank()) {
+            return normalizedName;
+        }
+        if (playerUuid != null) {
+            return playerUuid.toString();
         }
 
-        WhitelistRow selected = listWidget.selectedRow().orElse(null);
-        if (selected == null) {
-            return;
-        }
-
-        boolean removed = false;
-        if (selected.playerUuid() != null) {
-            removed = whitelist.remove(selected.playerUuid());
-        }
-        if (!removed && selected.playerName() != null && !selected.playerName().isBlank()) {
-            whitelist.removeByName(selected.playerName());
-        }
-
-        reloadRows();
+        return "<unknown>";
     }
 
-    private void clearWhitelist() {
-        whitelist.clear();
-        reloadRows();
-    }
-
-    private void renderRow(
-        DrawContext context,
-        net.minecraft.client.font.TextRenderer textRenderer,
-        WhitelistRow row,
-        int x,
-        int y,
-        int width,
-        int height,
-        boolean hovered,
-        boolean selected
-    ) {
-        context.drawTextWithShadow(textRenderer, Text.literal(row.displayName()), x, y, 0xFFFFFF);
-        context.drawTextWithShadow(textRenderer, Text.literal(row.detailLine()), x, y + 11, 0xA0A0A0);
+    private static String safeName(String playerName) {
+        return playerName == null ? "" : playerName.trim();
     }
 }

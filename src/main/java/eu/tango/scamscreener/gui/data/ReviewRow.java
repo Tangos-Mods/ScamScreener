@@ -1,5 +1,6 @@
 package eu.tango.scamscreener.gui.data;
 
+import eu.tango.scamscreener.chat.ChatLineClassifier;
 import eu.tango.scamscreener.review.ReviewEntry;
 import eu.tango.scamscreener.review.ReviewVerdict;
 
@@ -72,6 +73,6 @@ public record ReviewRow(
             return "";
         }
 
-        return rawMessage.replace('\n', ' ').replace('\r', ' ').trim();
+        return ChatLineClassifier.displayMessageOnly(rawMessage.replace('\n', ' ').replace('\r', ' ').trim());
     }
 }

@@ -16,9 +16,12 @@ import lombok.Setter;
 @NoArgsConstructor
 public final class RuntimeConfig {
     private PipelineSettings pipeline = new PipelineSettings();
+    private AlertSettings alerts = new AlertSettings();
     private OutputSettings output = new OutputSettings();
     private ReviewSettings review = new ReviewSettings();
     private StageSettings stages = new StageSettings();
+    private SafetySettings safety = new SafetySettings();
+    private DebugSettings debug = new DebugSettings();
 
     /**
      * Returns the normalized pipeline settings.
@@ -31,6 +34,19 @@ public final class RuntimeConfig {
         }
 
         return pipeline;
+    }
+
+    /**
+     * Returns the normalized alert settings.
+     *
+     * @return non-null alert settings
+     */
+    public AlertSettings alerts() {
+        if (alerts == null) {
+            alerts = new AlertSettings();
+        }
+
+        return alerts;
     }
 
     /**
@@ -73,6 +89,32 @@ public final class RuntimeConfig {
     }
 
     /**
+     * Returns the normalized safety settings.
+     *
+     * @return non-null safety settings
+     */
+    public SafetySettings safety() {
+        if (safety == null) {
+            safety = new SafetySettings();
+        }
+
+        return safety;
+    }
+
+    /**
+     * Returns the normalized debug settings.
+     *
+     * @return non-null debug settings
+     */
+    public DebugSettings debug() {
+        if (debug == null) {
+            debug = new DebugSettings();
+        }
+
+        return debug;
+    }
+
+    /**
      * Top-level pipeline settings.
      */
     @Getter
@@ -92,6 +134,35 @@ public final class RuntimeConfig {
     }
 
     /**
+     * v1-style alert settings layered on top of the current pipeline outputs.
+     */
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    public static final class AlertSettings {
+        private AlertRiskLevel minimumRiskLevel = AlertRiskLevel.LOW;
+        private AutoCaptureAlertLevel autoCaptureLevel = AutoCaptureAlertLevel.LOW;
+
+        /**
+         * Returns the normalized minimum visible alert threshold.
+         *
+         * @return the minimum visible alert threshold
+         */
+        public AlertRiskLevel minimumRiskLevel() {
+            return minimumRiskLevel == null ? AlertRiskLevel.LOW : minimumRiskLevel;
+        }
+
+        /**
+         * Returns the normalized review auto-capture level.
+         *
+         * @return the auto-capture level
+         */
+        public AutoCaptureAlertLevel autoCaptureLevel() {
+            return autoCaptureLevel == null ? AutoCaptureAlertLevel.LOW : autoCaptureLevel;
+        }
+    }
+
+    /**
      * User-facing output settings.
      */
     @Getter
@@ -102,6 +173,7 @@ public final class RuntimeConfig {
         private boolean pingOnRiskWarning = true;
         private boolean showBlacklistWarningMessage = true;
         private boolean pingOnBlacklistWarning = true;
+        private boolean showAutoLeaveMessage = true;
         private boolean debugLogging = false;
     }
 
@@ -133,5 +205,53 @@ public final class RuntimeConfig {
     @NoArgsConstructor
     public static final class StageSettings {
         private boolean modelEnabled = true;
+    }
+
+    /**
+     * Restored non-pipeline safety settings from the v1 user flow.
+     */
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    public static final class SafetySettings {
+        private boolean autoLeaveOnBlacklist = false;
+        private boolean muteFilterEnabled = false;
+        private java.util.List<String> mutePatterns = new java.util.ArrayList<>();
+
+        /**
+         * Returns the normalized mute-pattern list.
+         *
+         * @return the configured mute patterns
+         */
+        public java.util.List<String> mutePatterns() {
+            if (mutePatterns == null) {
+                mutePatterns = new java.util.ArrayList<>();
+            }
+
+            return mutePatterns;
+        }
+    }
+
+    /**
+     * Restored v1 debug flag state.
+     */
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    public static final class DebugSettings {
+        private java.util.Map<String, Boolean> flags = new java.util.LinkedHashMap<>();
+
+        /**
+         * Returns the normalized debug-flag map.
+         *
+         * @return the configured debug flags
+         */
+        public java.util.Map<String, Boolean> flags() {
+            if (flags == null) {
+                flags = new java.util.LinkedHashMap<>();
+            }
+
+            return flags;
+        }
     }
 }

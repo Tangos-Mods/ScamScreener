@@ -42,6 +42,28 @@ public final class MessageDispatcher {
     }
 
     /**
+     * Sends a local chat command on the client connection.
+     *
+     * @param command the command without the leading slash
+     */
+    public static void sendCommand(String command) {
+        if (command == null || command.isBlank()) {
+            return;
+        }
+
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client == null) {
+            return;
+        }
+
+        client.execute(() -> {
+            if (client.getNetworkHandler() != null) {
+                client.getNetworkHandler().sendChatCommand(command.trim());
+            }
+        });
+    }
+
+    /**
      * Consumes one pending local echo match, when present.
      *
      * @param rawMessage the inbound raw message

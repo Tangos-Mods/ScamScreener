@@ -1,6 +1,7 @@
 package eu.tango.scamscreener;
 
 import eu.tango.scamscreener.chat.ChatPipelineListener;
+import eu.tango.scamscreener.chat.mute.ChatMuteFilter;
 import eu.tango.scamscreener.command.ScamScreenerCommandHandler;
 import eu.tango.scamscreener.message.DecisionMessageHandler;
 import eu.tango.scamscreener.review.ReviewCaptureHandler;
@@ -26,6 +27,7 @@ public class ScamScreenerMod implements ClientModInitializer {
         LOGGER.info("Initializing ScamScreener");
         ScamScreenerRuntime.getInstance();
         ScamScreenerCommandHandler.initialize();
+        ChatMuteFilter.initialize();
         ReviewCaptureHandler.initialize();
         DecisionMessageHandler.initialize();
         ChatPipelineListener.initialize();

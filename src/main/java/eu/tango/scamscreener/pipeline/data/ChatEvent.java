@@ -91,7 +91,7 @@ public final class ChatEvent {
         Instant receptionTimestamp,
         int maxChatLength
     ) {
-        return fromInboundChat(message, sender, receptionTimestamp, maxChatLength, ChatSourceType.UNKNOWN);
+        return fromInboundChat(message, sender, null, receptionTimestamp, maxChatLength, ChatSourceType.UNKNOWN);
     }
 
     /**
@@ -111,9 +111,34 @@ public final class ChatEvent {
         int maxChatLength,
         ChatSourceType sourceType
     ) {
+        return fromInboundChat(message, sender, null, receptionTimestamp, maxChatLength, sourceType);
+    }
+
+    /**
+     * Creates a chat event directly from the inbound Fabric chat callback values.
+     *
+     * @param message the inbound chat message text component
+     * @param sender the sender profile, if available
+     * @param params the Fabric message parameter object, if available
+     * @param receptionTimestamp the receive timestamp
+     * @param maxChatLength the maximum message length to extract
+     * @param sourceType the detected source type of the message
+     * @return a normalized chat event for pipeline processing
+     */
+    public static ChatEvent fromInboundChat(
+        Text message,
+        GameProfile sender,
+        Object params,
+        Instant receptionTimestamp,
+        int maxChatLength,
+        ChatSourceType sourceType
+    ) {
         String rawMessage = message == null ? "" : message.asTruncatedString(maxChatLength);
         UUID senderUuid = sender == null ? null : sender.id();
         String senderName = sender == null || sender.name() == null ? "" : sender.name();
+        if (senderName.isBlank()) {
+            senderName = extractSenderNameFromParams(params, maxChatLength);
+        }
         long timestampMs = receptionTimestamp == null ? System.currentTimeMillis() : receptionTimestamp.toEpochMilli();
 
         // Centralize callback-to-event conversion so the listener stays lean.
@@ -173,5 +198,36 @@ public final class ChatEvent {
      */
     public boolean isSystemSource() {
         return sourceType == ChatSourceType.SYSTEM;
+    }
+
+    private static String extractSenderNameFromParams(Object params, int maxChatLength) {
+        if (params == null) {
+            return "";
+        }
+
+        for (String methodName : new String[] { "name", "getName", "senderName", "targetName" }) {
+            String extractedName = invokeNameMethod(params, methodName, maxChatLength);
+            if (!extractedName.isBlank()) {
+                return extractedName;
+            }
+        }
+
+        return "";
+    }
+
+    private static String invokeNameMethod(Object params, String methodName, int maxChatLength) {
+        try {
+            Object value = params.getClass().getMethod(methodName).invoke(params);
+            if (value instanceof Text textValue) {
+                return textValue.asTruncatedString(maxChatLength).trim();
+            }
+            if (value instanceof String stringValue) {
+                return stringValue.trim();
+            }
+        } catch (ReflectiveOperationException ignored) {
+            return "";
+        }
+
+        return "";
     }
 }

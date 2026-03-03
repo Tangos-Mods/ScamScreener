@@ -1,5 +1,6 @@
 package eu.tango.scamscreener.command;
 
+import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
@@ -9,16 +10,29 @@ import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import eu.tango.scamscreener.ScamScreenerRuntime;
 import eu.tango.scamscreener.api.BlacklistAccess;
 import eu.tango.scamscreener.api.WhitelistAccess;
+import eu.tango.scamscreener.chat.ChatPipelineListener;
+import eu.tango.scamscreener.config.data.AlertRiskLevel;
 import eu.tango.scamscreener.gui.ScamScreenerScreens;
+import eu.tango.scamscreener.gui.screen.AiUpdateSettingsScreen;
+import eu.tango.scamscreener.gui.screen.AlertInfoScreen;
+import eu.tango.scamscreener.gui.screen.AlertManageScreen;
 import eu.tango.scamscreener.gui.screen.BlacklistScreen;
+import eu.tango.scamscreener.gui.screen.DebugSettingsScreen;
 import eu.tango.scamscreener.gui.screen.MessageSettingsScreen;
+import eu.tango.scamscreener.gui.screen.MetricsSettingsScreen;
 import eu.tango.scamscreener.gui.screen.ReviewScreen;
 import eu.tango.scamscreener.gui.screen.RulesSettingsScreen;
 import eu.tango.scamscreener.gui.screen.RuntimeSettingsScreen;
 import eu.tango.scamscreener.gui.screen.WhitelistScreen;
 import eu.tango.scamscreener.lists.BlacklistEntry;
 import eu.tango.scamscreener.lists.WhitelistEntry;
+import eu.tango.scamscreener.message.DecisionMessages;
+import eu.tango.scamscreener.message.AlertContextRegistry;
 import eu.tango.scamscreener.message.ClientMessages;
+import eu.tango.scamscreener.message.MessageDispatcher;
+import eu.tango.scamscreener.pipeline.data.ChatEvent;
+import eu.tango.scamscreener.pipeline.data.PipelineDecision;
+import eu.tango.scamscreener.debug.DebugKeys;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
@@ -64,12 +78,126 @@ public final class ScamScreenerCommandHandler {
         return literal(literalName)
             .executes(context -> openRoot(context.getSource()))
             .then(literal("open").executes(context -> openRoot(context.getSource())))
+            .then(buildLegacyAddCommand())
+            .then(buildLegacyRemoveCommand())
+            .then(buildLegacyListCommand())
             .then(buildWhitelistCommand())
             .then(buildBlacklistCommand())
-            .then(literal("review").executes(context -> openReview(context.getSource())))
+            .then(buildReviewCommand())
+            .then(buildAlertLevelCommand())
+            .then(buildAutoLeaveCommand())
+            .then(buildMuteCommand())
+            .then(buildUnmuteCommand())
+            .then(buildDebugCommand())
+            .then(literal("metrics").executes(context -> openMetrics(context.getSource())))
+            .then(literal("aiupdate").executes(context -> openAiUpdate(context.getSource())))
+            .then(literal("version").executes(context -> showVersion(context.getSource())))
+            .then(literal("preview").executes(context -> previewWarnings(context.getSource())))
             .then(literal("rules").executes(context -> openRules(context.getSource())))
+            .then(literal("runtime").executes(context -> openRuntime(context.getSource())))
             .then(literal("settings").executes(context -> openSettings(context.getSource())))
-            .then(literal("messages").executes(context -> openMessages(context.getSource())));
+            .then(literal("messages").executes(context -> openMessages(context.getSource())))
+            .then(literal("help").executes(context -> showHelp(context.getSource())));
+    }
+
+    private static LiteralArgumentBuilder<FabricClientCommandSource> buildReviewCommand() {
+        return literal("review")
+            .executes(context -> openReview(context.getSource()))
+            .then(literal("manage")
+                .then(argument("alertId", StringArgumentType.word())
+                    .executes(context -> openReviewManage(context.getSource(), StringArgumentType.getString(context, "alertId")))))
+            .then(literal("info")
+                .then(argument("alertId", StringArgumentType.word())
+                    .executes(context -> openReviewInfo(context.getSource(), StringArgumentType.getString(context, "alertId")))))
+            .then(literal("player")
+                .then(argument("playerName", StringArgumentType.word())
+                    .suggests((context, builder) -> suggestReviewPlayers(builder))
+                    .executes(context -> openReviewPlayer(context.getSource(), StringArgumentType.getString(context, "playerName")))))
+            .then(argument("playerName", StringArgumentType.word())
+                .suggests((context, builder) -> suggestReviewPlayers(builder))
+                .executes(context -> openReviewPlayer(context.getSource(), StringArgumentType.getString(context, "playerName"))));
+    }
+
+    private static LiteralArgumentBuilder<FabricClientCommandSource> buildLegacyAddCommand() {
+        return literal("add")
+            .then(argument("target", StringArgumentType.word())
+                .executes(context -> addBlacklist(context.getSource(), readTarget(context), 100, DEFAULT_BLACKLIST_REASON))
+                .then(argument("score", IntegerArgumentType.integer(0))
+                    .executes(context -> addBlacklist(
+                        context.getSource(),
+                        readTarget(context),
+                        IntegerArgumentType.getInteger(context, "score"),
+                        DEFAULT_BLACKLIST_REASON
+                    ))
+                    .then(argument("reason", StringArgumentType.greedyString())
+                        .executes(context -> addBlacklist(
+                            context.getSource(),
+                            readTarget(context),
+                            IntegerArgumentType.getInteger(context, "score"),
+                            StringArgumentType.getString(context, "reason")
+                        ))))
+                .then(argument("reason", StringArgumentType.greedyString())
+                    .executes(context -> addBlacklist(
+                        context.getSource(),
+                        readTarget(context),
+                        100,
+                        StringArgumentType.getString(context, "reason")
+                    ))));
+    }
+
+    private static LiteralArgumentBuilder<FabricClientCommandSource> buildLegacyRemoveCommand() {
+        return literal("remove")
+            .then(argument("target", StringArgumentType.word())
+                .suggests((context, builder) -> suggestBlacklistEntries(builder))
+                .executes(context -> removeBlacklist(context.getSource(), readTarget(context))));
+    }
+
+    private static LiteralArgumentBuilder<FabricClientCommandSource> buildLegacyListCommand() {
+        return literal("list").executes(context -> openBlacklist(context.getSource()));
+    }
+
+    private static LiteralArgumentBuilder<FabricClientCommandSource> buildAlertLevelCommand() {
+        return literal("alertlevel")
+            .executes(context -> showAlertLevel(context.getSource()))
+            .then(argument("level", StringArgumentType.word())
+                .suggests((context, builder) -> suggestAlertLevels(builder))
+                .executes(context -> setAlertLevel(context.getSource(), StringArgumentType.getString(context, "level"))));
+    }
+
+    private static LiteralArgumentBuilder<FabricClientCommandSource> buildAutoLeaveCommand() {
+        return literal("autoleave")
+            .executes(context -> showAutoLeave(context.getSource()))
+            .then(literal("on").executes(context -> setAutoLeave(context.getSource(), true)))
+            .then(literal("off").executes(context -> setAutoLeave(context.getSource(), false)));
+    }
+
+    private static LiteralArgumentBuilder<FabricClientCommandSource> buildMuteCommand() {
+        return literal("mute")
+            .executes(context -> enableMuteFilter(context.getSource()))
+            .then(argument("pattern", StringArgumentType.greedyString())
+                .executes(context -> addMutePattern(context.getSource(), StringArgumentType.getString(context, "pattern"))));
+    }
+
+    private static LiteralArgumentBuilder<FabricClientCommandSource> buildUnmuteCommand() {
+        return literal("unmute")
+            .executes(context -> disableMuteFilter(context.getSource()))
+            .then(argument("pattern", StringArgumentType.greedyString())
+                .suggests((context, builder) -> suggestMutePatterns(builder))
+                .executes(context -> removeMutePattern(context.getSource(), StringArgumentType.getString(context, "pattern"))));
+    }
+
+    private static LiteralArgumentBuilder<FabricClientCommandSource> buildDebugCommand() {
+        return literal("debug")
+            .executes(context -> showDebugStatus(context.getSource()))
+            .then(argument("enabled", BoolArgumentType.bool())
+                .executes(context -> setAllDebug(context.getSource(), BoolArgumentType.getBool(context, "enabled")))
+                .then(argument("debug", StringArgumentType.word())
+                    .suggests((context, builder) -> suggestDebugKeys(builder))
+                    .executes(context -> setDebugKey(
+                        context.getSource(),
+                        StringArgumentType.getString(context, "debug"),
+                        BoolArgumentType.getBool(context, "enabled")
+                    ))));
     }
 
     private static LiteralArgumentBuilder<FabricClientCommandSource> buildWhitelistCommand() {
@@ -135,16 +263,195 @@ public final class ScamScreenerCommandHandler {
         return queueScreen(source, () -> source.getClient().setScreen(new ReviewScreen(null)));
     }
 
+    private static int openReviewManage(FabricClientCommandSource source, String alertId) {
+        AlertContextRegistry.AlertContext context = AlertContextRegistry.find(alertId).orElse(null);
+        if (context == null) {
+            source.sendError(ClientMessages.alertContextMissing());
+            return 0;
+        }
+
+        return queueScreen(source, () -> source.getClient().setScreen(new AlertManageScreen(null, context)));
+    }
+
+    private static int openReviewInfo(FabricClientCommandSource source, String alertId) {
+        AlertContextRegistry.AlertContext context = AlertContextRegistry.find(alertId).orElse(null);
+        if (context == null) {
+            source.sendError(ClientMessages.alertContextMissing());
+            return 0;
+        }
+
+        return queueScreen(source, () -> source.getClient().setScreen(new AlertInfoScreen(null, context)));
+    }
+
+    private static int openReviewPlayer(FabricClientCommandSource source, String playerName) {
+        AlertContextRegistry.AlertContext context = AlertContextRegistry.createPlayerReviewContext(playerName).orElse(null);
+        if (context == null) {
+            source.sendError(ClientMessages.alertContextMissing());
+            return 0;
+        }
+
+        return queueScreen(source, () -> source.getClient().setScreen(new AlertManageScreen(null, context)));
+    }
+
     private static int openRules(FabricClientCommandSource source) {
         return queueScreen(source, () -> source.getClient().setScreen(new RulesSettingsScreen(null)));
     }
 
-    private static int openSettings(FabricClientCommandSource source) {
+    private static int openRuntime(FabricClientCommandSource source) {
         return queueScreen(source, () -> source.getClient().setScreen(new RuntimeSettingsScreen(null)));
+    }
+
+    private static int openSettings(FabricClientCommandSource source) {
+        return queueScreen(source, () -> ScamScreenerScreens.openRoot(null));
     }
 
     private static int openMessages(FabricClientCommandSource source) {
         return queueScreen(source, () -> source.getClient().setScreen(new MessageSettingsScreen(null)));
+    }
+
+    private static int openMetrics(FabricClientCommandSource source) {
+        return queueScreen(source, () -> source.getClient().setScreen(new MetricsSettingsScreen(null)));
+    }
+
+    private static int openAiUpdate(FabricClientCommandSource source) {
+        return queueScreen(source, () -> source.getClient().setScreen(new AiUpdateSettingsScreen(null)));
+    }
+
+    private static int showHelp(FabricClientCommandSource source) {
+        source.sendFeedback(ClientMessages.commandHelp());
+        return 1;
+    }
+
+    private static int showAlertLevel(FabricClientCommandSource source) {
+        source.sendFeedback(ClientMessages.currentAlertLevel(ScamScreenerRuntime.getInstance().config().alerts().minimumRiskLevel()));
+        return 1;
+    }
+
+    private static int setAlertLevel(FabricClientCommandSource source, String value) {
+        AlertRiskLevel level = parseAlertLevel(value);
+        if (level == null) {
+            source.sendError(ClientMessages.invalidAlertLevel());
+            return 0;
+        }
+
+        ScamScreenerRuntime.getInstance().config().alerts().setMinimumRiskLevel(level);
+        ScamScreenerRuntime.getInstance().saveConfig();
+        source.sendFeedback(ClientMessages.updatedAlertLevel(level));
+        return 1;
+    }
+
+    private static int showAutoLeave(FabricClientCommandSource source) {
+        source.sendFeedback(ClientMessages.autoLeaveStatus(ScamScreenerRuntime.getInstance().config().safety().isAutoLeaveOnBlacklist()));
+        return 1;
+    }
+
+    private static int setAutoLeave(FabricClientCommandSource source, boolean enabled) {
+        ScamScreenerRuntime.getInstance().config().safety().setAutoLeaveOnBlacklist(enabled);
+        ScamScreenerRuntime.getInstance().saveConfig();
+        source.sendFeedback(enabled ? ClientMessages.autoLeaveEnabled() : ClientMessages.autoLeaveDisabled());
+        return 1;
+    }
+
+    private static int enableMuteFilter(FabricClientCommandSource source) {
+        ScamScreenerRuntime.getInstance().mutePatternManager().setEnabled(true);
+        source.sendFeedback(ClientMessages.muteEnabled());
+        return 1;
+    }
+
+    private static int disableMuteFilter(FabricClientCommandSource source) {
+        ScamScreenerRuntime.getInstance().mutePatternManager().setEnabled(false);
+        source.sendFeedback(ClientMessages.muteDisabled());
+        return 1;
+    }
+
+    private static int addMutePattern(FabricClientCommandSource source, String pattern) {
+        var result = ScamScreenerRuntime.getInstance().mutePatternManager().addPattern(pattern);
+        if (result == eu.tango.scamscreener.chat.mute.MutePatternManager.AddResult.ADDED) {
+            source.sendFeedback(ClientMessages.mutePatternAdded(pattern));
+            return 1;
+        }
+        if (result == eu.tango.scamscreener.chat.mute.MutePatternManager.AddResult.ALREADY_EXISTS) {
+            source.sendError(ClientMessages.mutePatternAlreadyExists(pattern));
+            return 0;
+        }
+
+        source.sendError(ClientMessages.mutePatternInvalid(pattern));
+        return 0;
+    }
+
+    private static int removeMutePattern(FabricClientCommandSource source, String pattern) {
+        boolean removed = ScamScreenerRuntime.getInstance().mutePatternManager().removePattern(pattern);
+        if (!removed) {
+            source.sendError(ClientMessages.mutePatternNotFound(pattern));
+            return 0;
+        }
+
+        source.sendFeedback(ClientMessages.mutePatternRemoved(pattern));
+        return 1;
+    }
+
+    private static int showDebugStatus(FabricClientCommandSource source) {
+        source.sendFeedback(ClientMessages.debugStatus(debugStates()));
+        return 1;
+    }
+
+    private static int setAllDebug(FabricClientCommandSource source, boolean enabled) {
+        ScamScreenerRuntime runtime = ScamScreenerRuntime.getInstance();
+        runtime.config().debug().flags().clear();
+        for (String key : DebugKeys.keys()) {
+            runtime.config().debug().flags().put(key, enabled);
+        }
+        runtime.config().output().setDebugLogging(enabled);
+        runtime.saveConfig();
+        source.sendFeedback(ClientMessages.debugUpdated("all " + (enabled ? "enabled" : "disabled")));
+        return 1;
+    }
+
+    private static int setDebugKey(FabricClientCommandSource source, String key, boolean enabled) {
+        String normalizedKey = DebugKeys.normalize(key);
+        if (normalizedKey.isBlank() || !DebugKeys.keys().contains(normalizedKey)) {
+            source.sendError(ClientMessages.debugKeyUnknown(key));
+            return 0;
+        }
+
+        ScamScreenerRuntime runtime = ScamScreenerRuntime.getInstance();
+        runtime.config().debug().flags().put(normalizedKey, enabled);
+        runtime.config().output().setDebugLogging(allDebugEnabled());
+        runtime.saveConfig();
+        source.sendFeedback(ClientMessages.debugUpdated(DebugKeys.label(normalizedKey) + " " + (enabled ? "enabled" : "disabled")));
+        return 1;
+    }
+
+    private static int showVersion(FabricClientCommandSource source) {
+        source.sendFeedback(ClientMessages.versionInfo());
+        return 1;
+    }
+
+    private static int previewWarnings(FabricClientCommandSource source) {
+        source.sendFeedback(ClientMessages.previewStarted());
+
+        ChatEvent chatEvent = ChatPipelineListener.getLastChatEvent().orElse(ChatEvent.messageOnly("legit middleman"));
+        PipelineDecision riskDecision = ChatPipelineListener.getLastPipelineDecision().orElse(
+            new PipelineDecision(
+                PipelineDecision.Outcome.REVIEW,
+                55,
+                "preview",
+                java.util.List.of(),
+                java.util.List.of("Preview warning")
+            )
+        );
+        PipelineDecision blacklistDecision = new PipelineDecision(
+            PipelineDecision.Outcome.BLACKLISTED,
+            Math.max(50, riskDecision.getTotalScore()),
+            "preview",
+            java.util.List.of(),
+            java.util.List.of("Preview blacklist warning")
+        );
+
+        MessageDispatcher.reply(DecisionMessages.riskWarning(chatEvent, riskDecision));
+        MessageDispatcher.reply(DecisionMessages.blacklistWarning(chatEvent, blacklistDecision));
+        source.sendFeedback(ClientMessages.previewFinished());
+        return 1;
     }
 
     private static int queueScreen(FabricClientCommandSource source, Runnable action) {
@@ -312,6 +619,43 @@ public final class ScamScreenerCommandHandler {
         return builder.buildFuture();
     }
 
+    private static CompletableFuture<Suggestions> suggestReviewPlayers(SuggestionsBuilder builder) {
+        for (String playerName : AlertContextRegistry.recentPlayerNames()) {
+            suggestValue(builder, playerName);
+        }
+        for (var entry : ScamScreenerRuntime.getInstance().reviewStore().entries()) {
+            if (entry != null) {
+                suggestValue(builder, entry.getSenderName());
+            }
+        }
+
+        return builder.buildFuture();
+    }
+
+    private static CompletableFuture<Suggestions> suggestAlertLevels(SuggestionsBuilder builder) {
+        for (AlertRiskLevel level : AlertRiskLevel.values()) {
+            suggestValue(builder, level.name().toLowerCase(Locale.ROOT));
+        }
+
+        return builder.buildFuture();
+    }
+
+    private static CompletableFuture<Suggestions> suggestMutePatterns(SuggestionsBuilder builder) {
+        for (String pattern : ScamScreenerRuntime.getInstance().mutePatternManager().allPatterns()) {
+            suggestValue(builder, pattern);
+        }
+
+        return builder.buildFuture();
+    }
+
+    private static CompletableFuture<Suggestions> suggestDebugKeys(SuggestionsBuilder builder) {
+        for (String key : DebugKeys.keys()) {
+            suggestValue(builder, key);
+        }
+
+        return builder.buildFuture();
+    }
+
     private static void suggestValue(SuggestionsBuilder builder, String value) {
         if (value == null || value.isBlank()) {
             return;
@@ -322,6 +666,32 @@ public final class ScamScreenerCommandHandler {
         if (remaining.isBlank() || normalizedValue.startsWith(remaining)) {
             builder.suggest(value);
         }
+    }
+
+    private static AlertRiskLevel parseAlertLevel(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+
+        try {
+            return AlertRiskLevel.valueOf(value.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException ignored) {
+            return null;
+        }
+    }
+
+    private static java.util.Map<String, Boolean> debugStates() {
+        return DebugKeys.withDefaults(ScamScreenerRuntime.getInstance().config().debug().flags());
+    }
+
+    private static boolean allDebugEnabled() {
+        for (boolean enabled : debugStates().values()) {
+            if (!enabled) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private record PlayerTarget(UUID playerUuid, String playerName) {

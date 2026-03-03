@@ -1,6 +1,8 @@
 package eu.tango.scamscreener.gui.screen;
 
 import eu.tango.scamscreener.ScamScreenerRuntime;
+import eu.tango.scamscreener.config.data.AlertRiskLevel;
+import eu.tango.scamscreener.config.data.AutoCaptureAlertLevel;
 import eu.tango.scamscreener.config.data.RuntimeConfig;
 import eu.tango.scamscreener.gui.base.BaseScreen;
 import net.minecraft.client.gui.screen.Screen;
@@ -11,10 +13,11 @@ import net.minecraft.text.Text;
  * Root settings hub using the compact v1 menu layout.
  */
 public final class ScamScreenerMainScreen extends BaseScreen {
-    private ButtonWidget reviewThresholdButton;
-    private ButtonWidget reviewCaptureButton;
-    private ButtonWidget modelStageButton;
-    private ButtonWidget debugLoggingButton;
+    private ButtonWidget alertLevelButton;
+    private ButtonWidget autoCaptureButton;
+    private ButtonWidget autoLeaveButton;
+    private ButtonWidget muteFilterButton;
+    private ButtonWidget localAiButton;
 
     /**
      * Creates the root ScamScreener screen.
@@ -35,29 +38,36 @@ public final class ScamScreenerMainScreen extends BaseScreen {
         int x = column.x();
         int y = column.y();
 
-        reviewThresholdButton = addDrawableChild(
-            ButtonWidget.builder(Text.empty(), button -> cycleReviewThreshold())
+        alertLevelButton = addDrawableChild(
+            ButtonWidget.builder(Text.empty(), button -> cycleAlertLevel())
                 .dimensions(x, y, buttonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
         y += ROW_HEIGHT;
 
-        reviewCaptureButton = addDrawableChild(
-            ButtonWidget.builder(Text.empty(), button -> toggleReviewCapture())
+        autoCaptureButton = addDrawableChild(
+            ButtonWidget.builder(Text.empty(), button -> cycleAutoCaptureLevel())
                 .dimensions(x, y, buttonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
         y += ROW_HEIGHT;
 
-        modelStageButton = addDrawableChild(
-            ButtonWidget.builder(Text.empty(), button -> toggleModelStage())
+        autoLeaveButton = addDrawableChild(
+            ButtonWidget.builder(Text.empty(), button -> toggleAutoLeave())
                 .dimensions(x, y, buttonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
         y += ROW_HEIGHT;
 
-        debugLoggingButton = addDrawableChild(
-            ButtonWidget.builder(Text.empty(), button -> toggleDebugLogging())
+        muteFilterButton = addDrawableChild(
+            ButtonWidget.builder(Text.empty(), button -> toggleMuteFilter())
+                .dimensions(x, y, buttonWidth, DEFAULT_BUTTON_HEIGHT)
+                .build()
+        );
+        y += ROW_HEIGHT;
+
+        localAiButton = addDrawableChild(
+            ButtonWidget.builder(Text.empty(), button -> toggleLocalAi())
                 .dimensions(x, y, buttonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
@@ -68,17 +78,34 @@ public final class ScamScreenerMainScreen extends BaseScreen {
         int menuButtonWidth = splitWidth(menuWidth, 3, DEFAULT_SPLIT_GAP);
 
         addDrawableChild(
-            ButtonWidget.builder(Text.literal("Rules"), button -> this.client.setScreen(new RulesSettingsScreen(this)))
+            ButtonWidget.builder(Text.literal("Rule Settings"), button -> this.client.setScreen(new RulesSettingsScreen(this)))
                 .dimensions(menuX, y, menuButtonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
         addDrawableChild(
-            ButtonWidget.builder(Text.literal("Messages"), button -> this.client.setScreen(new MessageSettingsScreen(this)))
+            ButtonWidget.builder(Text.literal("Debug Settings"), button -> this.client.setScreen(new DebugSettingsScreen(this)))
                 .dimensions(columnX(menuX, menuButtonWidth, DEFAULT_SPLIT_GAP, 1), y, menuButtonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
         addDrawableChild(
-            ButtonWidget.builder(Text.literal("Review"), button -> this.client.setScreen(new ReviewSettingsScreen(this)))
+            ButtonWidget.builder(Text.literal("Blacklist"), button -> this.client.setScreen(new BlacklistScreen(this)))
+                .dimensions(columnX(menuX, menuButtonWidth, DEFAULT_SPLIT_GAP, 2), y, menuButtonWidth, DEFAULT_BUTTON_HEIGHT)
+                .build()
+        );
+        y += ROW_HEIGHT;
+
+        addDrawableChild(
+            ButtonWidget.builder(Text.literal("Message Settings"), button -> this.client.setScreen(new MessageSettingsScreen(this)))
+                .dimensions(menuX, y, menuButtonWidth, DEFAULT_BUTTON_HEIGHT)
+                .build()
+        );
+        addDrawableChild(
+            ButtonWidget.builder(Text.literal("Metrics"), button -> this.client.setScreen(new MetricsSettingsScreen(this)))
+                .dimensions(columnX(menuX, menuButtonWidth, DEFAULT_SPLIT_GAP, 1), y, menuButtonWidth, DEFAULT_BUTTON_HEIGHT)
+                .build()
+        );
+        addDrawableChild(
+            ButtonWidget.builder(Text.literal("AI Update"), button -> this.client.setScreen(new AiUpdateSettingsScreen(this)))
                 .dimensions(columnX(menuX, menuButtonWidth, DEFAULT_SPLIT_GAP, 2), y, menuButtonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
@@ -86,78 +113,85 @@ public final class ScamScreenerMainScreen extends BaseScreen {
 
         addDrawableChild(
             ButtonWidget.builder(Text.literal("Whitelist"), button -> this.client.setScreen(new WhitelistScreen(this)))
-                .dimensions(menuX, y, menuButtonWidth, DEFAULT_BUTTON_HEIGHT)
-                .build()
-        );
-        addDrawableChild(
-            ButtonWidget.builder(Text.literal("Blacklist"), button -> this.client.setScreen(new BlacklistScreen(this)))
-                .dimensions(columnX(menuX, menuButtonWidth, DEFAULT_SPLIT_GAP, 1), y, menuButtonWidth, DEFAULT_BUTTON_HEIGHT)
-                .build()
-        );
-        addDrawableChild(
-            ButtonWidget.builder(Text.literal("Queue"), button -> this.client.setScreen(new ReviewScreen(this)))
-                .dimensions(columnX(menuX, menuButtonWidth, DEFAULT_SPLIT_GAP, 2), y, menuButtonWidth, DEFAULT_BUTTON_HEIGHT)
+                .dimensions(x, y, buttonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
         y += ROW_HEIGHT;
 
+        int halfWidth = splitWidth(buttonWidth, 2, DEFAULT_SPLIT_GAP);
         addDrawableChild(
-            ButtonWidget.builder(Text.literal("Reload Data"), button -> reloadRuntime())
-                .dimensions(x, y, buttonWidth, DEFAULT_BUTTON_HEIGHT)
+            ButtonWidget.builder(Text.literal("Review Training CSV"), button -> this.client.setScreen(new ReviewScreen(this)))
+                .dimensions(x, y, halfWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
+        ButtonWidget uploadButton = addDrawableChild(
+            ButtonWidget.builder(Text.literal("Upload Training Data"), button -> {
+            })
+                .dimensions(columnX(x, halfWidth, DEFAULT_SPLIT_GAP, 1), y, halfWidth, DEFAULT_BUTTON_HEIGHT)
+                .build()
+        );
+        uploadButton.active = false;
 
         addCloseButton(buttonWidth);
         refreshButtons();
     }
 
-    private void cycleReviewThreshold() {
-        RuntimeConfig.PipelineSettings pipeline = ScamScreenerRuntime.getInstance().config().pipeline();
-        pipeline.setReviewThreshold((pipeline.reviewThreshold() + 1) % 6);
+    private void cycleAlertLevel() {
+        RuntimeConfig.AlertSettings alerts = ScamScreenerRuntime.getInstance().config().alerts();
+        AlertRiskLevel nextLevel = alerts.minimumRiskLevel().next();
+        alerts.setMinimumRiskLevel(nextLevel);
         ScamScreenerRuntime.getInstance().saveConfig();
         refreshButtons();
     }
 
-    private void toggleReviewCapture() {
+    private void cycleAutoCaptureLevel() {
         RuntimeConfig.ReviewSettings review = ScamScreenerRuntime.getInstance().config().review();
-        review.setCaptureEnabled(!review.isCaptureEnabled());
+        RuntimeConfig.AlertSettings alerts = ScamScreenerRuntime.getInstance().config().alerts();
+        AutoCaptureAlertLevel nextLevel = alerts.autoCaptureLevel().next();
+        alerts.setAutoCaptureLevel(nextLevel);
+        review.setCaptureEnabled(nextLevel != AutoCaptureAlertLevel.OFF);
         ScamScreenerRuntime.getInstance().saveConfig();
         refreshButtons();
     }
 
-    private void toggleModelStage() {
+    private void toggleAutoLeave() {
+        RuntimeConfig.SafetySettings safety = ScamScreenerRuntime.getInstance().config().safety();
+        safety.setAutoLeaveOnBlacklist(!safety.isAutoLeaveOnBlacklist());
+        ScamScreenerRuntime.getInstance().saveConfig();
+        refreshButtons();
+    }
+
+    private void toggleMuteFilter() {
+        ScamScreenerRuntime.getInstance().mutePatternManager().setEnabled(!ScamScreenerRuntime.getInstance().mutePatternManager().isEnabled());
+        refreshButtons();
+    }
+
+    private void toggleLocalAi() {
         RuntimeConfig.StageSettings stages = ScamScreenerRuntime.getInstance().config().stages();
         stages.setModelEnabled(!stages.isModelEnabled());
         ScamScreenerRuntime.getInstance().saveConfig();
         refreshButtons();
     }
 
-    private void toggleDebugLogging() {
-        RuntimeConfig.OutputSettings output = ScamScreenerRuntime.getInstance().config().output();
-        output.setDebugLogging(!output.isDebugLogging());
-        ScamScreenerRuntime.getInstance().saveConfig();
-        refreshButtons();
-    }
-
-    private void reloadRuntime() {
-        ScamScreenerRuntime.getInstance().reload();
-        refreshButtons();
-    }
-
     private void refreshButtons() {
         RuntimeConfig config = ScamScreenerRuntime.getInstance().config();
 
-        if (reviewThresholdButton != null) {
-            reviewThresholdButton.setMessage(Text.literal("Review Threshold: " + config.pipeline().reviewThreshold()));
+        if (alertLevelButton != null) {
+            alertLevelButton.setMessage(Text.literal("Alert Threshold: " + config.alerts().minimumRiskLevel().name()));
         }
-        if (reviewCaptureButton != null) {
-            reviewCaptureButton.setMessage(Text.literal("Review Capture: " + onOff(config.review().isCaptureEnabled())));
+        if (autoCaptureButton != null) {
+            AutoCaptureAlertLevel autoCaptureLevel = config.alerts().autoCaptureLevel();
+            String suffix = autoCaptureLevel == AutoCaptureAlertLevel.OFF ? "OFF" : "ON (" + autoCaptureLevel.name() + ")";
+            autoCaptureButton.setMessage(Text.literal("AI Auto-Capture: " + suffix));
         }
-        if (modelStageButton != null) {
-            modelStageButton.setMessage(Text.literal("Model Stage: " + onOff(config.stages().isModelEnabled())));
+        if (autoLeaveButton != null) {
+            autoLeaveButton.setMessage(Text.literal("Auto /p leave on blacklist: " + onOff(config.safety().isAutoLeaveOnBlacklist())));
         }
-        if (debugLoggingButton != null) {
-            debugLoggingButton.setMessage(Text.literal("Debug Logging: " + onOff(config.output().isDebugLogging())));
+        if (muteFilterButton != null) {
+            muteFilterButton.setMessage(Text.literal("Mute Filter: " + onOff(ScamScreenerRuntime.getInstance().mutePatternManager().isEnabled())));
+        }
+        if (localAiButton != null) {
+            localAiButton.setMessage(Text.literal("Local AI Signal: " + onOff(config.stages().isModelEnabled())));
         }
     }
 }

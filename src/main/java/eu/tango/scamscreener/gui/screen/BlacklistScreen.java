@@ -2,37 +2,46 @@ package eu.tango.scamscreener.gui.screen;
 
 import eu.tango.scamscreener.ScamScreenerRuntime;
 import eu.tango.scamscreener.api.BlacklistAccess;
-import eu.tango.scamscreener.gui.base.BaseListScreen;
-import eu.tango.scamscreener.gui.data.BlacklistRow;
-import eu.tango.scamscreener.gui.widget.SelectableListWidget;
+import eu.tango.scamscreener.gui.base.BaseScreen;
 import eu.tango.scamscreener.lists.BlacklistEntry;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.text.Text;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 
 /**
- * Shared blacklist management screen.
+ * Restored v1-style blacklist management screen.
  */
-public final class BlacklistScreen extends BaseListScreen {
-    private static final int LIST_ROW_HEIGHT = 36;
+public final class BlacklistScreen extends BaseScreen {
+    private static final int ENTRIES_PER_PAGE = 7;
+    private static final int SCORE_STEP = 10;
 
     private final BlacklistAccess blacklist;
+    private final List<ButtonWidget> entryButtons = new ArrayList<>();
+    private final List<BlacklistEntry> pageEntries = new ArrayList<>();
 
-    private SelectableListWidget<BlacklistRow> listWidget;
-    private ButtonWidget reloadButton;
+    private ButtonWidget previousPageButton;
+    private ButtonWidget nextPageButton;
+    private ButtonWidget scoreDownButton;
+    private ButtonWidget scoreUpButton;
+    private ButtonWidget setReasonButton;
     private ButtonWidget removeButton;
-    private ButtonWidget clearButton;
+    private TextFieldWidget reasonInput;
+    private int page;
+    private UUID selectedUuid;
+    private String selectedName = "";
+    private int totalPages = 1;
 
     /**
      * Creates the blacklist screen using the shared runtime blacklist.
      *
-     * @param parent the parent screen to return to
+     * @param parent the parent screen
      */
     public BlacklistScreen(Screen parent) {
         this(parent, ScamScreenerRuntime.getInstance().blacklist());
@@ -41,169 +50,298 @@ public final class BlacklistScreen extends BaseListScreen {
     /**
      * Creates the blacklist screen.
      *
-     * @param parent the parent screen to return to
-     * @param blacklist the blacklist access to present and edit
+     * @param parent the parent screen
+     * @param blacklist the blacklist access to manage
      */
     public BlacklistScreen(Screen parent, BlacklistAccess blacklist) {
-        super(Text.literal("Blacklist"), parent);
+        super(Text.literal("ScamScreener Blacklist"), parent);
         this.blacklist = blacklist;
     }
 
-    /**
-     * Builds the list layout and footer actions.
-     */
     @Override
     protected void init() {
-        int contentWidth = Math.min(520, Math.max(300, this.width - 40));
-        int contentX = centeredX(contentWidth);
-        int listY = CONTENT_TOP + 16;
-        int listHeight = Math.max(120, footerY() - listY - 36);
+        entryButtons.clear();
+        pageEntries.clear();
 
-        listWidget = new SelectableListWidget<>(
-            contentX,
-            listY,
-            contentWidth,
-            listHeight,
-            LIST_ROW_HEIGHT,
-            this::renderRow
+        int buttonWidth = Math.min(420, Math.max(220, this.width - 30));
+        int x = centeredX(buttonWidth);
+        int y = 34;
+
+        for (int index = 0; index < ENTRIES_PER_PAGE; index++) {
+            final int indexOnPage = index;
+            ButtonWidget rowButton = addDrawableChild(
+                ButtonWidget.builder(Text.literal("-"), button -> selectEntry(indexOnPage))
+                    .dimensions(x, y, buttonWidth, DEFAULT_BUTTON_HEIGHT)
+                    .build()
+            );
+            entryButtons.add(rowButton);
+            y += ROW_HEIGHT;
+        }
+
+        int halfWidth = splitWidth(buttonWidth, 2, DEFAULT_SPLIT_GAP);
+        previousPageButton = addDrawableChild(
+            ButtonWidget.builder(Text.literal("< Previous"), button -> {
+                page = Math.max(0, page - 1);
+                refreshList();
+            }).dimensions(x, y, halfWidth, DEFAULT_BUTTON_HEIGHT).build()
         );
+        nextPageButton = addDrawableChild(
+            ButtonWidget.builder(Text.literal("Next >"), button -> {
+                page = Math.min(Math.max(0, totalPages - 1), page + 1);
+                refreshList();
+            }).dimensions(columnX(x, halfWidth, DEFAULT_SPLIT_GAP, 1), y, halfWidth, DEFAULT_BUTTON_HEIGHT).build()
+        );
+        y += ROW_HEIGHT;
 
-        int buttonWidth = splitWidth(contentWidth, 4, DEFAULT_SPLIT_GAP);
-        int buttonY = listY + listHeight + 10;
-
-        reloadButton = addDrawableChild(
-            ButtonWidget.builder(Text.literal("Reload"), button -> reloadRows())
-                .dimensions(contentX, buttonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
+        int thirdWidth = splitWidth(buttonWidth, 3, DEFAULT_SPLIT_GAP);
+        scoreDownButton = addDrawableChild(
+            ButtonWidget.builder(Text.literal("Score -" + SCORE_STEP), button -> adjustScore(-SCORE_STEP))
+                .dimensions(x, y, thirdWidth, DEFAULT_BUTTON_HEIGHT)
+                .build()
+        );
+        scoreUpButton = addDrawableChild(
+            ButtonWidget.builder(Text.literal("Score +" + SCORE_STEP), button -> adjustScore(SCORE_STEP))
+                .dimensions(columnX(x, thirdWidth, DEFAULT_SPLIT_GAP, 1), y, thirdWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
         removeButton = addDrawableChild(
-            ButtonWidget.builder(Text.literal("Remove Selected"), button -> removeSelected())
-                .dimensions(columnX(contentX, buttonWidth, DEFAULT_SPLIT_GAP, 1), buttonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
+            ButtonWidget.builder(Text.literal("Remove"), button -> removeSelected())
+                .dimensions(columnX(x, thirdWidth, DEFAULT_SPLIT_GAP, 2), y, thirdWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
-        clearButton = addDrawableChild(
-            ButtonWidget.builder(Text.literal("Clear All"), button -> clearBlacklist())
-                .dimensions(columnX(contentX, buttonWidth, DEFAULT_SPLIT_GAP, 2), buttonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
-                .build()
+        y += ROW_HEIGHT;
+
+        int saveButtonWidth = 52;
+        int inputWidth = Math.max(80, buttonWidth - saveButtonWidth - DEFAULT_SPLIT_GAP);
+        reasonInput = addDrawableChild(
+            new TextFieldWidget(
+                this.textRenderer,
+                x,
+                y,
+                inputWidth,
+                DEFAULT_BUTTON_HEIGHT,
+                Text.literal("Reason")
+            )
         );
-        addDrawableChild(
-            ButtonWidget.builder(Text.literal("Close"), button -> close())
-                .dimensions(columnX(contentX, buttonWidth, DEFAULT_SPLIT_GAP, 3), buttonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
+        reasonInput.setMaxLength(64);
+        setReasonButton = addDrawableChild(
+            ButtonWidget.builder(Text.literal("Save"), button -> applyReasonInput())
+                .dimensions(x + inputWidth + DEFAULT_SPLIT_GAP, y, saveButtonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
 
-        reloadRows();
+        addBackButton(buttonWidth);
+        refreshList();
     }
 
-    /**
-     * Draws the screen summary and the reusable list widget.
-     *
-     * @param context the current draw context
-     * @param mouseX the current mouse x position
-     * @param mouseY the current mouse y position
-     * @param deltaTicks partial tick delta
-     */
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float deltaTicks) {
         super.render(context, mouseX, mouseY, deltaTicks);
 
-        int left = centeredX(Math.min(520, Math.max(300, this.width - 40)));
-        drawSectionTitle(context, left, CONTENT_TOP, "Blocked Players");
-        drawLine(context, left, CONTENT_TOP + 12, "Entries: " + blacklist.allEntries().size());
+        context.drawCenteredTextWithShadow(
+            this.textRenderer,
+            Text.literal("Page " + (totalPages == 0 ? 0 : page + 1) + "/" + Math.max(1, totalPages)),
+            this.width / 2,
+            TITLE_Y + 12,
+            opaqueColor(0xAAAAAA)
+        );
 
-        if (listWidget != null) {
-            listWidget.render(context, this.textRenderer, mouseX, mouseY);
+        BlacklistEntry selected = selectedEntry();
+        String selectedText = selected == null
+            ? "Selected: none"
+            : "Selected: " + displayName(selected.playerUuid(), selected.playerName())
+                + " | score " + Math.max(0, selected.score())
+                + " | " + safeReason(selected.reason());
+        context.drawCenteredTextWithShadow(
+            this.textRenderer,
+            Text.literal(selectedText),
+            this.width / 2,
+            this.height - 42,
+            opaqueColor(0xCCCCCC)
+        );
+    }
+
+    private void selectEntry(int indexOnPage) {
+        if (indexOnPage < 0 || indexOnPage >= pageEntries.size()) {
+            return;
+        }
+
+        BlacklistEntry entry = pageEntries.get(indexOnPage);
+        selectedUuid = entry == null ? null : entry.playerUuid();
+        selectedName = entry == null ? "" : safeName(entry.playerName());
+        refreshList();
+    }
+
+    private void refreshList() {
+        List<BlacklistEntry> allEntries = new ArrayList<>(blacklist.allEntries());
+        allEntries.sort((left, right) -> displayName(left.playerUuid(), left.playerName())
+            .toLowerCase(Locale.ROOT)
+            .compareTo(displayName(right.playerUuid(), right.playerName()).toLowerCase(Locale.ROOT)));
+
+        totalPages = Math.max(1, (int) Math.ceil(allEntries.size() / (double) ENTRIES_PER_PAGE));
+        page = Math.max(0, Math.min(page, totalPages - 1));
+
+        if (!hasSelection(allEntries)) {
+            selectedUuid = null;
+            selectedName = "";
+        }
+
+        pageEntries.clear();
+        int start = page * ENTRIES_PER_PAGE;
+        for (int index = 0; index < ENTRIES_PER_PAGE; index++) {
+            int absoluteIndex = start + index;
+            ButtonWidget button = entryButtons.get(index);
+            if (absoluteIndex >= allEntries.size()) {
+                button.active = false;
+                button.setMessage(Text.literal("-"));
+                continue;
+            }
+
+            BlacklistEntry entry = allEntries.get(absoluteIndex);
+            pageEntries.add(entry);
+            button.active = true;
+            button.setMessage(Text.literal(formatEntry(entry, matchesSelection(entry))));
+        }
+
+        if ((selectedUuid == null && selectedName.isBlank()) && !allEntries.isEmpty()) {
+            BlacklistEntry firstEntry = allEntries.get(0);
+            selectedUuid = firstEntry.playerUuid();
+            selectedName = safeName(firstEntry.playerName());
+            refreshList();
+            return;
+        }
+
+        previousPageButton.active = page > 0;
+        nextPageButton.active = page < totalPages - 1;
+        updateActionButtons();
+    }
+
+    private void updateActionButtons() {
+        BlacklistEntry selected = selectedEntry();
+        boolean hasSelection = selected != null;
+        scoreDownButton.active = hasSelection;
+        scoreUpButton.active = hasSelection;
+        removeButton.active = hasSelection;
+        setReasonButton.active = hasSelection;
+        if (reasonInput != null) {
+            reasonInput.setEditable(hasSelection);
+            reasonInput.active = hasSelection;
+            String value = hasSelection ? safeReason(selected.reason()) : "";
+            if (!value.equals(reasonInput.getText())) {
+                reasonInput.setText(value);
+            }
         }
     }
 
-    @Override
-    protected boolean handleListClick(double mouseX, double mouseY, int button) {
-        if (listWidget != null && listWidget.mouseClicked(mouseX, mouseY, button)) {
-            updateActionState();
-            return true;
+    private BlacklistEntry selectedEntry() {
+        if (selectedUuid != null) {
+            BlacklistEntry byUuid = blacklist.get(selectedUuid).orElse(null);
+            if (byUuid != null) {
+                return byUuid;
+            }
+        }
+        if (!selectedName.isBlank()) {
+            return blacklist.findByName(selectedName).orElse(null);
+        }
+
+        return null;
+    }
+
+    private void adjustScore(int delta) {
+        BlacklistEntry selected = selectedEntry();
+        if (selected == null) {
+            return;
+        }
+
+        int updatedScore = Math.max(0, Math.min(100, selected.score() + delta));
+        blacklist.add(selected.playerUuid(), selected.playerName(), updatedScore, selected.reason());
+        refreshList();
+    }
+
+    private void applyReasonInput() {
+        BlacklistEntry selected = selectedEntry();
+        if (selected == null || reasonInput == null) {
+            return;
+        }
+
+        blacklist.add(selected.playerUuid(), selected.playerName(), selected.score(), reasonInput.getText());
+        refreshList();
+    }
+
+    private void removeSelected() {
+        if (selectedUuid != null && blacklist.remove(selectedUuid)) {
+            selectedUuid = null;
+            selectedName = "";
+            refreshList();
+            return;
+        }
+
+        if (!selectedName.isBlank()) {
+            blacklist.removeByName(selectedName);
+            selectedUuid = null;
+            selectedName = "";
+            refreshList();
+        }
+    }
+
+    private boolean hasSelection(List<BlacklistEntry> entries) {
+        for (BlacklistEntry entry : entries) {
+            if (matchesSelection(entry)) {
+                return true;
+            }
         }
 
         return false;
     }
 
-    @Override
-    protected boolean handleListScroll(double mouseX, double mouseY, double verticalAmount) {
-        return listWidget != null && listWidget.mouseScrolled(mouseX, mouseY, verticalAmount);
+    private boolean matchesSelection(BlacklistEntry entry) {
+        if (entry == null) {
+            return false;
+        }
+
+        if (selectedUuid != null && selectedUuid.equals(entry.playerUuid())) {
+            return true;
+        }
+
+        String entryName = safeName(entry.playerName());
+        return !selectedName.isBlank() && selectedName.equalsIgnoreCase(entryName);
     }
 
-    private void reloadRows() {
-        List<BlacklistRow> rows = new ArrayList<>();
-        for (BlacklistEntry entry : blacklist.allEntries()) {
-            rows.add(BlacklistRow.fromEntry(entry));
-        }
-        rows.sort(Comparator.comparing(row -> row.displayName().toLowerCase(Locale.ROOT)));
-
-        if (listWidget != null) {
-            listWidget.setRows(rows);
+    private static String formatEntry(BlacklistEntry entry, boolean selected) {
+        if (entry == null) {
+            return "-";
         }
 
-        updateActionState();
+        String reason = safeReason(entry.reason());
+        if (reason.length() > 22) {
+            reason = reason.substring(0, 19) + "...";
+        }
+
+        return (selected ? "> " : "  ")
+            + displayName(entry.playerUuid(), entry.playerName())
+            + " | "
+            + Math.max(0, entry.score())
+            + " | "
+            + reason;
     }
 
-    private void updateActionState() {
-        if (reloadButton != null) {
-            reloadButton.active = true;
+    private static String displayName(UUID playerUuid, String playerName) {
+        String normalizedName = safeName(playerName);
+        if (!normalizedName.isBlank()) {
+            return normalizedName;
         }
-        if (removeButton != null) {
-            removeButton.active = listWidget != null && listWidget.selectedRow().isPresent();
+        if (playerUuid != null) {
+            return playerUuid.toString();
         }
-        if (clearButton != null) {
-            clearButton.active = !blacklist.isEmpty();
-        }
+
+        return "<unknown>";
     }
 
-    private void removeSelected() {
-        if (listWidget == null) {
-            return;
-        }
-
-        BlacklistRow selected = listWidget.selectedRow().orElse(null);
-        if (selected == null) {
-            return;
-        }
-
-        boolean removed = false;
-        if (selected.playerUuid() != null) {
-            removed = blacklist.remove(selected.playerUuid());
-        }
-        if (!removed && selected.playerName() != null && !selected.playerName().isBlank()) {
-            blacklist.removeByName(selected.playerName());
-        }
-
-        reloadRows();
+    private static String safeName(String playerName) {
+        return playerName == null ? "" : playerName.trim();
     }
 
-    private void clearBlacklist() {
-        blacklist.clear();
-        reloadRows();
-    }
-
-    private void renderRow(
-        DrawContext context,
-        net.minecraft.client.font.TextRenderer textRenderer,
-        BlacklistRow row,
-        int x,
-        int y,
-        int width,
-        int height,
-        boolean hovered,
-        boolean selected
-    ) {
-        context.drawTextWithShadow(textRenderer, Text.literal(row.displayName()), x, y, 0xFFFFFF);
-        context.drawTextWithShadow(textRenderer, Text.literal(row.detailLine()), x, y + 11, 0xFFB366);
-        context.drawTextWithShadow(textRenderer, Text.literal(trimToWidth(row.extraLine(), 64)), x, y + 22, 0xA0A0A0);
-    }
-
-    private String trimToWidth(String value, int maxLength) {
-        if (value == null || value.length() <= maxLength) {
-            return value == null ? "" : value;
-        }
-
-        return value.substring(0, Math.max(0, maxLength - 3)) + "...";
+    private static String safeReason(String reason) {
+        return reason == null ? "" : reason;
     }
 }

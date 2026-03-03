@@ -42,4 +42,21 @@ class ChatLineClassifierTest {
         assertEquals(ChatLineClassifier.ChatLineType.UNKNOWN, ChatLineClassifier.classify(longUnknownLine));
         assertTrue(ChatLineClassifier.parsePlayerMessage(longUnknownLine).isEmpty());
     }
+
+    @Test
+    void parsesFormattedPlayerLines() {
+        String formattedLine = "§bSam §f: legit middleman";
+
+        ChatLineClassifier.ParsedPlayerLine parsedPlayerLine = ChatLineClassifier.parsePlayerMessage(formattedLine).orElse(null);
+        assertNotNull(parsedPlayerLine);
+        assertEquals("Sam", parsedPlayerLine.senderName());
+        assertEquals("legit middleman", parsedPlayerLine.message());
+    }
+
+    @Test
+    void stripsVisiblePrefixesForUiDisplay() {
+        assertEquals("legit middleman", ChatLineClassifier.displayMessageOnly("§bSam §f: legit middleman"));
+        assertEquals("Your Ocelot is ready to pick up!", ChatLineClassifier.displayMessageOnly("[NPC] Kat: Your Ocelot is ready to pick up!"));
+        assertEquals("plain message", ChatLineClassifier.displayMessageOnly("plain message"));
+    }
 }

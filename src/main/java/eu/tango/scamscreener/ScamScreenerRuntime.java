@@ -3,6 +3,7 @@ package eu.tango.scamscreener;
 import eu.tango.scamscreener.api.event.BlacklistEvent;
 import eu.tango.scamscreener.api.event.PlayerListChangeType;
 import eu.tango.scamscreener.api.event.WhitelistEvent;
+import eu.tango.scamscreener.chat.mute.MutePatternManager;
 import eu.tango.scamscreener.config.data.RulesConfig;
 import eu.tango.scamscreener.config.data.RuntimeConfig;
 import eu.tango.scamscreener.lists.Blacklist;
@@ -54,6 +55,9 @@ public final class ScamScreenerRuntime {
     @Getter
     @Accessors(fluent = true)
     private final FunnelStore funnelStore;
+    @Getter
+    @Accessors(fluent = true)
+    private final MutePatternManager mutePatternManager;
     private volatile RuntimeConfig runtimeConfig;
     private volatile RulesConfig rulesConfig;
     @Getter
@@ -75,6 +79,8 @@ public final class ScamScreenerRuntime {
         behaviorStore = new BehaviorStore();
         trendStore = new TrendStore();
         funnelStore = new FunnelStore();
+        mutePatternManager = new MutePatternManager();
+        mutePatternManager.reloadFromConfig(runtimeConfig);
         applyRuleStoreSettings();
         whitelistConfigStore.loadInto(whitelist);
         blacklistConfigStore.loadInto(blacklist);
@@ -136,6 +142,7 @@ public final class ScamScreenerRuntime {
         reviewConfigStore.reload();
         reviewConfigStore.loadInto(reviewStore);
         reviewStore.setMaxEntries(runtimeConfig.review().maxEntries());
+        mutePatternManager.reloadFromConfig(runtimeConfig);
 
         rebuildPipelineEngine();
     }

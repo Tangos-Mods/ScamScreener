@@ -38,7 +38,7 @@ public final class ChatLineClassifier {
             return ChatLineType.UNKNOWN;
         }
 
-        String cleaned = rawLine.trim();
+        String cleaned = stripFormatting(rawLine).trim();
         if (isSystemPrefix(cleaned)) {
             return ChatLineType.SYSTEM;
         }
@@ -59,6 +59,41 @@ public final class ChatLineClassifier {
     }
 
     /**
+     * Returns the visible message body without player/system prefixes when possible.
+     *
+     * @param rawLine the visible chat line to simplify
+     * @return the simplified message body for UI display
+     */
+    public static String displayMessageOnly(String rawLine) {
+        if (rawLine == null || rawLine.isBlank()) {
+            return "";
+        }
+
+        String cleaned = stripFormatting(rawLine).trim();
+        ParsedPlayerLine parsedPlayerLine = parsePlayerMessage(cleaned).orElse(null);
+        if (parsedPlayerLine != null) {
+            return parsedPlayerLine.message();
+        }
+
+        int separatorIndex = cleaned.indexOf(':');
+        if (separatorIndex <= 0 || separatorIndex >= cleaned.length() - 1) {
+            return cleaned;
+        }
+
+        String prefixSection = cleaned.substring(0, separatorIndex).trim();
+        String message = cleaned.substring(separatorIndex + 1).trim();
+        if (message.isBlank()) {
+            return cleaned;
+        }
+
+        if (isSystemPrefix(prefixSection) || prefixSection.startsWith("[")) {
+            return message;
+        }
+
+        return cleaned;
+    }
+
+    /**
      * Extracts sender and message from a visible player chat line.
      *
      * @param rawLine the visible chat line to parse
@@ -69,7 +104,7 @@ public final class ChatLineClassifier {
             return Optional.empty();
         }
 
-        String cleaned = rawLine.trim();
+        String cleaned = stripFormatting(rawLine).trim();
         if (isSystemPrefix(cleaned)) {
             return Optional.empty();
         }
@@ -105,10 +140,46 @@ public final class ChatLineClassifier {
         }
 
         if (!isValidPlayerName(remaining)) {
-            return "";
+            remaining = trailingPlayerToken(remaining);
+            if (remaining.isBlank()) {
+                return "";
+            }
         }
 
         return remaining;
+    }
+
+    private static String trailingPlayerToken(String value) {
+        if (value == null || value.isBlank()) {
+            return "";
+        }
+
+        String[] tokens = value.trim().split("\\s+");
+        for (int index = tokens.length - 1; index >= 0; index--) {
+            String token = trimNonNameEdges(tokens[index]);
+            if (isValidPlayerName(token)) {
+                return token;
+            }
+        }
+
+        return "";
+    }
+
+    private static String trimNonNameEdges(String value) {
+        if (value == null || value.isBlank()) {
+            return "";
+        }
+
+        int start = 0;
+        int end = value.length();
+        while (start < end && !isValidPlayerNameCharacter(value.charAt(start))) {
+            start++;
+        }
+        while (end > start && !isValidPlayerNameCharacter(value.charAt(end - 1))) {
+            end--;
+        }
+
+        return start >= end ? "" : value.substring(start, end);
     }
 
     private static boolean isValidPlayerName(String value) {
@@ -145,6 +216,25 @@ public final class ChatLineClassifier {
             }
         }
         return false;
+    }
+
+    private static String stripFormatting(String rawLine) {
+        if (rawLine == null || rawLine.isEmpty()) {
+            return "";
+        }
+
+        StringBuilder builder = new StringBuilder(rawLine.length());
+        for (int index = 0; index < rawLine.length(); index++) {
+            char current = rawLine.charAt(index);
+            if (current == '\u00A7' && index + 1 < rawLine.length()) {
+                index++;
+                continue;
+            }
+
+            builder.append(current);
+        }
+
+        return builder.toString();
     }
 
     /**

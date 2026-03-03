@@ -4,6 +4,7 @@ import eu.tango.scamscreener.ScamScreenerRuntime;
 import eu.tango.scamscreener.gui.base.BaseListScreen;
 import eu.tango.scamscreener.gui.data.ReviewRow;
 import eu.tango.scamscreener.gui.widget.SelectableListWidget;
+import eu.tango.scamscreener.message.AlertContextRegistry;
 import eu.tango.scamscreener.review.ReviewActionHandler;
 import eu.tango.scamscreener.review.ReviewEntry;
 import eu.tango.scamscreener.review.ReviewVerdict;
@@ -58,7 +59,7 @@ public final class ReviewScreen extends BaseListScreen {
     protected void init() {
         int contentWidth = Math.min(620, Math.max(360, this.width - 40));
         int contentX = centeredX(contentWidth);
-        int controlsY = CONTENT_TOP + 40;
+        int controlsY = CONTENT_TOP + 56;
         int searchWidth = Math.max(140, contentWidth - FILTER_BUTTON_WIDTH - DEFAULT_SPLIT_GAP);
 
         filterButton = addDrawableChild(
@@ -104,7 +105,7 @@ public final class ReviewScreen extends BaseListScreen {
                 .build()
         );
         ignoreButton = addDrawableChild(
-            ButtonWidget.builder(Text.literal("Ignore"), button -> setSelectedVerdict(ReviewVerdict.IGNORED))
+            ButtonWidget.builder(Text.literal("Dismiss"), button -> setSelectedVerdict(ReviewVerdict.IGNORED))
                 .dimensions(columnX(contentX, buttonWidth, DEFAULT_SPLIT_GAP, 2), buttonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
@@ -138,7 +139,7 @@ public final class ReviewScreen extends BaseListScreen {
 
         buttonY += DEFAULT_BUTTON_HEIGHT + 4;
         detailsButton = addDrawableChild(
-            ButtonWidget.builder(Text.literal("Details"), button -> openDetails())
+            ButtonWidget.builder(Text.literal("Info"), button -> openInfo())
                 .dimensions(contentX, buttonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
@@ -174,10 +175,10 @@ public final class ReviewScreen extends BaseListScreen {
             context,
             left,
             CONTENT_TOP + 12,
-            "Pending " + count(ReviewVerdict.PENDING)
+            "Open " + count(ReviewVerdict.PENDING)
                 + " | Risk " + count(ReviewVerdict.RISK)
                 + " | Safe " + count(ReviewVerdict.SAFE)
-                + " | Ignored " + count(ReviewVerdict.IGNORED)
+                + " | Dismissed " + count(ReviewVerdict.IGNORED)
         );
         drawLine(
             context,
@@ -187,7 +188,7 @@ public final class ReviewScreen extends BaseListScreen {
                 + " | Filter " + activeFilter.label()
                 + " | Search " + searchSummary()
         );
-        drawLine(context, left, CONTENT_TOP + 36, "Click a selected row again to cycle P/R/S/I like v1.");
+        drawLine(context, left, CONTENT_TOP + 36, "Click a selected row again to cycle Open/Risk/Safe/Dismissed.");
 
         if (listWidget != null) {
             listWidget.render(context, this.textRenderer, mouseX, mouseY);
@@ -294,13 +295,18 @@ public final class ReviewScreen extends BaseListScreen {
         reloadRows(null);
     }
 
-    private void openDetails() {
+    private void openInfo() {
         ReviewEntry entry = selectedEntry().orElse(null);
         if (entry == null || this.client == null) {
             return;
         }
 
-        this.client.setScreen(new ReviewDetailScreen(this, entry));
+        AlertContextRegistry.AlertContext context = AlertContextRegistry.createReviewContext(entry).orElse(null);
+        if (context == null) {
+            return;
+        }
+
+        this.client.setScreen(new AlertInfoScreen(this, context));
     }
 
     private void updateActionState() {
@@ -392,16 +398,16 @@ public final class ReviewScreen extends BaseListScreen {
     ) {
         String header = "[" + marker(row.verdict()) + "] (" + row.score() + ") " + row.displayName();
 
-        context.drawTextWithShadow(textRenderer, Text.literal(header), x, y, color(row.verdict()));
-        context.drawTextWithShadow(textRenderer, Text.literal(row.compactMessage()), x, y + 11, 0xFFFFFF);
+        context.drawTextWithShadow(textRenderer, Text.literal(header), x, y, opaqueColor(color(row.verdict())));
+        context.drawTextWithShadow(textRenderer, Text.literal(row.compactMessage()), x, y + 11, opaqueColor(0xFFFFFF));
     }
 
     private String marker(ReviewVerdict verdict) {
         return switch (verdict == null ? ReviewVerdict.PENDING : verdict) {
-            case PENDING -> "P";
+            case PENDING -> "O";
             case RISK -> "R";
             case SAFE -> "S";
-            case IGNORED -> "I";
+            case IGNORED -> "D";
         };
     }
 
@@ -474,10 +480,10 @@ public final class ReviewScreen extends BaseListScreen {
 
     private enum ReviewFilter {
         ALL("All", null),
-        PENDING("Pending", ReviewVerdict.PENDING),
+        PENDING("Open", ReviewVerdict.PENDING),
         RISK("Risk", ReviewVerdict.RISK),
         SAFE("Safe", ReviewVerdict.SAFE),
-        IGNORED("Ignored", ReviewVerdict.IGNORED);
+        IGNORED("Dismissed", ReviewVerdict.IGNORED);
 
         private final String label;
         private final ReviewVerdict verdict;

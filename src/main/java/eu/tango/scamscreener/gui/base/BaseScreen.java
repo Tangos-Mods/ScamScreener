@@ -12,8 +12,8 @@ import net.minecraft.text.Text;
  * place so concrete screens only define their specific content.
  */
 public abstract class BaseScreen extends Screen {
-    protected static final int TITLE_Y = 16;
-    protected static final int CONTENT_TOP = 42;
+    protected static final int TITLE_Y = 14;
+    protected static final int CONTENT_TOP = 36;
     protected static final int FOOTER_MARGIN = 28;
     protected static final int ROW_HEIGHT = 24;
     protected static final int DEFAULT_BUTTON_HEIGHT = 20;
@@ -43,7 +43,7 @@ public abstract class BaseScreen extends Screen {
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float deltaTicks) {
         context.fill(0, 0, this.width, this.height, 0x90000000);
-        context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, TITLE_Y, 0xFFFFFF);
+        context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, TITLE_Y, opaqueColor(0xFFFFFF));
         super.render(context, mouseX, mouseY, deltaTicks);
     }
 
@@ -164,7 +164,7 @@ public abstract class BaseScreen extends Screen {
      * @param title the visible section title
      */
     protected void drawSectionTitle(DrawContext context, int x, int y, String title) {
-        context.drawTextWithShadow(this.textRenderer, Text.literal(title), x, y, 0x55FF55);
+        context.drawTextWithShadow(this.textRenderer, Text.literal(title), x, y, opaqueColor(0x55FF55));
     }
 
     /**
@@ -176,7 +176,17 @@ public abstract class BaseScreen extends Screen {
      * @param text the visible text
      */
     protected void drawLine(DrawContext context, int x, int y, String text) {
-        context.drawTextWithShadow(this.textRenderer, Text.literal(text), x, y, 0xFFFFFF);
+        context.drawTextWithShadow(this.textRenderer, Text.literal(text), x, y, opaqueColor(0xFFFFFF));
+    }
+
+    /**
+     * Ensures custom text colors use a visible alpha channel.
+     *
+     * @param color an RGB or ARGB color
+     * @return the same color with an opaque alpha channel when none was set
+     */
+    protected static int opaqueColor(int color) {
+        return (color & 0xFF000000) == 0 ? (color | 0xFF000000) : color;
     }
 
     /**

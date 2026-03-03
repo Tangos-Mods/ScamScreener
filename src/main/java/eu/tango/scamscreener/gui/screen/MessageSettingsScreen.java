@@ -12,10 +12,11 @@ import net.minecraft.text.Text;
  * User-facing output settings screen using the classic v1 single-column layout.
  */
 public final class MessageSettingsScreen extends BaseScreen {
-    private ButtonWidget riskMessageButton;
-    private ButtonWidget riskPingButton;
+    private ButtonWidget scamWarningMessageButton;
+    private ButtonWidget scamWarningPingButton;
     private ButtonWidget blacklistMessageButton;
     private ButtonWidget blacklistPingButton;
+    private ButtonWidget autoLeaveMessageButton;
 
     /**
      * Creates the message settings screen.
@@ -36,14 +37,14 @@ public final class MessageSettingsScreen extends BaseScreen {
         int x = column.x();
         int y = column.y() + 12;
 
-        riskMessageButton = addDrawableChild(
+        scamWarningMessageButton = addDrawableChild(
             ButtonWidget.builder(Text.empty(), button -> toggleRiskMessage())
                 .dimensions(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
         y += ROW_HEIGHT;
 
-        riskPingButton = addDrawableChild(
+        scamWarningPingButton = addDrawableChild(
             ButtonWidget.builder(Text.empty(), button -> toggleRiskPing())
                 .dimensions(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
@@ -59,6 +60,13 @@ public final class MessageSettingsScreen extends BaseScreen {
 
         blacklistPingButton = addDrawableChild(
             ButtonWidget.builder(Text.empty(), button -> toggleBlacklistPing())
+                .dimensions(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
+                .build()
+        );
+        y += ROW_HEIGHT;
+
+        autoLeaveMessageButton = addDrawableChild(
+            ButtonWidget.builder(Text.empty(), button -> toggleAutoLeaveMessage())
                 .dimensions(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
@@ -112,20 +120,30 @@ public final class MessageSettingsScreen extends BaseScreen {
         refreshButtons();
     }
 
+    private void toggleAutoLeaveMessage() {
+        RuntimeConfig.OutputSettings output = ScamScreenerRuntime.getInstance().config().output();
+        output.setShowAutoLeaveMessage(!output.isShowAutoLeaveMessage());
+        ScamScreenerRuntime.getInstance().saveConfig();
+        refreshButtons();
+    }
+
     private void refreshButtons() {
         RuntimeConfig.OutputSettings output = ScamScreenerRuntime.getInstance().config().output();
 
-        if (riskMessageButton != null) {
-            riskMessageButton.setMessage(Text.literal("Show Risk Warning: " + onOff(output.isShowRiskWarningMessage())));
+        if (scamWarningMessageButton != null) {
+            scamWarningMessageButton.setMessage(Text.literal("Scam Warning Message: " + onOff(output.isShowRiskWarningMessage())));
         }
-        if (riskPingButton != null) {
-            riskPingButton.setMessage(Text.literal("Ping On Risk Warning: " + onOff(output.isPingOnRiskWarning())));
+        if (scamWarningPingButton != null) {
+            scamWarningPingButton.setMessage(Text.literal("Scam Warning Ping: " + onOff(output.isPingOnRiskWarning())));
         }
         if (blacklistMessageButton != null) {
-            blacklistMessageButton.setMessage(Text.literal("Show Blacklist Warning: " + onOff(output.isShowBlacklistWarningMessage())));
+            blacklistMessageButton.setMessage(Text.literal("Blacklist Warning Message: " + onOff(output.isShowBlacklistWarningMessage())));
         }
         if (blacklistPingButton != null) {
-            blacklistPingButton.setMessage(Text.literal("Ping On Blacklist Warning: " + onOff(output.isPingOnBlacklistWarning())));
+            blacklistPingButton.setMessage(Text.literal("Blacklist Warning Ping: " + onOff(output.isPingOnBlacklistWarning())));
+        }
+        if (autoLeaveMessageButton != null) {
+            autoLeaveMessageButton.setMessage(Text.literal("Auto Leave Info Message: " + onOff(output.isShowAutoLeaveMessage())));
         }
     }
 }

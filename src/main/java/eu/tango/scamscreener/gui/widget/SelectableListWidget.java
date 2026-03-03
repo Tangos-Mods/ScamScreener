@@ -147,7 +147,7 @@ public final class SelectableListWidget<T> {
         context.fill(x + width - 1, y, x + width, y + height, 0xFF5A5A5A);
 
         if (rows.isEmpty()) {
-            context.drawCenteredTextWithShadow(textRenderer, "No entries", x + (width / 2), y + (height / 2) - 4, 0xAAAAAA);
+            context.drawCenteredTextWithShadow(textRenderer, "No entries", x + (width / 2), y + (height / 2) - 4, opaqueColor(0xAAAAAA));
             return;
         }
 
@@ -267,6 +267,10 @@ public final class SelectableListWidget<T> {
             return max;
         }
         return value;
+    }
+
+    private static int opaqueColor(int color) {
+        return (color & 0xFF000000) == 0 ? (color | 0xFF000000) : color;
     }
 
     /**

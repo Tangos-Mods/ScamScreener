@@ -79,7 +79,7 @@ public final class ReviewDetailScreen extends BaseListScreen {
                 .build()
         );
         ignoreButton = addDrawableChild(
-            ButtonWidget.builder(Text.literal("Ignore"), button -> setVerdict(ReviewVerdict.IGNORED))
+            ButtonWidget.builder(Text.literal("Dismiss"), button -> setVerdict(ReviewVerdict.IGNORED))
                 .dimensions(columnX(contentX, buttonWidth, DEFAULT_SPLIT_GAP, 2), buttonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
@@ -179,7 +179,7 @@ public final class ReviewDetailScreen extends BaseListScreen {
         } else {
             addKeyValue("Entry ID", entry.getId(), 0xFFFFFF);
             addKeyValue("Sender", displaySender(), 0xFFFFFF);
-            addKeyValue("Verdict", entry.getVerdict().name(), color(entry.getVerdict()));
+            addKeyValue("Verdict", verdictLabel(entry.getVerdict()), color(entry.getVerdict()));
             addKeyValue("Score", Integer.toString(entry.getScore()), 0xFFFFFF);
             addKeyValue("Decided By", emptyFallback(entry.getDecidedByStage(), "-"), 0xFFFFFF);
             addKeyValue("Captured", formatCapturedAt(entry.getCapturedAtMs()), 0xAAAAAA);
@@ -261,7 +261,7 @@ public final class ReviewDetailScreen extends BaseListScreen {
             return;
         }
 
-        context.drawTextWithShadow(textRenderer, Text.literal(line.text()), x, y, line.color());
+        context.drawTextWithShadow(textRenderer, Text.literal(line.text()), x, y, opaqueColor(line.color()));
     }
 
     private void addSection(String title, int color) {
@@ -331,6 +331,19 @@ public final class ReviewDetailScreen extends BaseListScreen {
             case RISK -> 0xFFB366;
             case SAFE -> 0x99FF99;
             case IGNORED -> 0xB8B8B8;
+        };
+    }
+
+    private static String verdictLabel(ReviewVerdict verdict) {
+        if (verdict == null) {
+            return "Open";
+        }
+
+        return switch (verdict) {
+            case PENDING -> "Open";
+            case RISK -> "Risk";
+            case SAFE -> "Safe";
+            case IGNORED -> "Dismissed";
         };
     }
 

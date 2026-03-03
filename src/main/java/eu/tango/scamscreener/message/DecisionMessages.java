@@ -1,9 +1,13 @@
 package eu.tango.scamscreener.message;
 
+import eu.tango.scamscreener.chat.ChatLineClassifier;
 import net.minecraft.client.MinecraftClient;
-import eu.tango.scamscreener.pipeline.data.ChatEvent;
 import eu.tango.scamscreener.pipeline.data.PipelineDecision;
+import eu.tango.scamscreener.pipeline.data.ChatEvent;
+import net.minecraft.text.ClickEvent;
+import net.minecraft.text.HoverEvent;
 import net.minecraft.text.MutableText;
+import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 
@@ -29,19 +33,21 @@ public final class DecisionMessages {
     public static MutableText riskWarning(ChatEvent chatEvent, PipelineDecision decision) {
         String player = safePlayer(chatEvent);
         int scoreValue = decision == null ? 0 : Math.max(0, decision.getTotalScore());
-        String title = severityLabel(decision, scoreValue) + " RISK MESSAGE";
+        AlertSeverity severity = AlertSeverity.fromDecision(decision);
+        String title = severity.name() + " RISK MESSAGE";
         String score = String.valueOf(scoreValue);
-        String reason = primaryReason(decision, "Suspicious message detected.");
         String playerScoreLine = player + " | " + score;
+        String alertContextId = AlertContextRegistry.register(chatEvent, decision);
 
         MutableText message = Text.empty()
             .append(Text.literal(WARNING_BORDER).formatted(Formatting.DARK_RED))
-            .append(Text.literal("\n" + centeredBold(title)).formatted(severityColor(decision, scoreValue), Formatting.BOLD))
+            .append(Text.literal("\n" + centeredBold(title)).formatted(severityColor(severity), Formatting.BOLD))
             .append(Text.literal("\n" + leadingPadding(playerScoreLine)))
             .append(Text.literal(player).formatted(Formatting.AQUA))
             .append(Text.literal(" | ").formatted(Formatting.DARK_GRAY))
             .append(Text.literal(score).formatted(scoreColor(scoreValue), Formatting.BOLD))
-            .append(Text.literal("\n" + centered(reason)).formatted(Formatting.YELLOW));
+            .append(Text.literal("\n"))
+            .append(actionLine(alertContextId));
 
         return message.append(Text.literal("\n" + WARNING_BORDER).formatted(Formatting.DARK_RED));
     }
@@ -74,6 +80,12 @@ public final class DecisionMessages {
 
     private static String safePlayer(ChatEvent chatEvent) {
         if (chatEvent == null || chatEvent.getSenderName() == null || chatEvent.getSenderName().isBlank()) {
+            if (chatEvent != null) {
+                ChatLineClassifier.ParsedPlayerLine parsedPlayerLine = ChatLineClassifier.parsePlayerMessage(chatEvent.getRawMessage()).orElse(null);
+                if (parsedPlayerLine != null && !parsedPlayerLine.senderName().isBlank()) {
+                    return parsedPlayerLine.senderName();
+                }
+            }
             return "unknown";
         }
 
@@ -93,28 +105,11 @@ public final class DecisionMessages {
         return reason;
     }
 
-    private static String severityLabel(PipelineDecision decision, int score) {
-        if (decision != null && decision.getOutcome() == PipelineDecision.Outcome.BLOCK) {
-            return "CRITICAL";
-        }
-        if (score >= 75) {
-            return "CRITICAL";
-        }
-        if (score >= 50) {
-            return "HIGH";
-        }
-        if (score >= 25) {
-            return "MEDIUM";
-        }
-        return "LOW";
-    }
-
-    private static Formatting severityColor(PipelineDecision decision, int score) {
-        String severity = severityLabel(decision, score);
-        return switch (severity) {
-            case "LOW" -> Formatting.RED;
-            case "MEDIUM" -> Formatting.GOLD;
-            case "HIGH" -> Formatting.RED;
+    private static Formatting severityColor(AlertSeverity severity) {
+        return switch (severity == null ? AlertSeverity.LOW : severity) {
+            case LOW -> Formatting.RED;
+            case MEDIUM -> Formatting.GOLD;
+            case HIGH -> Formatting.RED;
             default -> Formatting.DARK_RED;
         };
     }
@@ -193,5 +188,40 @@ public final class DecisionMessages {
         }
 
         return extra;
+    }
+
+    private static MutableText actionLine(String alertContextId) {
+        MutableText line = Text.literal(leadingPadding("[manage] [info]"));
+        boolean hasContext = alertContextId != null && !alertContextId.isBlank();
+
+        line.append(actionTag(
+            "manage",
+            Formatting.GOLD,
+            "Open review window for training-label selection and upload options.",
+            hasContext ? "/scamscreener review manage " + alertContextId : null
+        ));
+        line.append(Text.literal(" "));
+        line.append(actionTag(
+            "info",
+            Formatting.YELLOW,
+            "Open rule detail window for this alert.",
+            hasContext ? "/scamscreener review info " + alertContextId : null
+        ));
+
+        return line;
+    }
+
+    private static MutableText actionTag(String label, Formatting color, String hover, String command) {
+        Style style = Style.EMPTY.withColor(color);
+        if (hover != null && !hover.isBlank()) {
+            style = style.withHoverEvent(new HoverEvent.ShowText(Text.literal(hover)));
+        }
+        if (command != null && !command.isBlank()) {
+            style = style.withClickEvent(new ClickEvent.RunCommand(command));
+        } else {
+            style = style.withStrikethrough(true);
+        }
+
+        return Text.literal("[" + label + "]").setStyle(style);
     }
 }
