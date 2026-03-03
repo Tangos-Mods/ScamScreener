@@ -17,7 +17,6 @@ public final class ScamScreenerMainScreen extends BaseScreen {
     private ButtonWidget autoCaptureButton;
     private ButtonWidget autoLeaveButton;
     private ButtonWidget muteFilterButton;
-    private ButtonWidget localAiButton;
 
     /**
      * Creates the root ScamScreener screen.
@@ -66,13 +65,6 @@ public final class ScamScreenerMainScreen extends BaseScreen {
         );
         y += ROW_HEIGHT;
 
-        localAiButton = addDrawableChild(
-            ButtonWidget.builder(Text.empty(), button -> toggleLocalAi())
-                .dimensions(x, y, buttonWidth, DEFAULT_BUTTON_HEIGHT)
-                .build()
-        );
-        y += ROW_HEIGHT;
-
         int menuWidth = Math.min(500, Math.max(260, this.width - 40));
         int menuX = centeredX(menuWidth);
         int menuButtonWidth = splitWidth(menuWidth, 3, DEFAULT_SPLIT_GAP);
@@ -105,7 +97,7 @@ public final class ScamScreenerMainScreen extends BaseScreen {
                 .build()
         );
         addDrawableChild(
-            ButtonWidget.builder(Text.literal("AI Update"), button -> this.client.setScreen(new AiUpdateSettingsScreen(this)))
+            ButtonWidget.builder(Text.literal("Runtime"), button -> this.client.setScreen(new RuntimeSettingsScreen(this)))
                 .dimensions(columnX(menuX, menuButtonWidth, DEFAULT_SPLIT_GAP, 2), y, menuButtonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
@@ -166,13 +158,6 @@ public final class ScamScreenerMainScreen extends BaseScreen {
         refreshButtons();
     }
 
-    private void toggleLocalAi() {
-        RuntimeConfig.StageSettings stages = ScamScreenerRuntime.getInstance().config().stages();
-        stages.setModelEnabled(!stages.isModelEnabled());
-        ScamScreenerRuntime.getInstance().saveConfig();
-        refreshButtons();
-    }
-
     private void refreshButtons() {
         RuntimeConfig config = ScamScreenerRuntime.getInstance().config();
 
@@ -181,17 +166,15 @@ public final class ScamScreenerMainScreen extends BaseScreen {
         }
         if (autoCaptureButton != null) {
             AutoCaptureAlertLevel autoCaptureLevel = config.alerts().autoCaptureLevel();
-            String suffix = autoCaptureLevel == AutoCaptureAlertLevel.OFF ? "OFF" : "ON (" + autoCaptureLevel.name() + ")";
-            autoCaptureButton.setMessage(Text.literal("AI Auto-Capture: " + suffix));
+            boolean enabled = autoCaptureLevel != AutoCaptureAlertLevel.OFF;
+            String detail = enabled ? " (" + autoCaptureLevel.name() + ")" : "";
+            autoCaptureButton.setMessage(toggleText("Auto-Capture: ", enabled, detail));
         }
         if (autoLeaveButton != null) {
-            autoLeaveButton.setMessage(Text.literal("Auto /p leave on blacklist: " + onOff(config.safety().isAutoLeaveOnBlacklist())));
+            autoLeaveButton.setMessage(toggleText("Auto /p leave on blacklist: ", config.safety().isAutoLeaveOnBlacklist()));
         }
         if (muteFilterButton != null) {
-            muteFilterButton.setMessage(Text.literal("Mute Filter: " + onOff(ScamScreenerRuntime.getInstance().mutePatternManager().isEnabled())));
-        }
-        if (localAiButton != null) {
-            localAiButton.setMessage(Text.literal("Local AI Signal: " + onOff(config.stages().isModelEnabled())));
+            muteFilterButton.setMessage(toggleText("Mute Filter: ", ScamScreenerRuntime.getInstance().mutePatternManager().isEnabled()));
         }
     }
 }

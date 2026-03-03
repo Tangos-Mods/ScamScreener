@@ -38,7 +38,7 @@ class BehaviorStageTest {
         assertEquals(Stage.Decision.PASS, first.getDecision());
         assertEquals(0, first.getScoreDelta());
         assertEquals(Stage.Decision.PASS, second.getDecision());
-        assertEquals(15, second.getScoreDelta());
+        assertEquals(1, second.getScoreDelta());
         assertTrue(second.getReason().contains("Repeated contact message x2"));
     }
 
@@ -60,7 +60,7 @@ class BehaviorStageTest {
         ));
 
         assertEquals(Stage.Decision.PASS, result.getDecision());
-        assertEquals(10, result.getScoreDelta());
+        assertEquals(1, result.getScoreDelta());
         assertTrue(result.getReason().contains("Burst contact: 4 messages in short window"));
     }
 
@@ -76,7 +76,7 @@ class BehaviorStageTest {
     }
 
     @Test
-    void usesConfiguredBehaviorScores() {
+    void capsConfiguredBehaviorScoresAtOnePoint() {
         UUID senderUuid = UUID.randomUUID();
         RulesConfig rulesConfig = new RulesConfig();
         rulesConfig.behaviorStage().setRepeatedMessageScore(30);
@@ -93,7 +93,7 @@ class BehaviorStageTest {
         ));
 
         assertEquals(Stage.Decision.PASS, result.getDecision());
-        assertEquals(30, result.getScoreDelta());
+        assertEquals(1, result.getScoreDelta());
     }
 
     @Test
@@ -114,7 +114,7 @@ class BehaviorStageTest {
         ));
 
         assertEquals(Stage.Decision.PASS, result.getDecision());
-        assertEquals(30, result.getScoreDelta());
+        assertEquals(1, result.getScoreDelta());
         assertTrue(result.getReason().contains("Behavior combo"));
     }
 }

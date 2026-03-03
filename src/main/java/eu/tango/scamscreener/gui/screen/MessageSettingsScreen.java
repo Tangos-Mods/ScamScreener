@@ -131,19 +131,19 @@ public final class MessageSettingsScreen extends BaseScreen {
         RuntimeConfig.OutputSettings output = ScamScreenerRuntime.getInstance().config().output();
 
         if (scamWarningMessageButton != null) {
-            scamWarningMessageButton.setMessage(Text.literal("Scam Warning Message: " + onOff(output.isShowRiskWarningMessage())));
+            scamWarningMessageButton.setMessage(toggleText("Scam Warning Message: ", output.isShowRiskWarningMessage()));
         }
         if (scamWarningPingButton != null) {
-            scamWarningPingButton.setMessage(Text.literal("Scam Warning Ping: " + onOff(output.isPingOnRiskWarning())));
+            scamWarningPingButton.setMessage(toggleText("Scam Warning Ping: ", output.isPingOnRiskWarning()));
         }
         if (blacklistMessageButton != null) {
-            blacklistMessageButton.setMessage(Text.literal("Blacklist Warning Message: " + onOff(output.isShowBlacklistWarningMessage())));
+            blacklistMessageButton.setMessage(toggleText("Blacklist Warning Message: ", output.isShowBlacklistWarningMessage()));
         }
         if (blacklistPingButton != null) {
-            blacklistPingButton.setMessage(Text.literal("Blacklist Warning Ping: " + onOff(output.isPingOnBlacklistWarning())));
+            blacklistPingButton.setMessage(toggleText("Blacklist Warning Ping: ", output.isPingOnBlacklistWarning()));
         }
         if (autoLeaveMessageButton != null) {
-            autoLeaveMessageButton.setMessage(Text.literal("Auto Leave Info Message: " + onOff(output.isShowAutoLeaveMessage())));
+            autoLeaveMessageButton.setMessage(toggleText("Auto Leave Info Message: ", output.isShowAutoLeaveMessage()));
         }
     }
 }

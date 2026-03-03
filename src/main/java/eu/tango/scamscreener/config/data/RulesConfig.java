@@ -18,6 +18,12 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 public final class RulesConfig {
+    private boolean muteStageEnabled = true;
+    private boolean ruleStageEnabled = true;
+    private boolean similarityStageEnabled = true;
+    private boolean behaviorStageEnabled = true;
+    private boolean trendStageEnabled = true;
+    private boolean funnelStageEnabled = true;
     private MuteStageSettings muteStage = new MuteStageSettings();
     private RuleStageSettings ruleStage = new RuleStageSettings();
     private SimilarityStageSettings similarityStage = new SimilarityStageSettings();
@@ -110,6 +116,22 @@ public final class RulesConfig {
     @Setter
     @NoArgsConstructor
     public static final class RuleStageSettings {
+        private boolean suspiciousLinkEnabled = true;
+        private boolean externalPlatformEnabled = true;
+        private boolean upfrontPaymentEnabled = true;
+        private boolean accountDataEnabled = true;
+        private boolean tooGoodEnabled = true;
+        private boolean coercionThreatEnabled = true;
+        private boolean middlemanTriggerEnabled = true;
+        private boolean proofBaitEnabled = true;
+        private boolean urgencyEnabled = true;
+        private boolean trustEnabled = true;
+        private boolean discordHandleEnabled = true;
+        private boolean linkRedirectComboEnabled = true;
+        private boolean trustPaymentComboEnabled = true;
+        private boolean urgencyAccountComboEnabled = true;
+        private boolean middlemanProofComboEnabled = true;
+
         private int suspiciousLinkScore = 20;
         private int externalPlatformScore = 15;
         private int upfrontPaymentScore = 25;
@@ -331,10 +353,10 @@ public final class RulesConfig {
         private int minRepeatMessageLength = 8;
         private int minBurstMessageLength = 4;
         private int repeatedMessageThreshold = 1;
-        private int repeatedMessageScore = 15;
+        private int repeatedMessageScore = 1;
         private int burstContactThreshold = 3;
-        private int burstContactScore = 10;
-        private int comboBonusMinimum = 1;
+        private int burstContactScore = 1;
+        private int comboBonusMinimum = 0;
         private int comboBonusDivisor = 2;
         private long windowMs = 90_000L;
         private int maxHistory = 8;

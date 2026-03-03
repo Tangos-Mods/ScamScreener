@@ -10,7 +10,6 @@ import eu.tango.scamscreener.pipeline.state.TrendStore;
 import eu.tango.scamscreener.pipeline.stage.BehaviorStage;
 import eu.tango.scamscreener.pipeline.stage.FunnelStage;
 import eu.tango.scamscreener.pipeline.stage.LevenshteinStage;
-import eu.tango.scamscreener.pipeline.stage.ModelStage;
 import eu.tango.scamscreener.pipeline.stage.MuteStage;
 import eu.tango.scamscreener.pipeline.stage.PlayerListStage;
 import eu.tango.scamscreener.pipeline.stage.RuleStage;
@@ -56,8 +55,7 @@ public class ScamScreenerPipelineFactory {
             new LevenshteinStage(ruleCatalog),
             new BehaviorStage(behaviorStore, ruleCatalog),
             new TrendStage(trendStore, ruleCatalog),
-            new FunnelStage(funnelStore, ruleCatalog),
-            new ModelStage()
+            new FunnelStage(funnelStore, ruleCatalog)
         );
     }
 

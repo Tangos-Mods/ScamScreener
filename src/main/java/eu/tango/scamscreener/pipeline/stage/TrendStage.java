@@ -73,6 +73,11 @@ public final class TrendStage extends Stage {
      */
     @Override
     protected StageResult evaluate(ChatEvent chatEvent) {
+        if (!rules.trendStageEnabled()) {
+            trendStore.record(chatEvent);
+            return pass();
+        }
+
         TrendStore.TrendSnapshot snapshot = trendStore.snapshotFor(chatEvent);
         TrendRules trend = rules.trend();
         if (snapshot.normalizedMessage().isBlank() || snapshot.normalizedMessage().length() < trend.minMessageLength()) {

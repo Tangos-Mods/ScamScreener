@@ -1,6 +1,7 @@
 package eu.tango.scamscreener.config.data;
 
 import eu.tango.scamscreener.pipeline.core.Stage;
+import eu.tango.scamscreener.review.ReviewCaseRole;
 import eu.tango.scamscreener.review.ReviewVerdict;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -44,6 +45,7 @@ public final class ReviewConfig {
         private ReviewVerdict verdict = ReviewVerdict.PENDING;
         private List<String> reasons = new ArrayList<>();
         private List<ReviewStageResult> stageResults = new ArrayList<>();
+        private List<ReviewCaseMessageConfig> caseMessages = new ArrayList<>();
 
         /**
          * Returns the normalized reasons.
@@ -62,6 +64,15 @@ public final class ReviewConfig {
         public List<ReviewStageResult> stageResults() {
             return stageResults == null ? new ArrayList<>() : stageResults;
         }
+
+        /**
+         * Returns the normalized persisted case-level messages.
+         *
+         * @return non-null case message entries
+         */
+        public List<ReviewCaseMessageConfig> caseMessages() {
+            return caseMessages == null ? new ArrayList<>() : caseMessages;
+        }
     }
 
     /**
@@ -75,5 +86,30 @@ public final class ReviewConfig {
         private Stage.Decision decision = Stage.Decision.PASS;
         private int scoreDelta;
         private String reason = "";
+    }
+
+    /**
+     * Persisted case-level message entry stored alongside a review entry.
+     */
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    public static final class ReviewCaseMessageConfig {
+        private int messageIndex;
+        private String speakerRole = "other";
+        private String messageSourceType = "player";
+        private String cleanText = "";
+        private boolean triggerMessage;
+        private ReviewCaseRole caseRole = ReviewCaseRole.EXCLUDED;
+        private List<String> signalTagIds = new ArrayList<>();
+        private List<String> advancedRuleSelections = new ArrayList<>();
+
+        public List<String> signalTagIds() {
+            return signalTagIds == null ? new ArrayList<>() : signalTagIds;
+        }
+
+        public List<String> advancedRuleSelections() {
+            return advancedRuleSelections == null ? new ArrayList<>() : advancedRuleSelections;
+        }
     }
 }

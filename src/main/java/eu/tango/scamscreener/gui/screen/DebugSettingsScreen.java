@@ -74,12 +74,12 @@ public final class DebugSettingsScreen extends BaseScreen {
     private void refreshButtons() {
         Map<String, Boolean> states = currentStates();
         if (allButton != null) {
-            allButton.setMessage(Text.literal("All Debug: " + onOff(allEnabled(states))));
+            allButton.setMessage(toggleText("All Debug: ", allEnabled(states)));
         }
 
         for (Map.Entry<String, ButtonWidget> entry : debugButtons.entrySet()) {
             boolean enabled = states.getOrDefault(entry.getKey(), false);
-            entry.getValue().setMessage(Text.literal(DebugKeys.label(entry.getKey()) + ": " + onOff(enabled)));
+            entry.getValue().setMessage(toggleText(DebugKeys.label(entry.getKey()) + ": ", enabled));
         }
     }
 

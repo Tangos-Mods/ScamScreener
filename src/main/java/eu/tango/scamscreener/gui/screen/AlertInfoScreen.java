@@ -4,6 +4,7 @@ import eu.tango.scamscreener.chat.ChatLineClassifier;
 import eu.tango.scamscreener.gui.base.BaseScreen;
 import eu.tango.scamscreener.message.AlertContextRegistry;
 import eu.tango.scamscreener.pipeline.data.PipelineDecision;
+import eu.tango.scamscreener.review.ReviewCaseMessage;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
@@ -207,6 +208,16 @@ public final class AlertInfoScreen extends BaseScreen {
         }
 
         Set<String> uniqueMessages = new LinkedHashSet<>();
+        for (ReviewCaseMessage caseMessage : context.caseMessages()) {
+            if (caseMessage == null) {
+                continue;
+            }
+
+            String normalizedMessage = normalizeDisplayedMessage(caseMessage.getCleanText());
+            if (!normalizedMessage.isBlank()) {
+                uniqueMessages.add(normalizedMessage);
+            }
+        }
         for (String capturedMessage : context.capturedMessages()) {
             String normalizedMessage = normalizeDisplayedMessage(capturedMessage);
             if (!normalizedMessage.isBlank()) {
@@ -384,7 +395,6 @@ public final class AlertInfoScreen extends BaseScreen {
         SIMILARITY("Similarity Stage", 0xFF55FF),
         TREND("Trend Stage", 0x5599FF),
         FUNNEL("Funnel Stage", 0x00AAAA),
-        AI("AI Stage", 0x55FF55),
         MUTE("Mute Stage", 0xAAAAAA),
         OTHER("Other Stage", 0xAAAAAA);
 
@@ -413,7 +423,6 @@ public final class AlertInfoScreen extends BaseScreen {
                 case "LevenshteinStage" -> SIMILARITY;
                 case "TrendStage" -> TREND;
                 case "FunnelStage" -> FUNNEL;
-                case "ModelStage" -> AI;
                 case "MuteStage" -> MUTE;
                 default -> OTHER;
             };

@@ -5,6 +5,8 @@ import eu.tango.scamscreener.pipeline.data.PipelineDecision;
 import eu.tango.scamscreener.pipeline.data.StageResult;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -30,6 +32,8 @@ class ReviewStoreTest {
         assertEquals(ReviewVerdict.PENDING, store.entries().getFirst().getVerdict());
         assertEquals(1, store.entries().getFirst().getReasons().size());
         assertEquals(1, store.entries().getFirst().getStageResults().size());
+        assertTrue(store.entries().getFirst().hasCaseMessages());
+        assertTrue(store.entries().getFirst().getCaseMessages().getFirst().isTriggerMessage());
     }
 
     @Test
@@ -123,5 +127,26 @@ class ReviewStoreTest {
         assertEquals(2, store.entries().size());
         assertEquals("three", store.entries().get(0).getMessage());
         assertEquals("two", store.entries().get(1).getMessage());
+    }
+
+    @Test
+    void createManualAddsManualReviewEntryWithCaseMessages() {
+        ReviewStore store = new ReviewStore();
+
+        ReviewEntry entry = store.createManual(
+            null,
+            "Alpha",
+            "legit middleman",
+            33,
+            "RuleStage",
+            500L,
+            List.of("rule.middleman"),
+            List.of(StageResult.score("RuleStage", 33, "rule.middleman")),
+            List.of(new ReviewCaseMessage(0, "other", "player", "legit middleman", true, ReviewCaseRole.SIGNAL, List.of("trust"), List.of()))
+        );
+
+        assertEquals("review-1", entry.getId());
+        assertEquals(1, store.entries().size());
+        assertEquals("trust", store.entries().getFirst().getCaseMessages().getFirst().getSignalTagIds().getFirst());
     }
 }

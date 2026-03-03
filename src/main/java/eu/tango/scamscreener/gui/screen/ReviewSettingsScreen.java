@@ -142,7 +142,7 @@ public final class ReviewSettingsScreen extends BaseScreen {
         RuntimeConfig.ReviewSettings review = runtime.config().review();
 
         if (captureEnabledButton != null) {
-            captureEnabledButton.setMessage(Text.literal("Capture Review Entries: " + onOff(review.isCaptureEnabled())));
+            captureEnabledButton.setMessage(toggleText("Capture Review Entries: ", review.isCaptureEnabled()));
         }
         if (maxEntriesButton != null) {
             maxEntriesButton.setMessage(Text.literal("Review Queue Capacity: " + review.maxEntries()));

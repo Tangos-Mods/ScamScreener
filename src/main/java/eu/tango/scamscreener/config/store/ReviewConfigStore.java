@@ -2,6 +2,7 @@ package eu.tango.scamscreener.config.store;
 
 import eu.tango.scamscreener.config.data.ReviewConfig;
 import eu.tango.scamscreener.pipeline.data.StageResult;
+import eu.tango.scamscreener.review.ReviewCaseMessage;
 import eu.tango.scamscreener.review.ReviewEntry;
 import eu.tango.scamscreener.review.ReviewStore;
 import eu.tango.scamscreener.review.ReviewVerdict;
@@ -83,6 +84,24 @@ public final class ReviewConfigStore extends BaseConfig<ReviewConfig> {
             );
         }
 
+        List<ReviewCaseMessage> caseMessages = new ArrayList<>();
+        for (ReviewConfig.ReviewCaseMessageConfig storedCaseMessage : storedEntry.caseMessages()) {
+            if (storedCaseMessage == null || storedCaseMessage.getCleanText() == null || storedCaseMessage.getCleanText().isBlank()) {
+                continue;
+            }
+
+            caseMessages.add(new ReviewCaseMessage(
+                storedCaseMessage.getMessageIndex(),
+                storedCaseMessage.getSpeakerRole(),
+                storedCaseMessage.getMessageSourceType(),
+                storedCaseMessage.getCleanText(),
+                storedCaseMessage.isTriggerMessage(),
+                storedCaseMessage.getCaseRole(),
+                storedCaseMessage.signalTagIds(),
+                storedCaseMessage.advancedRuleSelections()
+            ));
+        }
+
         ReviewEntry entry = new ReviewEntry(
             storedEntry.getId(),
             senderUuid,
@@ -92,7 +111,8 @@ public final class ReviewConfigStore extends BaseConfig<ReviewConfig> {
             storedEntry.getDecidedByStage(),
             storedEntry.getCapturedAtMs(),
             storedEntry.reasons(),
-            stageResults
+            stageResults,
+            caseMessages
         );
         entry.setVerdict(storedEntry.getVerdict() == null ? ReviewVerdict.PENDING : storedEntry.getVerdict());
         return entry;
@@ -125,6 +145,23 @@ public final class ReviewConfigStore extends BaseConfig<ReviewConfig> {
             storedStageResult.setScoreDelta(stageResult.getScoreDelta());
             storedStageResult.setReason(stageResult.getReason());
             storedEntry.getStageResults().add(storedStageResult);
+        }
+
+        for (ReviewCaseMessage caseMessage : entry.getCaseMessages()) {
+            if (caseMessage == null || caseMessage.getCleanText().isBlank()) {
+                continue;
+            }
+
+            ReviewConfig.ReviewCaseMessageConfig storedCaseMessage = new ReviewConfig.ReviewCaseMessageConfig();
+            storedCaseMessage.setMessageIndex(caseMessage.getMessageIndex());
+            storedCaseMessage.setSpeakerRole(caseMessage.getSpeakerRole());
+            storedCaseMessage.setMessageSourceType(caseMessage.getMessageSourceType());
+            storedCaseMessage.setCleanText(caseMessage.getCleanText());
+            storedCaseMessage.setTriggerMessage(caseMessage.isTriggerMessage());
+            storedCaseMessage.setCaseRole(caseMessage.getCaseRole());
+            storedCaseMessage.getSignalTagIds().addAll(caseMessage.getSignalTagIds());
+            storedCaseMessage.getAdvancedRuleSelections().addAll(caseMessage.getAdvancedRuleSelections());
+            storedEntry.getCaseMessages().add(storedCaseMessage);
         }
 
         return storedEntry;

@@ -37,11 +37,8 @@ public final class ReviewScreen extends BaseListScreen {
     private ButtonWidget markSafeButton;
     private ButtonWidget ignoreButton;
     private ButtonWidget resetVisibleButton;
-    private ButtonWidget blacklistButton;
-    private ButtonWidget whitelistButton;
     private ButtonWidget removeButton;
     private ButtonWidget clearVisibleButton;
-    private ButtonWidget detailsButton;
 
     /**
      * Creates a review screen backed by the shared runtime review queue.
@@ -95,12 +92,12 @@ public final class ReviewScreen extends BaseListScreen {
         int buttonY = listY + listHeight + 10;
 
         markRiskButton = addDrawableChild(
-            ButtonWidget.builder(Text.literal("Mark Risk"), button -> setSelectedVerdict(ReviewVerdict.RISK))
+            ButtonWidget.builder(Text.literal("Review Case"), button -> openCaseReview())
                 .dimensions(contentX, buttonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
         markSafeButton = addDrawableChild(
-            ButtonWidget.builder(Text.literal("Mark Safe"), button -> setSelectedVerdict(ReviewVerdict.SAFE))
+            ButtonWidget.builder(Text.literal("Info"), button -> openInfo())
                 .dimensions(columnX(contentX, buttonWidth, DEFAULT_SPLIT_GAP, 1), buttonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
@@ -110,37 +107,21 @@ public final class ReviewScreen extends BaseListScreen {
                 .build()
         );
         resetVisibleButton = addDrawableChild(
-            ButtonWidget.builder(Text.literal("Reset Visible"), button -> resetVisibleChoices())
+            ButtonWidget.builder(Text.literal("New Case"), button -> openNewCase())
                 .dimensions(columnX(contentX, buttonWidth, DEFAULT_SPLIT_GAP, 3), buttonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
 
         buttonY += DEFAULT_BUTTON_HEIGHT + 4;
-        blacklistButton = addDrawableChild(
-            ButtonWidget.builder(Text.literal("To Blacklist"), button -> addSelectedToBlacklist())
-                .dimensions(contentX, buttonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
-                .build()
-        );
-        whitelistButton = addDrawableChild(
-            ButtonWidget.builder(Text.literal("To Whitelist"), button -> addSelectedToWhitelist())
-                .dimensions(columnX(contentX, buttonWidth, DEFAULT_SPLIT_GAP, 1), buttonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
-                .build()
-        );
+        int lowerButtonWidth = splitWidth(contentWidth, 2, DEFAULT_SPLIT_GAP);
         removeButton = addDrawableChild(
             ButtonWidget.builder(Text.literal("Remove"), button -> removeSelectedEntry())
-                .dimensions(columnX(contentX, buttonWidth, DEFAULT_SPLIT_GAP, 2), buttonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
+                .dimensions(contentX, buttonY, lowerButtonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
         clearVisibleButton = addDrawableChild(
             ButtonWidget.builder(Text.literal("Clear Visible"), button -> clearVisible())
-                .dimensions(columnX(contentX, buttonWidth, DEFAULT_SPLIT_GAP, 3), buttonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
-                .build()
-        );
-
-        buttonY += DEFAULT_BUTTON_HEIGHT + 4;
-        detailsButton = addDrawableChild(
-            ButtonWidget.builder(Text.literal("Info"), button -> openInfo())
-                .dimensions(contentX, buttonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
+                .dimensions(columnX(contentX, lowerButtonWidth, DEFAULT_SPLIT_GAP, 1), buttonY, lowerButtonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
 
@@ -188,7 +169,7 @@ public final class ReviewScreen extends BaseListScreen {
                 + " | Filter " + activeFilter.label()
                 + " | Search " + searchSummary()
         );
-        drawLine(context, left, CONTENT_TOP + 36, "Click a selected row again to cycle Open/Risk/Safe/Dismissed.");
+        drawLine(context, left, CONTENT_TOP + 36, "Select a case or start a New Case, then use Review Case to annotate context and signals.");
 
         if (listWidget != null) {
             listWidget.render(context, this.textRenderer, mouseX, mouseY);
@@ -201,14 +182,8 @@ public final class ReviewScreen extends BaseListScreen {
             return false;
         }
 
-        int previousSelection = listWidget.selectedIndex();
         if (!listWidget.mouseClicked(mouseX, mouseY, button)) {
             return false;
-        }
-
-        if (previousSelection >= 0 && previousSelection == listWidget.selectedIndex()) {
-            cycleSelectedVerdict();
-            return true;
         }
 
         updateActionState();
@@ -265,26 +240,6 @@ public final class ReviewScreen extends BaseListScreen {
         reloadRows(null);
     }
 
-    private void addSelectedToBlacklist() {
-        ReviewEntry entry = selectedEntry().orElse(null);
-        if (!ReviewActionHandler.hasPlayerTarget(entry)) {
-            return;
-        }
-
-        ReviewActionHandler.addToBlacklist(entry);
-        reloadRows(entry.getId());
-    }
-
-    private void addSelectedToWhitelist() {
-        ReviewEntry entry = selectedEntry().orElse(null);
-        if (!ReviewActionHandler.hasPlayerTarget(entry)) {
-            return;
-        }
-
-        ReviewActionHandler.addToWhitelist(entry);
-        reloadRows(entry.getId());
-    }
-
     private void removeSelectedEntry() {
         ReviewEntry entry = selectedEntry().orElse(null);
         if (entry == null) {
@@ -293,6 +248,20 @@ public final class ReviewScreen extends BaseListScreen {
 
         ReviewActionHandler.remove(entry);
         reloadRows(null);
+    }
+
+    private void openCaseReview() {
+        ReviewEntry entry = selectedEntry().orElse(null);
+        if (entry == null || this.client == null) {
+            return;
+        }
+
+        AlertContextRegistry.AlertContext context = AlertContextRegistry.createReviewContext(entry).orElse(null);
+        if (context == null) {
+            return;
+        }
+
+        this.client.setScreen(new AlertManageScreen(this, context));
     }
 
     private void openInfo() {
@@ -309,10 +278,17 @@ public final class ReviewScreen extends BaseListScreen {
         this.client.setScreen(new AlertInfoScreen(this, context));
     }
 
+    private void openNewCase() {
+        if (this.client == null) {
+            return;
+        }
+
+        this.client.setScreen(new AlertManageScreen(this, null));
+    }
+
     private void updateActionState() {
         boolean hasVisibleRows = !rows.isEmpty();
         boolean hasSelection = selectedEntry().isPresent();
-        boolean hasSelectionTarget = ReviewActionHandler.hasPlayerTarget(selectedEntry().orElse(null));
 
         if (markRiskButton != null) {
             markRiskButton.active = hasSelection;
@@ -324,22 +300,13 @@ public final class ReviewScreen extends BaseListScreen {
             ignoreButton.active = hasSelection;
         }
         if (resetVisibleButton != null) {
-            resetVisibleButton.active = hasVisibleRows;
-        }
-        if (blacklistButton != null) {
-            blacklistButton.active = hasSelectionTarget;
-        }
-        if (whitelistButton != null) {
-            whitelistButton.active = hasSelectionTarget;
+            resetVisibleButton.active = true;
         }
         if (removeButton != null) {
             removeButton.active = hasSelection;
         }
         if (clearVisibleButton != null) {
             clearVisibleButton.active = hasVisibleRows;
-        }
-        if (detailsButton != null) {
-            detailsButton.active = hasSelection;
         }
     }
 

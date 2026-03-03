@@ -19,7 +19,6 @@ public final class RuntimeConfig {
     private AlertSettings alerts = new AlertSettings();
     private OutputSettings output = new OutputSettings();
     private ReviewSettings review = new ReviewSettings();
-    private StageSettings stages = new StageSettings();
     private SafetySettings safety = new SafetySettings();
     private DebugSettings debug = new DebugSettings();
 
@@ -73,19 +72,6 @@ public final class RuntimeConfig {
         }
 
         return review;
-    }
-
-    /**
-     * Returns the normalized stage settings.
-     *
-     * @return non-null stage settings
-     */
-    public StageSettings stages() {
-        if (stages == null) {
-            stages = new StageSettings();
-        }
-
-        return stages;
     }
 
     /**
@@ -195,16 +181,6 @@ public final class RuntimeConfig {
         public int maxEntries() {
             return Math.max(25, Math.min(500, maxEntries));
         }
-    }
-
-    /**
-     * Simple stage toggle settings.
-     */
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    public static final class StageSettings {
-        private boolean modelEnabled = true;
     }
 
     /**

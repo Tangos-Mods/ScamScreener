@@ -197,7 +197,7 @@ public final class DecisionMessages {
         line.append(actionTag(
             "manage",
             Formatting.GOLD,
-            "Open review window for training-label selection and upload options.",
+            "Open the case review window to group context messages and assign signal tags.",
             hasContext ? "/scamscreener review manage " + alertContextId : null
         ));
         line.append(Text.literal(" "));

@@ -10,10 +10,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ChatLineClassifierTest {
     @Test
     void classifiesPlayerAndHypixelSystemLinesAsExpected() {
-        String playerLine = "[134] [MVP+] Pankraz01: Ich spiele Hypixel Skyblock";
+        String playerLine = "[241] [MVP+] Pankraz01: Ich spiele Hypixel Skyblock";
         String npcLine = "[NPC] Kat: Your Ocelot is ready to pick up!";
         String bossLine = "[BOSS] Necron: You never defeat me.";
         String bazaarLine = "[Bazaar] Cancelled buy order for Decombobulator.";
+        String serverColonLine = "Auction expires in 5m: use /ah to bid";
 
         assertEquals(ChatLineClassifier.ChatLineType.PLAYER, ChatLineClassifier.classify(playerLine));
         assertTrue(ChatLineClassifier.isPlayerMessage(playerLine));
@@ -33,6 +34,10 @@ class ChatLineClassifierTest {
         assertEquals(ChatLineClassifier.ChatLineType.SYSTEM, ChatLineClassifier.classify(bazaarLine));
         assertFalse(ChatLineClassifier.isPlayerMessage(bazaarLine));
         assertTrue(ChatLineClassifier.parsePlayerMessage(bazaarLine).isEmpty());
+
+        assertEquals(ChatLineClassifier.ChatLineType.UNKNOWN, ChatLineClassifier.classify(serverColonLine));
+        assertFalse(ChatLineClassifier.isPlayerMessage(serverColonLine));
+        assertTrue(ChatLineClassifier.parsePlayerMessage(serverColonLine).isEmpty());
     }
 
     @Test
@@ -44,18 +49,32 @@ class ChatLineClassifierTest {
     }
 
     @Test
-    void parsesFormattedPlayerLines() {
-        String formattedLine = "§bSam §f: legit middleman";
+    void parsesDirectGuildAndPartyLines() {
+        String directMessageLine = "From: [MVP+] Sam: legit middleman";
+        String guildLine = "Guild > [VIP] Sam: invite me to discord";
+        String partyLine = "Party > Sam: send coins first";
 
-        ChatLineClassifier.ParsedPlayerLine parsedPlayerLine = ChatLineClassifier.parsePlayerMessage(formattedLine).orElse(null);
-        assertNotNull(parsedPlayerLine);
-        assertEquals("Sam", parsedPlayerLine.senderName());
-        assertEquals("legit middleman", parsedPlayerLine.message());
+        ChatLineClassifier.ParsedPlayerLine directMessage = ChatLineClassifier.parsePlayerMessage(directMessageLine).orElse(null);
+        assertNotNull(directMessage);
+        assertEquals("Sam", directMessage.senderName());
+        assertEquals("legit middleman", directMessage.message());
+
+        ChatLineClassifier.ParsedPlayerLine guildMessage = ChatLineClassifier.parsePlayerMessage(guildLine).orElse(null);
+        assertNotNull(guildMessage);
+        assertEquals("Sam", guildMessage.senderName());
+        assertEquals("invite me to discord", guildMessage.message());
+
+        ChatLineClassifier.ParsedPlayerLine partyMessage = ChatLineClassifier.parsePlayerMessage(partyLine).orElse(null);
+        assertNotNull(partyMessage);
+        assertEquals("Sam", partyMessage.senderName());
+        assertEquals("send coins first", partyMessage.message());
     }
 
     @Test
     void stripsVisiblePrefixesForUiDisplay() {
-        assertEquals("legit middleman", ChatLineClassifier.displayMessageOnly("§bSam §f: legit middleman"));
+        assertEquals("legit middleman", ChatLineClassifier.displayMessageOnly("From: [MVP+] Sam: legit middleman"));
+        assertEquals("invite me to discord", ChatLineClassifier.displayMessageOnly("Guild > [VIP] Sam: invite me to discord"));
+        assertEquals("send coins first", ChatLineClassifier.displayMessageOnly("Party > Sam: send coins first"));
         assertEquals("Your Ocelot is ready to pick up!", ChatLineClassifier.displayMessageOnly("[NPC] Kat: Your Ocelot is ready to pick up!"));
         assertEquals("plain message", ChatLineClassifier.displayMessageOnly("plain message"));
     }

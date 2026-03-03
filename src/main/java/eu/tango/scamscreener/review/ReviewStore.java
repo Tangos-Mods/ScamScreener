@@ -2,12 +2,14 @@ package eu.tango.scamscreener.review;
 
 import eu.tango.scamscreener.pipeline.data.ChatEvent;
 import eu.tango.scamscreener.pipeline.data.PipelineDecision;
+import eu.tango.scamscreener.pipeline.data.StageResult;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.UUID;
 
 /**
  * In-memory queue of review entries.
@@ -66,6 +68,18 @@ public final class ReviewStore {
      * @return the created review entry, when one was captured
      */
     public synchronized Optional<ReviewEntry> capture(ChatEvent chatEvent, PipelineDecision decision) {
+        return capture(chatEvent, decision, List.of());
+    }
+
+    /**
+     * Captures a new entry from a pipeline review outcome with case context.
+     *
+     * @param chatEvent the reviewed chat event
+     * @param decision the final pipeline decision
+     * @param caseMessages the anonymized case messages captured with the event
+     * @return the created review entry, when one was captured
+     */
+    public synchronized Optional<ReviewEntry> capture(ChatEvent chatEvent, PipelineDecision decision, List<ReviewCaseMessage> caseMessages) {
         if (decision == null || decision.getOutcome() != PipelineDecision.Outcome.REVIEW) {
             return Optional.empty();
         }
@@ -80,13 +94,11 @@ public final class ReviewStore {
             decision.getDecidedByStage(),
             safeEvent.getTimestampMs(),
             decision.getReasons(),
-            decision.getStageResults()
+            decision.getStageResults(),
+            caseMessages
         );
 
-        entries.add(0, entry);
-        trimToCapacity();
-        saveHook.run();
-        return Optional.of(entry);
+        return Optional.of(addEntry(entry));
     }
 
     /**
@@ -240,6 +252,60 @@ public final class ReviewStore {
         }
     }
 
+    /**
+     * Adds one manually reviewed entry to the queue.
+     *
+     * @param entry the entry to insert
+     * @return the inserted entry, or {@code null} when it was invalid
+     */
+    public synchronized ReviewEntry addManual(ReviewEntry entry) {
+        if (entry == null || entry.getId().isBlank()) {
+            return null;
+        }
+
+        return addEntry(entry);
+    }
+
+    /**
+     * Creates and inserts one manual review entry.
+     *
+     * @param senderUuid the sender UUID, when available
+     * @param senderName the sender name, when available
+     * @param message the trigger message
+     * @param score the score shown to the player
+     * @param decidedByStage the deciding stage label
+     * @param capturedAtMs the capture timestamp
+     * @param reasons the captured reasons
+     * @param stageResults the captured stage trace
+     * @param caseMessages the case-level review messages
+     * @return the created review entry
+     */
+    public synchronized ReviewEntry createManual(
+        UUID senderUuid,
+        String senderName,
+        String message,
+        int score,
+        String decidedByStage,
+        long capturedAtMs,
+        List<String> reasons,
+        List<StageResult> stageResults,
+        List<ReviewCaseMessage> caseMessages
+    ) {
+        ReviewEntry entry = new ReviewEntry(
+            "review-" + nextId.incrementAndGet(),
+            senderUuid,
+            senderName,
+            message,
+            score,
+            decidedByStage,
+            capturedAtMs <= 0L ? System.currentTimeMillis() : capturedAtMs,
+            reasons,
+            stageResults,
+            caseMessages
+        );
+        return addEntry(entry);
+    }
+
     private ReviewEntry findInternal(String entryId) {
         if (entryId == null || entryId.isBlank()) {
             return null;
@@ -258,6 +324,13 @@ public final class ReviewStore {
         while (entries.size() > maxEntries) {
             entries.remove(entries.size() - 1);
         }
+    }
+
+    private ReviewEntry addEntry(ReviewEntry entry) {
+        entries.add(0, entry);
+        trimToCapacity();
+        saveHook.run();
+        return entry;
     }
 
     private static String normalizeSearch(String searchTerm) {

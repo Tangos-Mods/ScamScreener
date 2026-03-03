@@ -56,6 +56,10 @@ public final class LevenshteinStage extends Stage {
      */
     @Override
     protected StageResult evaluate(ChatEvent chatEvent) {
+        if (!rules.similarityStageEnabled()) {
+            return pass();
+        }
+
         String normalizedMessage = TextNormalization.normalizeForSimilarity(chatEvent.getRawMessage());
         if (normalizedMessage.length() < rules.minCompareLength()) {
             return pass();

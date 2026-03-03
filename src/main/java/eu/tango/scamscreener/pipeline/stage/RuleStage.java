@@ -53,6 +53,10 @@ public final class RuleStage extends Stage {
      */
     @Override
     protected StageResult evaluate(ChatEvent chatEvent) {
+        if (!rules.ruleStageEnabled()) {
+            return pass();
+        }
+
         String message = chatEvent.getNormalizedMessage();
         if (message.isBlank()) {
             return pass();

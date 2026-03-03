@@ -11,6 +11,8 @@ import eu.tango.scamscreener.pipeline.data.PipelineDecision;
  * Bridges final pipeline decisions into user-facing chat messages and sounds.
  */
 public final class DecisionMessageHandler {
+    private static final int MIN_VISIBLE_REVIEW_WARNING_SCORE = 10;
+
     private static boolean initialized;
 
     private DecisionMessageHandler() {
@@ -38,10 +40,14 @@ public final class DecisionMessageHandler {
         AlertSeverity severity = AlertSeverity.fromDecision(decision);
         switch (decision.getOutcome()) {
             case REVIEW, BLOCK -> {
-                if (output.isShowRiskWarningMessage() && severity.riskLevel().isAtLeast(minimumRiskLevel)) {
+                if (output.isShowRiskWarningMessage()
+                    && severity.riskLevel().isAtLeast(minimumRiskLevel)
+                    && meetsVisibleRiskWarningThreshold(decision)) {
                     MessageDispatcher.reply(DecisionMessages.riskWarning(chatEvent, decision));
                 }
-                if (output.isPingOnRiskWarning() && severity.riskLevel().isAtLeast(minimumRiskLevel)) {
+                if (output.isPingOnRiskWarning()
+                    && severity.riskLevel().isAtLeast(minimumRiskLevel)
+                    && meetsVisibleRiskWarningThreshold(decision)) {
                     NotificationService.playWarningTone();
                 }
             }
@@ -62,5 +68,17 @@ public final class DecisionMessageHandler {
             default -> {
             }
         }
+    }
+
+    private static boolean meetsVisibleRiskWarningThreshold(PipelineDecision decision) {
+        if (decision == null) {
+            return false;
+        }
+
+        if (decision.getOutcome() == PipelineDecision.Outcome.BLOCK) {
+            return true;
+        }
+
+        return Math.max(0, decision.getTotalScore()) >= MIN_VISIBLE_REVIEW_WARNING_SCORE;
     }
 }

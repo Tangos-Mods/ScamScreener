@@ -7,6 +7,7 @@ import eu.tango.scamscreener.pipeline.data.ChatSourceType;
 import eu.tango.scamscreener.pipeline.data.PipelineDecision;
 import eu.tango.scamscreener.pipeline.data.StageResult;
 import eu.tango.scamscreener.pipeline.state.BehaviorStore;
+import eu.tango.scamscreener.review.ReviewCaseMessage;
 import eu.tango.scamscreener.review.ReviewEntry;
 
 import java.util.ArrayList;
@@ -49,6 +50,7 @@ public final class AlertContextRegistry {
 
         List<String> capturedMessages = collectCapturedMessages(safeEvent);
         List<RuleDetail> ruleDetails = collectRuleDetails(safeDecision);
+        List<ReviewCaseMessage> caseMessages = buildCaseMessages(capturedMessages, safeEvent.getRawMessage(), safeEvent.getSourceType());
 
         String id = UUID.randomUUID().toString().replace("-", "");
         AlertContext context = new AlertContext(
@@ -57,6 +59,7 @@ public final class AlertContextRegistry {
             safeEvent.getSenderName(),
             safeEvent.getRawMessage(),
             capturedMessages,
+            caseMessages,
             safeDecision.getTotalScore(),
             safeDecision.getOutcome(),
             safeDecision.getDecidedByStage(),
@@ -149,11 +152,6 @@ public final class AlertContextRegistry {
             return Optional.empty();
         }
 
-        Optional<AlertContext> linkedContext = findByLinkedReviewEntryId(reviewEntry.getId());
-        if (linkedContext.isPresent()) {
-            return linkedContext;
-        }
-
         List<RuleDetail> ruleDetails = collectRuleDetails(new PipelineDecision(
             PipelineDecision.Outcome.REVIEW,
             reviewEntry.getScore(),
@@ -169,6 +167,7 @@ public final class AlertContextRegistry {
             reviewEntry.getSenderName(),
             reviewEntry.getMessage(),
             collectCapturedMessagesForPlayer(reviewEntry.getSenderUuid(), reviewEntry.getSenderName(), reviewEntry.getMessage()),
+            reviewEntry.getCaseMessages(),
             reviewEntry.getScore(),
             PipelineDecision.Outcome.REVIEW,
             reviewEntry.getDecidedByStage(),
@@ -213,6 +212,7 @@ public final class AlertContextRegistry {
             safePlayerName,
             "",
             collectCapturedMessagesForPlayer(null, safePlayerName),
+            List.of(),
             0,
             PipelineDecision.Outcome.IGNORE,
             "",
@@ -323,6 +323,10 @@ public final class AlertContextRegistry {
         }
 
         return List.copyOf(uniqueMessages);
+    }
+
+    private static List<ReviewCaseMessage> buildCaseMessages(List<String> capturedMessages, String triggerMessage, ChatSourceType sourceType) {
+        return ReviewCaseMessage.fromCapturedMessages(capturedMessages, triggerMessage, sourceType);
     }
 
     private static List<RuleDetail> collectRuleDetails(PipelineDecision decision) {
@@ -479,6 +483,7 @@ public final class AlertContextRegistry {
      * @param senderName the sender name, when available
      * @param rawMessage the captured chat message
      * @param capturedMessages the merged multi-line message context
+     * @param caseMessages the review-ready case-level messages
      * @param score the total pipeline score
      * @param outcome the final pipeline outcome
      * @param decidedByStage the stage that finalized the decision
@@ -494,6 +499,7 @@ public final class AlertContextRegistry {
         String senderName,
         String rawMessage,
         List<String> capturedMessages,
+        List<ReviewCaseMessage> caseMessages,
         int score,
         PipelineDecision.Outcome outcome,
         String decidedByStage,
@@ -508,6 +514,7 @@ public final class AlertContextRegistry {
             senderName = senderName == null ? "" : senderName.trim();
             rawMessage = rawMessage == null ? "" : rawMessage.trim();
             capturedMessages = capturedMessages == null ? List.of() : List.copyOf(capturedMessages);
+            caseMessages = caseMessages == null ? List.of() : List.copyOf(caseMessages);
             score = Math.max(0, score);
             outcome = outcome == null ? PipelineDecision.Outcome.IGNORE : outcome;
             decidedByStage = decidedByStage == null ? "" : decidedByStage.trim();

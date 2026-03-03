@@ -13,7 +13,6 @@ import net.minecraft.text.Text;
  */
 public final class RuntimeSettingsScreen extends BaseScreen {
     private ButtonWidget reviewThresholdButton;
-    private ButtonWidget modelStageButton;
     private ButtonWidget debugLoggingButton;
 
     /**
@@ -37,13 +36,6 @@ public final class RuntimeSettingsScreen extends BaseScreen {
 
         reviewThresholdButton = addDrawableChild(
             ButtonWidget.builder(Text.empty(), button -> cycleReviewThreshold())
-                .dimensions(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
-                .build()
-        );
-        y += ROW_HEIGHT;
-
-        modelStageButton = addDrawableChild(
-            ButtonWidget.builder(Text.empty(), button -> toggleModelStage())
                 .dimensions(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
@@ -105,13 +97,6 @@ public final class RuntimeSettingsScreen extends BaseScreen {
         refreshButtons();
     }
 
-    private void toggleModelStage() {
-        RuntimeConfig.StageSettings stages = ScamScreenerRuntime.getInstance().config().stages();
-        stages.setModelEnabled(!stages.isModelEnabled());
-        ScamScreenerRuntime.getInstance().saveConfig();
-        refreshButtons();
-    }
-
     private void toggleDebugLogging() {
         RuntimeConfig.OutputSettings output = ScamScreenerRuntime.getInstance().config().output();
         output.setDebugLogging(!output.isDebugLogging());
@@ -125,11 +110,8 @@ public final class RuntimeSettingsScreen extends BaseScreen {
         if (reviewThresholdButton != null) {
             reviewThresholdButton.setMessage(Text.literal("Review Threshold: " + config.pipeline().reviewThreshold()));
         }
-        if (modelStageButton != null) {
-            modelStageButton.setMessage(Text.literal("Model Stage: " + onOff(config.stages().isModelEnabled())));
-        }
         if (debugLoggingButton != null) {
-            debugLoggingButton.setMessage(Text.literal("Debug Logging: " + onOff(config.output().isDebugLogging())));
+            debugLoggingButton.setMessage(toggleText("Debug Logging: ", config.output().isDebugLogging()));
         }
     }
 }

@@ -3,6 +3,7 @@ package eu.tango.scamscreener.gui.base;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 
 /**
@@ -12,6 +13,8 @@ import net.minecraft.text.Text;
  * place so concrete screens only define their specific content.
  */
 public abstract class BaseScreen extends Screen {
+    protected static final int TOGGLE_ON_COLOR = 0x90EE90;
+    protected static final int TOGGLE_OFF_COLOR = 0xFF7F7F;
     protected static final int TITLE_Y = 14;
     protected static final int CONTENT_TOP = 36;
     protected static final int FOOTER_MARGIN = 28;
@@ -197,6 +200,37 @@ public abstract class BaseScreen extends Screen {
      */
     protected String onOff(boolean enabled) {
         return enabled ? "ON" : "OFF";
+    }
+
+    /**
+     * Returns one text label with a colorized trailing ON/OFF state.
+     *
+     * @param prefix the label prefix before the state
+     * @param enabled the current state
+     * @return the composed colored label
+     */
+    protected Text toggleText(String prefix, boolean enabled) {
+        MutableText status = Text.literal(onOff(enabled))
+            .styled(style -> style.withColor(enabled ? TOGGLE_ON_COLOR : TOGGLE_OFF_COLOR));
+        return Text.literal(prefix).append(status);
+    }
+
+    /**
+     * Returns one text label with a colored ON/OFF state followed by extra detail text.
+     *
+     * @param prefix the label prefix before the state
+     * @param enabled the current state
+     * @param enabledDetail optional detail appended after ON, such as a threshold
+     * @return the composed colored label
+     */
+    protected Text toggleText(String prefix, boolean enabled, String enabledDetail) {
+        MutableText base = Text.literal(prefix)
+            .append(Text.literal(onOff(enabled)).styled(style -> style.withColor(enabled ? TOGGLE_ON_COLOR : TOGGLE_OFF_COLOR)));
+        if (!enabled || enabledDetail == null || enabledDetail.isBlank()) {
+            return base;
+        }
+
+        return base.append(Text.literal(enabledDetail));
     }
 
     /**

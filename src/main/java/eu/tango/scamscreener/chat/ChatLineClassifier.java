@@ -21,7 +21,8 @@ public final class ChatLineClassifier {
         "[boss]",
         "[bazaar]",
         "[auction]",
-        "[scamscreener]"
+        "[scamscreener]",
+        "Profile"
     );
 
     private ChatLineClassifier() {
@@ -109,19 +110,74 @@ public final class ChatLineClassifier {
             return Optional.empty();
         }
 
-        int separatorIndex = cleaned.indexOf(':');
-        if (separatorIndex <= 0 || separatorIndex >= cleaned.length() - 1) {
+        Optional<ParsedPlayerLine> directMessage = parsePrefixedPlayerMessage(cleaned, "From:");
+        if (directMessage.isPresent()) {
+            return directMessage;
+        }
+
+        Optional<ParsedPlayerLine> guildMessage = parsePrefixedPlayerMessage(cleaned, "Guild >");
+        if (guildMessage.isPresent()) {
+            return guildMessage;
+        }
+
+        Optional<ParsedPlayerLine> partyMessage = parsePrefixedPlayerMessage(cleaned, "Party >");
+        if (partyMessage.isPresent()) {
+            return partyMessage;
+        }
+
+        if (!hasPublicLevelPrefix(cleaned)) {
             return Optional.empty();
         }
 
-        String senderSection = cleaned.substring(0, separatorIndex).trim();
-        String message = cleaned.substring(separatorIndex + 1).trim();
+        return parseSenderAndMessage(cleaned);
+    }
+
+    private static Optional<ParsedPlayerLine> parsePrefixedPlayerMessage(String rawLine, String prefix) {
+        if (!startsWithIgnoreCase(rawLine, prefix)) {
+            return Optional.empty();
+        }
+
+        String remainder = rawLine.substring(prefix.length()).trim();
+        if (remainder.isBlank()) {
+            return Optional.empty();
+        }
+
+        return parseSenderAndMessage(remainder);
+    }
+
+    private static Optional<ParsedPlayerLine> parseSenderAndMessage(String rawLine) {
+        int separatorIndex = rawLine.indexOf(':');
+        if (separatorIndex <= 0 || separatorIndex >= rawLine.length() - 1) {
+            return Optional.empty();
+        }
+
+        String senderSection = rawLine.substring(0, separatorIndex).trim();
+        String message = rawLine.substring(separatorIndex + 1).trim();
         String senderName = extractSenderName(senderSection);
         if (senderName.isBlank() || message.isBlank()) {
             return Optional.empty();
         }
 
         return Optional.of(new ParsedPlayerLine(senderName, message));
+    }
+
+    private static boolean hasPublicLevelPrefix(String rawLine) {
+        if (rawLine == null || rawLine.isBlank() || rawLine.charAt(0) != '[') {
+            return false;
+        }
+
+        int closingBracketIndex = rawLine.indexOf(']');
+        if (closingBracketIndex <= 1) {
+            return false;
+        }
+
+        for (int index = 1; index < closingBracketIndex; index++) {
+            if (!Character.isDigit(rawLine.charAt(index))) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static String extractSenderName(String senderSection) {
@@ -216,6 +272,14 @@ public final class ChatLineClassifier {
             }
         }
         return false;
+    }
+
+    private static boolean startsWithIgnoreCase(String value, String prefix) {
+        if (value == null || prefix == null || value.length() < prefix.length()) {
+            return false;
+        }
+
+        return value.regionMatches(true, 0, prefix, 0, prefix.length());
     }
 
     private static String stripFormatting(String rawLine) {

@@ -53,6 +53,10 @@ public final class MuteStage extends Stage {
      */
     @Override
     protected StageResult evaluate(ChatEvent chatEvent) {
+        if (!rules.muteStageEnabled()) {
+            return pass();
+        }
+
         MuteRules mute = rules.mute();
         if (chatEvent.isSystemSource()) {
             // System and NPC messages should bypass risk checks, not be treated as hidden chat.

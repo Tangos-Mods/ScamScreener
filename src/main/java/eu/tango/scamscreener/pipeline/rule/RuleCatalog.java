@@ -18,6 +18,12 @@ import java.util.regex.Pattern;
 @Getter
 @Accessors(fluent = true)
 public final class RuleCatalog {
+    private final boolean muteStageEnabled;
+    private final boolean ruleStageEnabled;
+    private final boolean similarityStageEnabled;
+    private final boolean behaviorStageEnabled;
+    private final boolean trendStageEnabled;
+    private final boolean funnelStageEnabled;
     private final MuteRules mute;
     private final Rule suspiciousLink;
     private final Rule externalPlatform;
@@ -52,6 +58,12 @@ public final class RuleCatalog {
      */
     public RuleCatalog(RulesConfig rulesConfig) {
         RulesConfig safeConfig = rulesConfig == null ? new RulesConfig() : rulesConfig;
+        muteStageEnabled = safeConfig.isMuteStageEnabled();
+        ruleStageEnabled = safeConfig.isRuleStageEnabled();
+        similarityStageEnabled = safeConfig.isSimilarityStageEnabled();
+        behaviorStageEnabled = safeConfig.isBehaviorStageEnabled();
+        trendStageEnabled = safeConfig.isTrendStageEnabled();
+        funnelStageEnabled = safeConfig.isFunnelStageEnabled();
         RulesConfig.MuteStageSettings muteSettings = safeConfig.muteStage();
         mute = new MuteRules(
             compileOptionalPattern(muteSettings.getHarmlessMessagePattern()),
@@ -63,37 +75,43 @@ public final class RuleCatalog {
 
         RulesConfig.RuleStageSettings settings = safeConfig.ruleStage();
 
-        suspiciousLink = Rule.pattern(
+        suspiciousLink = patternRule(
+            settings.isSuspiciousLinkEnabled(),
             "SUSPICIOUS_LINK",
             settings.getSuspiciousLinkPattern(),
             settings.getSuspiciousLinkScore(),
             "Suspicious link: \"%s\""
         );
-        externalPlatform = Rule.pattern(
+        externalPlatform = patternRule(
+            settings.isExternalPlatformEnabled(),
             "EXTERNAL_PLATFORM",
             settings.getExternalPlatformPattern(),
             settings.getExternalPlatformScore(),
             "External platform push: \"%s\""
         );
-        upfrontPayment = Rule.pattern(
+        upfrontPayment = patternRule(
+            settings.isUpfrontPaymentEnabled(),
             "UPFRONT_PAYMENT",
             settings.getUpfrontPaymentPattern(),
             settings.getUpfrontPaymentScore(),
             "Upfront payment wording: \"%s\""
         );
-        accountData = Rule.pattern(
+        accountData = patternRule(
+            settings.isAccountDataEnabled(),
             "ACCOUNT_DATA",
             settings.getAccountDataPattern(),
             settings.getAccountDataScore(),
             "Sensitive account wording: \"%s\""
         );
-        tooGood = Rule.pattern(
+        tooGood = patternRule(
+            settings.isTooGoodEnabled(),
             "TOO_GOOD",
             settings.getTooGoodPattern(),
             settings.getTooGoodScore(),
             "Too-good-to-be-true wording: \"%s\""
         );
-        coercionThreat = Rule.pattern(
+        coercionThreat = patternRule(
+            settings.isCoercionThreatEnabled(),
             "COERCION_THREAT",
             settings.getCoercionThreatPattern(),
             settings.getCoercionThreatScore(),
@@ -102,20 +120,23 @@ public final class RuleCatalog {
         urgencyAllowlist = Rule.pattern("URGENCY_ALLOWLIST", settings.getUrgencyAllowlistPattern(), 0);
         tradeContextAllowlist = Rule.pattern("TRADE_CONTEXT_ALLOWLIST", settings.getTradeContextAllowlistPattern(), 0);
         trustAllowlist = Rule.pattern("TRUST_ALLOWLIST", settings.getTrustAllowlistPattern(), 0);
-        middleman = Rule.pattern("MIDDLEMAN", settings.getMiddlemanPattern(), 0);
-        middlemanClaim = Rule.pattern(
+        middleman = patternRule(settings.isMiddlemanTriggerEnabled(), "MIDDLEMAN", settings.getMiddlemanPattern(), 0);
+        middlemanClaim = patternRule(
+            settings.isMiddlemanTriggerEnabled(),
             "MIDDLEMAN_CLAIM",
             settings.getMiddlemanClaimPattern(),
             settings.getMiddlemanClaimScore(),
             "Middleman claim: \"%s\""
         );
-        proofBait = Rule.pattern(
+        proofBait = patternRule(
+            settings.isProofBaitEnabled(),
             "PROOF_BAIT",
             settings.getProofBaitPattern(),
             settings.getProofBaitScore(),
             "Proof or vouch bait: \"%s\""
         );
-        urgency = Rule.phrase(
+        urgency = phraseRule(
+            settings.isUrgencyEnabled(),
             "URGENCY",
             settings.urgencyKeywords(),
             settings.urgencyPhrases(),
@@ -123,7 +144,8 @@ public final class RuleCatalog {
             settings.getUrgencyThreshold(),
             "Urgency wording: \"%s\""
         );
-        trust = Rule.phrase(
+        trust = phraseRule(
+            settings.isTrustEnabled(),
             "TRUST",
             settings.trustKeywords(),
             settings.trustPhrases(),
@@ -131,29 +153,34 @@ public final class RuleCatalog {
             settings.getTrustThreshold(),
             "Trust manipulation wording: \"%s\""
         );
-        trustSignal = Rule.pattern("TRUST_SIGNAL", settings.getTrustSignalPattern(), 0);
-        discordHandle = Rule.pattern(
+        trustSignal = patternRule(settings.isTrustEnabled(), "TRUST_SIGNAL", settings.getTrustSignalPattern(), 0);
+        discordHandle = patternRule(
+            settings.isDiscordHandleEnabled(),
             "DISCORD_HANDLE",
             settings.getDiscordHandlePattern(),
             settings.getDiscordHandleScore(),
             "Discord handle with platform mention: \"%s\""
         );
-        linkRedirectCombo = Rule.fixed(
+        linkRedirectCombo = fixedRule(
+            settings.isLinkRedirectComboEnabled(),
             "LINK_REDIRECT_COMBO",
             settings.getLinkRedirectComboScore(),
             "Link plus off-platform redirect"
         );
-        trustPaymentCombo = Rule.fixed(
+        trustPaymentCombo = fixedRule(
+            settings.isTrustPaymentComboEnabled(),
             "TRUST_PAYMENT_COMBO",
             settings.getTrustPaymentComboScore(),
             "Trust framing plus upfront payment"
         );
-        urgencyAccountCombo = Rule.fixed(
+        urgencyAccountCombo = fixedRule(
+            settings.isUrgencyAccountComboEnabled(),
             "URGENCY_ACCOUNT_COMBO",
             settings.getUrgencyAccountComboScore(),
             "Urgency paired with sensitive account request"
         );
-        middlemanProofCombo = Rule.fixed(
+        middlemanProofCombo = fixedRule(
+            settings.isMiddlemanProofComboEnabled(),
             "MIDDLEMAN_PROOF_COMBO",
             settings.getMiddlemanProofComboScore(),
             "Middleman claim plus proof bait"
@@ -171,7 +198,7 @@ public final class RuleCatalog {
             Math.max(0, behaviorSettings.getRepeatedMessageScore()),
             Math.max(0, behaviorSettings.getBurstContactThreshold()),
             Math.max(0, behaviorSettings.getBurstContactScore()),
-            Math.max(1, behaviorSettings.getComboBonusMinimum()),
+            Math.max(0, behaviorSettings.getComboBonusMinimum()),
             Math.max(1, behaviorSettings.getComboBonusDivisor()),
             Math.max(1L, behaviorSettings.getWindowMs()),
             Math.max(1, behaviorSettings.getMaxHistory())
@@ -265,5 +292,31 @@ public final class RuleCatalog {
         }
 
         return Pattern.compile(rawPattern);
+    }
+
+    private static Rule patternRule(boolean enabled, String id, String rawPattern, int score) {
+        return patternRule(enabled, id, rawPattern, score, "");
+    }
+
+    private static Rule patternRule(boolean enabled, String id, String rawPattern, int score, String reasonTemplate) {
+        return enabled ? Rule.pattern(id, rawPattern, score, reasonTemplate) : Rule.pattern(id, "", 0, reasonTemplate);
+    }
+
+    private static Rule fixedRule(boolean enabled, String id, int score, String reasonTemplate) {
+        return enabled ? Rule.fixed(id, score, reasonTemplate) : Rule.fixed(id, 0, reasonTemplate);
+    }
+
+    private static Rule phraseRule(
+        boolean enabled,
+        String id,
+        List<String> keywords,
+        List<String> phrases,
+        int score,
+        int threshold,
+        String reasonTemplate
+    ) {
+        return enabled
+            ? Rule.phrase(id, keywords, phrases, score, threshold, reasonTemplate)
+            : Rule.phrase(id, List.of(), List.of(), 0, Integer.MAX_VALUE, reasonTemplate);
     }
 }

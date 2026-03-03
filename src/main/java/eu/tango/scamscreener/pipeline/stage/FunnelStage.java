@@ -73,6 +73,11 @@ public final class FunnelStage extends Stage {
      */
     @Override
     protected StageResult evaluate(ChatEvent chatEvent) {
+        if (!rules.funnelStageEnabled()) {
+            funnelStore.recordStep(chatEvent, FunnelStore.FunnelStep.MESSAGE, chatEvent.getNormalizedMessage());
+            return pass();
+        }
+
         FunnelStore.FunnelSnapshot snapshot = funnelStore.snapshotFor(chatEvent);
         if (!snapshot.hasSender()) {
             return pass();

@@ -1,6 +1,6 @@
 package eu.tango.scamscreener.gui.data;
 
-import eu.tango.scamscreener.chat.ChatLineClassifier;
+import eu.tango.scamscreener.review.ReviewCaseMessage;
 import eu.tango.scamscreener.review.ReviewEntry;
 import eu.tango.scamscreener.review.ReviewVerdict;
 
@@ -35,8 +35,8 @@ public record ReviewRow(
 
         return new ReviewRow(
             entry.getId(),
-            entry.getSenderName(),
-            entry.getMessage(),
+            caseTitle(entry),
+            caseSummary(entry),
             entry.getScore(),
             entry.getVerdict()
         );
@@ -52,7 +52,7 @@ public record ReviewRow(
             return playerName;
         }
 
-        return "Unknown Sender";
+        return "Case";
     }
 
     /**
@@ -73,6 +73,64 @@ public record ReviewRow(
             return "";
         }
 
-        return ChatLineClassifier.displayMessageOnly(rawMessage.replace('\n', ' ').replace('\r', ' ').trim());
+        return rawMessage.replace('\n', ' ').replace('\r', ' ').trim();
+    }
+
+    private static String caseTitle(ReviewEntry entry) {
+        if (entry == null) {
+            return "Case";
+        }
+
+        String numericId = trailingNumericId(entry.getId());
+        if (isManual(entry)) {
+            return numericId.isBlank() ? "Manual Case" : "Manual Case #" + numericId;
+        }
+
+        return numericId.isBlank() ? "Case" : "Case #" + numericId;
+    }
+
+    private static String caseSummary(ReviewEntry entry) {
+        if (entry == null) {
+            return "";
+        }
+
+        int messageCount = 0;
+        int signalCount = 0;
+        if (entry.hasCaseMessages()) {
+            for (ReviewCaseMessage caseMessage : entry.getCaseMessages()) {
+                if (caseMessage == null || caseMessage.getCleanText().isBlank()) {
+                    continue;
+                }
+                messageCount++;
+                if (caseMessage.isSignalMessage()) {
+                    signalCount++;
+                }
+            }
+        }
+        if (messageCount == 0 && entry.getMessage() != null && !entry.getMessage().isBlank()) {
+            messageCount = 1;
+        }
+
+        String stageLabel = entry.getDecidedByStage() == null || entry.getDecidedByStage().isBlank()
+            ? "Manual"
+            : entry.getDecidedByStage().trim();
+        return messageCount + " messages | " + signalCount + " signals | " + stageLabel;
+    }
+
+    private static boolean isManual(ReviewEntry entry) {
+        if (entry == null) {
+            return false;
+        }
+
+        return entry.getDecidedByStage() == null || entry.getDecidedByStage().isBlank();
+    }
+
+    private static String trailingNumericId(String rowId) {
+        if (rowId == null || rowId.isBlank()) {
+            return "";
+        }
+
+        int separatorIndex = rowId.lastIndexOf('-');
+        return separatorIndex < 0 ? rowId.trim() : rowId.substring(separatorIndex + 1).trim();
     }
 }

@@ -13,7 +13,6 @@ import eu.tango.scamscreener.api.WhitelistAccess;
 import eu.tango.scamscreener.chat.ChatPipelineListener;
 import eu.tango.scamscreener.config.data.AlertRiskLevel;
 import eu.tango.scamscreener.gui.ScamScreenerScreens;
-import eu.tango.scamscreener.gui.screen.AiUpdateSettingsScreen;
 import eu.tango.scamscreener.gui.screen.AlertInfoScreen;
 import eu.tango.scamscreener.gui.screen.AlertManageScreen;
 import eu.tango.scamscreener.gui.screen.BlacklistScreen;
@@ -90,7 +89,6 @@ public final class ScamScreenerCommandHandler {
             .then(buildUnmuteCommand())
             .then(buildDebugCommand())
             .then(literal("metrics").executes(context -> openMetrics(context.getSource())))
-            .then(literal("aiupdate").executes(context -> openAiUpdate(context.getSource())))
             .then(literal("version").executes(context -> showVersion(context.getSource())))
             .then(literal("preview").executes(context -> previewWarnings(context.getSource())))
             .then(literal("rules").executes(context -> openRules(context.getSource())))
@@ -311,10 +309,6 @@ public final class ScamScreenerCommandHandler {
 
     private static int openMetrics(FabricClientCommandSource source) {
         return queueScreen(source, () -> source.getClient().setScreen(new MetricsSettingsScreen(null)));
-    }
-
-    private static int openAiUpdate(FabricClientCommandSource source) {
-        return queueScreen(source, () -> source.getClient().setScreen(new AiUpdateSettingsScreen(null)));
     }
 
     private static int showHelp(FabricClientCommandSource source) {

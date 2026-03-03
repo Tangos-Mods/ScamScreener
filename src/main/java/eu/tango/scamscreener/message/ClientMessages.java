@@ -2,6 +2,7 @@ package eu.tango.scamscreener.message;
 
 import eu.tango.scamscreener.ScamScreenerMod;
 import eu.tango.scamscreener.config.data.AlertRiskLevel;
+import eu.tango.scamscreener.review.ReviewVerdict;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
@@ -221,6 +222,25 @@ public final class ClientMessages {
             .append(Text.literal(".").formatted(Formatting.GRAY));
     }
 
+    public static MutableText caseReviewNeedsCaseSelection() {
+        return error("No case selected. Mark at least one message as Context or Signal.");
+    }
+
+    public static MutableText caseReviewNeedsSignalSelection() {
+        return error("Risk review needs at least one Signal message.");
+    }
+
+    public static MutableText caseReviewSaved(int includedCount, int signalCount, ReviewVerdict verdict) {
+        return prefixed()
+            .append(Text.literal("Case review saved. verdict=").formatted(Formatting.GRAY))
+            .append(Text.literal(displayVerdict(verdict)).formatted(verdictColor(verdict), Formatting.BOLD))
+            .append(Text.literal(", included=").formatted(Formatting.GRAY))
+            .append(Text.literal(String.valueOf(Math.max(0, includedCount))).formatted(Formatting.AQUA, Formatting.BOLD))
+            .append(Text.literal(", signals=").formatted(Formatting.GRAY))
+            .append(Text.literal(String.valueOf(Math.max(0, signalCount))).formatted(Formatting.GOLD, Formatting.BOLD))
+            .append(Text.literal(".").formatted(Formatting.GRAY));
+    }
+
     private static MutableText error(String message) {
         return prefixed().append(Text.literal(message == null ? "" : message).formatted(Formatting.RED));
     }
@@ -235,5 +255,31 @@ public final class ClientMessages {
         }
 
         return value.trim();
+    }
+
+    private static String displayVerdict(ReviewVerdict verdict) {
+        if (verdict == null) {
+            return "OPEN";
+        }
+
+        return switch (verdict) {
+            case PENDING -> "OPEN";
+            case RISK -> "RISK";
+            case SAFE -> "SAFE";
+            case IGNORED -> "DISMISSED";
+        };
+    }
+
+    private static Formatting verdictColor(ReviewVerdict verdict) {
+        if (verdict == null) {
+            return Formatting.GRAY;
+        }
+
+        return switch (verdict) {
+            case PENDING -> Formatting.GRAY;
+            case RISK -> Formatting.DARK_RED;
+            case SAFE -> Formatting.GREEN;
+            case IGNORED -> Formatting.YELLOW;
+        };
     }
 }

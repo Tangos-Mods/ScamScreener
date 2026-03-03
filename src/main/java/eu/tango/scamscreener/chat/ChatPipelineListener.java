@@ -101,6 +101,7 @@ public final class ChatPipelineListener {
             return;
         }
 
+        ScamScreenerRuntime.getInstance().recentChatCache().record(safeEvent);
         lastChatEvent = safeEvent;
         lastPipelineDecision = ScamScreenerRuntime.getInstance().pipelineEngine().evaluate(safeEvent);
         PipelineDecisionEvent.EVENT.invoker().onPipelineDecision(safeEvent, lastPipelineDecision);

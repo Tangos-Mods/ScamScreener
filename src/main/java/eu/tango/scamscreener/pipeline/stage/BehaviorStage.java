@@ -15,6 +15,8 @@ import java.util.List;
  * Sender-specific behavior heuristics based on short local message history.
  */
 public final class BehaviorStage extends Stage {
+    private static final int MAX_BEHAVIOR_SPAM_SCORE = 1;
+
     private final BehaviorStore behaviorStore;
     private final RuleCatalog rules;
 
@@ -73,12 +75,16 @@ public final class BehaviorStage extends Stage {
      */
     @Override
     protected StageResult evaluate(ChatEvent chatEvent) {
+        if (!rules.behaviorStageEnabled()) {
+            behaviorStore.record(chatEvent);
+            return pass();
+        }
+
         BehaviorStore.BehaviorSnapshot snapshot = behaviorStore.snapshotFor(chatEvent);
         if (!snapshot.hasSender()) {
             return pass();
         }
 
-        int totalScore = 0;
         List<String> reasonParts = new ArrayList<>();
         String normalizedMessage = chatEvent.getNormalizedMessage();
         BehaviorRules behavior = rules.behavior();
@@ -88,29 +94,26 @@ public final class BehaviorStage extends Stage {
         if (normalizedMessage.length() >= behavior.minRepeatMessageLength()
             && snapshot.sameMessageCount() >= behavior.repeatedMessageThreshold()) {
             repeatedTriggered = true;
-            totalScore += behavior.repeatedMessageScore();
             reasonParts.add(behavior.repeatedMessageReason(snapshot.sameMessageCount() + 1));
         }
 
         if (normalizedMessage.length() >= behavior.minBurstMessageLength()
             && snapshot.recentMessageCount() >= behavior.burstContactThreshold()) {
             burstTriggered = true;
-            totalScore += behavior.burstContactScore();
             reasonParts.add(behavior.burstContactReason(snapshot.recentMessageCount() + 1));
         }
 
         if (repeatedTriggered && burstTriggered) {
-            totalScore += behavior.comboBonus();
             reasonParts.add(behavior.comboReason());
         }
 
         // Always record the current message so the next event sees updated sender history.
         behaviorStore.record(chatEvent);
 
-        if (totalScore <= 0) {
+        if (!repeatedTriggered && !burstTriggered) {
             return pass();
         }
 
-        return score(totalScore, String.join("; ", reasonParts));
+        return score(MAX_BEHAVIOR_SPAM_SCORE, String.join("; ", reasonParts));
     }
 }

@@ -3,6 +3,7 @@ package eu.tango.scamscreener;
 import eu.tango.scamscreener.api.event.BlacklistEvent;
 import eu.tango.scamscreener.api.event.PlayerListChangeType;
 import eu.tango.scamscreener.api.event.WhitelistEvent;
+import eu.tango.scamscreener.chat.RecentChatCache;
 import eu.tango.scamscreener.chat.mute.MutePatternManager;
 import eu.tango.scamscreener.config.data.RulesConfig;
 import eu.tango.scamscreener.config.data.RuntimeConfig;
@@ -57,6 +58,9 @@ public final class ScamScreenerRuntime {
     private final FunnelStore funnelStore;
     @Getter
     @Accessors(fluent = true)
+    private final RecentChatCache recentChatCache;
+    @Getter
+    @Accessors(fluent = true)
     private final MutePatternManager mutePatternManager;
     private volatile RuntimeConfig runtimeConfig;
     private volatile RulesConfig rulesConfig;
@@ -79,6 +83,7 @@ public final class ScamScreenerRuntime {
         behaviorStore = new BehaviorStore();
         trendStore = new TrendStore();
         funnelStore = new FunnelStore();
+        recentChatCache = new RecentChatCache();
         mutePatternManager = new MutePatternManager();
         mutePatternManager.reloadFromConfig(runtimeConfig);
         applyRuleStoreSettings();
@@ -173,6 +178,7 @@ public final class ScamScreenerRuntime {
         behaviorStore.reset();
         trendStore.reset();
         funnelStore.reset();
+        recentChatCache.clear();
     }
 
     private void saveWhitelist() {

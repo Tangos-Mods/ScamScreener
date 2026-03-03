@@ -4,6 +4,7 @@ import eu.tango.scamscreener.ScamScreenerRuntime;
 import eu.tango.scamscreener.api.event.PipelineDecisionEvent;
 import eu.tango.scamscreener.config.data.AutoCaptureAlertLevel;
 import eu.tango.scamscreener.message.AlertSeverity;
+import eu.tango.scamscreener.pipeline.data.ChatSourceType;
 import eu.tango.scamscreener.pipeline.data.ChatEvent;
 import eu.tango.scamscreener.pipeline.data.PipelineDecision;
 
@@ -38,6 +39,10 @@ public final class ReviewCaptureHandler {
             return;
         }
 
-        runtime.reviewStore().capture(chatEvent, decision);
+        runtime.reviewStore().capture(chatEvent, decision, ReviewCaseMessage.fromCapturedMessages(
+            runtime.behaviorStore().snapshotFor(chatEvent).recentMessages(),
+            chatEvent == null ? "" : chatEvent.getRawMessage(),
+            chatEvent == null ? ChatSourceType.UNKNOWN : chatEvent.getSourceType()
+        ));
     }
 }
