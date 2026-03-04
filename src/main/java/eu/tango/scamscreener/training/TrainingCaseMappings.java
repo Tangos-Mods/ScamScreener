@@ -83,11 +83,27 @@ public final class TrainingCaseMappings {
 
         Map<String, MappingOption> options = new LinkedHashMap<>();
         for (StageResult stageResult : stageResults) {
-            if (stageResult == null || !stageResult.hasReason()) {
+            if (stageResult == null) {
                 continue;
             }
 
             String stageId = stageResult.getStageId();
+            List<String> reasonParts = splitReasonParts(stageResult.getReason());
+            if (stageResult.hasReasonIds()) {
+                for (int index = 0; index < stageResult.getReasonIds().size(); index++) {
+                    String fallbackReasonText = index < reasonParts.size() ? reasonParts.get(index) : "";
+                    MappingOption option = optionForReasonId(stageId, stageResult.getReasonIds().get(index), fallbackReasonText);
+                    if (option != null) {
+                        options.putIfAbsent(option.id(), option);
+                    }
+                }
+                continue;
+            }
+
+            if (!stageResult.hasReason()) {
+                continue;
+            }
+
             for (String reasonPart : splitReasonParts(stageResult.getReason())) {
                 MappingOption option = optionFor(stageId, reasonPart);
                 if (option != null) {
@@ -168,7 +184,8 @@ public final class TrainingCaseMappings {
         if (separatorIndex > 0 && separatorIndex < normalized.length() - 2) {
             String left = stageId(normalized.substring(0, separatorIndex));
             String right = normalizeReasonId(normalized.substring(separatorIndex + 2));
-            return new ParsedSelection(composeSelectionId(left, right), left, right, normalized);
+            String label = stageLabel(left) + " - " + reasonLabelFor(left, right, "");
+            return new ParsedSelection(composeSelectionId(left, right), left, right, label);
         }
 
         String stageToken = "";
@@ -207,6 +224,120 @@ public final class TrainingCaseMappings {
             label = stageLabel + " - " + label;
         }
         return new MappingOption(composeSelectionId(optionStageId, mappedReason.reasonId()), optionStageId, mappedReason.reasonId(), label);
+    }
+
+    private static MappingOption optionForReasonId(String stageNameOrId, String reasonId, String fallbackReasonText) {
+        String normalizedStageId = stageId(stageNameOrId);
+        String normalizedReasonId = normalizeReasonId(reasonId);
+        if (normalizedReasonId.isBlank()) {
+            return null;
+        }
+
+        String label = reasonLabelFor(normalizedStageId, normalizedReasonId, fallbackReasonText);
+        String stageLabel = stageLabel(normalizedStageId);
+        if (!stageLabel.isBlank() && !label.isBlank()) {
+            label = stageLabel + " - " + label;
+        }
+
+        return new MappingOption(
+            composeSelectionId(normalizedStageId, normalizedReasonId),
+            normalizedStageId,
+            normalizedReasonId,
+            label
+        );
+    }
+
+    private static String reasonLabelFor(String stageId, String reasonId, String fallbackReasonText) {
+        String normalizedFallback = fallbackReasonText == null ? "" : fallbackReasonText.trim();
+        if (!normalizedFallback.isBlank()) {
+            return normalizedFallback;
+        }
+
+        String knownLabel = knownReasonLabel(stageId, reasonId);
+        if (!knownLabel.isBlank()) {
+            return knownLabel;
+        }
+
+        if (reasonId != null && reasonId.startsWith("similarity.")) {
+            return "Similarity match (" + wordsFromId(reasonId.substring("similarity.".length())) + ")";
+        }
+
+        return reasonId == null || reasonId.isBlank() ? "unknown" : reasonId;
+    }
+
+    private static String knownReasonLabel(String stageNameOrId, String reasonId) {
+        if (reasonId == null || reasonId.isBlank()) {
+            return "";
+        }
+
+        return switch (reasonId) {
+            case "mute.system_bypass" -> "MUTE_SYSTEM_BYPASS";
+            case "mute.noise_bypass" -> "MUTE_NOISE_BYPASS";
+            case "mute.duplicate_bypass" -> "MUTE_DUPLICATE_BYPASS";
+            case "player_list.whitelist_match" -> "WHITELIST_MATCH";
+            case "player_list.blacklist_match" -> "BLACKLIST_MATCH";
+            case "rule.suspicious_link" -> "Suspicious link";
+            case "rule.external_platform" -> "External platform push";
+            case "rule.upfront_payment" -> "Upfront payment wording";
+            case "rule.account_data" -> "Sensitive account wording";
+            case "rule.too_good" -> "Too-good-to-be-true wording";
+            case "rule.coercion_threat" -> "Coercion or extortion wording";
+            case "rule.middleman_claim" -> "Middleman claim";
+            case "rule.proof_bait" -> "Proof or vouch bait";
+            case "rule.urgency" -> "Urgency wording";
+            case "rule.trust" -> "Trust manipulation wording";
+            case "rule.discord_handle" -> "Discord handle with platform mention";
+            case "rule.link_redirect_combo" -> "Link plus off-platform redirect";
+            case "rule.trust_payment_combo" -> "Trust framing plus upfront payment";
+            case "rule.urgency_account_combo" -> "Urgency paired with sensitive account request";
+            case "rule.middleman_proof_combo" -> "Middleman claim plus proof bait";
+            case "behavior.repeated_message" -> "Repeated contact message";
+            case "behavior.burst_contact" -> "Burst contact";
+            case "behavior.combo_repeated_burst" -> "Behavior combo: repeated burst contact";
+            case "trend.multi_sender_wave" -> "Trend wave";
+            case "trend.wave_escalation" -> "Trend escalation";
+            case "trend.single_cross_sender_repeat" -> "Cross-sender repeat";
+            case "funnel.external_after_contact" -> "Funnel step: external platform after prior contact";
+            case "funnel.external_after_trust" -> "Funnel step: external platform after trust framing";
+            case "funnel.payment_after_external" -> "Funnel step: payment request after external platform";
+            case "funnel.payment_after_trust" -> "Funnel step: payment request after trust framing";
+            case "funnel.account_after_external" -> "Funnel step: account request after external platform";
+            case "funnel.account_after_trust" -> "Funnel step: account request after trust framing";
+            case "funnel.full_chain" -> "Funnel chain: trust -> external platform -> request";
+            case "context.signal_blend" -> "Context signal blend";
+            case "context.escalation" -> "Context escalation";
+            default -> {
+                if (stageId(stageNameOrId).equals("stage.similarity") && reasonId.startsWith("similarity.")) {
+                    yield "Similarity match (" + wordsFromId(reasonId.substring("similarity.".length())) + ")";
+                }
+
+                yield "";
+            }
+        };
+    }
+
+    private static String wordsFromId(String idSuffix) {
+        if (idSuffix == null || idSuffix.isBlank()) {
+            return "match";
+        }
+
+        String[] parts = idSuffix.trim().split("_+");
+        StringBuilder builder = new StringBuilder();
+        for (String part : parts) {
+            if (part == null || part.isBlank()) {
+                continue;
+            }
+            if (builder.length() > 0) {
+                builder.append(' ');
+            }
+            String normalizedPart = part.toLowerCase(Locale.ROOT);
+            builder.append(Character.toUpperCase(normalizedPart.charAt(0)));
+            if (normalizedPart.length() > 1) {
+                builder.append(normalizedPart.substring(1));
+            }
+        }
+
+        return builder.length() == 0 ? "match" : builder.toString();
     }
 
     private static MappedReason mapReason(String normalizedStageId, String reasonText) {

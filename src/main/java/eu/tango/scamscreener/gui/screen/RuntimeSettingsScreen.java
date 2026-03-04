@@ -9,7 +9,7 @@ import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.text.Text;
 
 /**
- * Runtime and pipeline settings screen using the classic v1 single-column layout.
+ * Runtime and pipeline settings screen.
  */
 public final class RuntimeSettingsScreen extends BaseScreen {
     private ButtonWidget reviewThresholdButton;
@@ -86,7 +86,7 @@ public final class RuntimeSettingsScreen extends BaseScreen {
 
         int left = centeredX(defaultButtonWidth());
         drawSectionTitle(context, left, CONTENT_TOP - 18, "Pipeline");
-        drawLine(context, left, CONTENT_TOP - 6, "Classic v1 layout, current v2 runtime controls.");
+        drawLine(context, left, CONTENT_TOP - 6, "Runtime thresholds and debug output controls.");
     }
 
     private void cycleReviewThreshold() {

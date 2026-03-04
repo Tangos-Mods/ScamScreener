@@ -74,7 +74,7 @@ public final class ReviewEntry {
      * @param capturedAtMs the capture timestamp in epoch milliseconds
      * @param reasons the collected review reasons from the pipeline
      * @param stageResults the ordered stage trace captured with this review
-     * @param caseMessages the anonymized case messages captured with this review
+     * @param caseMessages the normalized case messages captured with this review
      */
     public ReviewEntry(
         String id,

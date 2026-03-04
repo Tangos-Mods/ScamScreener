@@ -17,6 +17,19 @@ Fabric mod scaffold based on Stonecutter.
 - Enable `maven-publish` in `build.gradle.kts` and the corresponding code block
   to publish releases to a personal maven repository.
 
+## Case Review and Training
+- Players do case annotation in-game and export reviewed cases.
+- Model/stage training is done by the developer in the IDE using the exported JSONL file.
+- Export file is written to `config/scamscreener/`:
+  - `training-cases-v2.jsonl`
+
+Detailed docs:
+- [training_case_v2](docs/training_case_v2.md)
+- [case_review_player_guide](docs/case_review_player_guide.md)
+
+Pipeline auto-tuning script:
+- `.\scripts\auto_tune_pipeline.ps1 -TrainingDataDir trainingdata -RulesFile run/config/scamscreener/rules.json -Apply`
+
 ## API
 
 Other mods can access ScamScreener through the Fabric entrypoint key

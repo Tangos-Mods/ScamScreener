@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * One anonymized message inside a case-oriented review.
+ * One normalized message inside a case-oriented review.
  */
 @Getter
 public final class ReviewCaseMessage {

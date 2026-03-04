@@ -1,5 +1,15 @@
 # TODO
 
+## Status Update (2026-03-04)
+
+- [x] `training_case_v2` is the canonical export format (replaces the old `training_case_v1` idea).
+- [x] Case review now has a real export flow (`review export` command and UI button).
+- [x] `ContextStage` is integrated into the default pipeline.
+- [x] Stage and reason mapping uses stable IDs (`stage.*`, `reasonId`, `mappingId`).
+- [x] Legacy preview command path was removed.
+- [x] Blacklist and whitelist keep UUID persistence in their dedicated config files.
+- [x] Persisted review/training payloads strip sender UUID identity; message text may still contain player names by design.
+
 ## Zielbild für eine saubere v2
 
 ScamScreener v2 soll am Ende klar in zwei Ebenen getrennt sein:

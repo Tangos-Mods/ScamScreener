@@ -86,6 +86,7 @@ public final class BehaviorStage extends Stage {
         }
 
         List<String> reasonParts = new ArrayList<>();
+        List<String> reasonIds = new ArrayList<>();
         String normalizedMessage = chatEvent.getNormalizedMessage();
         BehaviorRules behavior = rules.behavior();
         boolean repeatedTriggered = false;
@@ -95,16 +96,19 @@ public final class BehaviorStage extends Stage {
             && snapshot.sameMessageCount() >= behavior.repeatedMessageThreshold()) {
             repeatedTriggered = true;
             reasonParts.add(behavior.repeatedMessageReason(snapshot.sameMessageCount() + 1));
+            reasonIds.add("behavior.repeated_message");
         }
 
         if (normalizedMessage.length() >= behavior.minBurstMessageLength()
             && snapshot.recentMessageCount() >= behavior.burstContactThreshold()) {
             burstTriggered = true;
             reasonParts.add(behavior.burstContactReason(snapshot.recentMessageCount() + 1));
+            reasonIds.add("behavior.burst_contact");
         }
 
         if (repeatedTriggered && burstTriggered) {
             reasonParts.add(behavior.comboReason());
+            reasonIds.add("behavior.combo_repeated_burst");
         }
 
         // Always record the current message so the next event sees updated sender history.
@@ -114,6 +118,6 @@ public final class BehaviorStage extends Stage {
             return pass();
         }
 
-        return score(MAX_BEHAVIOR_SPAM_SCORE, String.join("; ", reasonParts));
+        return score(MAX_BEHAVIOR_SPAM_SCORE, reasonIds, String.join("; ", reasonParts));
     }
 }

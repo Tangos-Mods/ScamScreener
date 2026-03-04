@@ -72,9 +72,6 @@ public final class ScamScreenerCommandHandler {
         return literal(literalName)
             .executes(context -> openRoot(context.getSource()))
             .then(literal("open").executes(context -> openRoot(context.getSource())))
-            .then(buildLegacyAddCommand())
-            .then(buildLegacyRemoveCommand())
-            .then(buildLegacyListCommand())
             .then(buildWhitelistCommand())
             .then(buildBlacklistCommand())
             .then(buildReviewCommand())
@@ -109,44 +106,6 @@ public final class ScamScreenerCommandHandler {
             .then(argument("playerName", StringArgumentType.word())
                 .suggests((context, builder) -> suggestReviewPlayers(builder))
                 .executes(context -> openReviewPlayer(context.getSource(), StringArgumentType.getString(context, "playerName"))));
-    }
-
-    private static LiteralArgumentBuilder<FabricClientCommandSource> buildLegacyAddCommand() {
-        return literal("add")
-            .then(argument("target", StringArgumentType.word())
-                .executes(context -> addBlacklist(context.getSource(), readTarget(context), 100, DEFAULT_BLACKLIST_REASON))
-                .then(argument("score", IntegerArgumentType.integer(0))
-                    .executes(context -> addBlacklist(
-                        context.getSource(),
-                        readTarget(context),
-                        IntegerArgumentType.getInteger(context, "score"),
-                        DEFAULT_BLACKLIST_REASON
-                    ))
-                    .then(argument("reason", StringArgumentType.greedyString())
-                        .executes(context -> addBlacklist(
-                            context.getSource(),
-                            readTarget(context),
-                            IntegerArgumentType.getInteger(context, "score"),
-                            StringArgumentType.getString(context, "reason")
-                        ))))
-                .then(argument("reason", StringArgumentType.greedyString())
-                    .executes(context -> addBlacklist(
-                        context.getSource(),
-                        readTarget(context),
-                        100,
-                        StringArgumentType.getString(context, "reason")
-                    ))));
-    }
-
-    private static LiteralArgumentBuilder<FabricClientCommandSource> buildLegacyRemoveCommand() {
-        return literal("remove")
-            .then(argument("target", StringArgumentType.word())
-                .suggests((context, builder) -> suggestBlacklistEntries(builder))
-                .executes(context -> removeBlacklist(context.getSource(), readTarget(context))));
-    }
-
-    private static LiteralArgumentBuilder<FabricClientCommandSource> buildLegacyListCommand() {
-        return literal("list").executes(context -> openBlacklist(context.getSource()));
     }
 
     private static LiteralArgumentBuilder<FabricClientCommandSource> buildAlertLevelCommand() {

@@ -12,7 +12,7 @@ import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.text.Text;
 
 /**
- * Root settings hub using the compact v1 menu layout.
+ * Root settings hub for ScamScreener.
  */
 public final class ScamScreenerMainScreen extends BaseScreen {
     private ButtonWidget alertLevelButton;
@@ -30,7 +30,7 @@ public final class ScamScreenerMainScreen extends BaseScreen {
     }
 
     /**
-     * Builds the v1-style quick toggles and navigation grid.
+     * Builds the quick toggles and navigation grid.
      */
     @Override
     protected void init() {
@@ -119,7 +119,7 @@ public final class ScamScreenerMainScreen extends BaseScreen {
                 .build()
         );
         addDrawableChild(
-            ButtonWidget.builder(Text.literal("Export Training"), button -> exportTrainingCases())
+            ButtonWidget.builder(Text.literal("Export for Dev"), button -> exportTrainingCases())
                 .dimensions(columnX(x, halfWidth, DEFAULT_SPLIT_GAP, 1), y, halfWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
@@ -178,8 +178,8 @@ public final class ScamScreenerMainScreen extends BaseScreen {
         if (autoCaptureButton != null) {
             AutoCaptureAlertLevel autoCaptureLevel = config.alerts().autoCaptureLevel();
             boolean enabled = autoCaptureLevel != AutoCaptureAlertLevel.OFF;
-            String detail = enabled ? " (" + autoCaptureLevel.name() + ")" : "";
-            autoCaptureButton.setMessage(toggleText("Auto-Capture: ", enabled, detail));
+            String detail = enabled ? " (" + autoCaptureLevel.name() + "+)" : "";
+            autoCaptureButton.setMessage(toggleText("Auto-Capture Cases: ", enabled, detail));
         }
         if (autoLeaveButton != null) {
             autoLeaveButton.setMessage(toggleText("Auto /p leave on blacklist: ", config.safety().isAutoLeaveOnBlacklist()));

@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Review list screen using the dense v1 review workflow.
+ * Review list screen using the case-oriented review workflow.
  */
 public final class ReviewScreen extends BaseListScreen {
     private static final int LIST_ROW_HEIGHT = 28;
@@ -132,7 +132,7 @@ public final class ReviewScreen extends BaseListScreen {
         addFooterButton(
             columnX(contentX, footerButtonWidth, DEFAULT_SPLIT_GAP, 1),
             footerButtonWidth,
-            Text.literal("Export Cases"),
+            Text.literal("Export for Dev"),
             button -> exportTrainingCases()
         );
         addFooterButton(
@@ -178,6 +178,7 @@ public final class ReviewScreen extends BaseListScreen {
                 + " | Search " + searchSummary()
         );
         drawLine(context, left, CONTENT_TOP + 36, "Select a case or start a New Case, then use Review Case to annotate context and signals.");
+        drawLine(context, left, CONTENT_TOP + 48, "Use Export for Dev to send reviewed cases for IDE-based training.");
 
         if (listWidget != null) {
             listWidget.render(context, this.textRenderer, mouseX, mouseY);

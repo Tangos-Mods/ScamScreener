@@ -8,7 +8,7 @@ import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.text.Text;
 
 /**
- * Small v1-style metrics summary using the currently available runtime counters.
+ * Small observability summary using the currently available runtime counters.
  */
 public final class MetricsSettingsScreen extends BaseScreen {
     private ButtonWidget reviewButton;
@@ -30,7 +30,7 @@ public final class MetricsSettingsScreen extends BaseScreen {
         ColumnState column = defaultColumnState();
         int buttonWidth = column.buttonWidth();
         int x = column.x();
-        int y = column.y();
+        int y = column.y() + 16;
 
         reviewButton = addDrawableChild(infoButton(x, y, buttonWidth));
         y += ROW_HEIGHT;
@@ -64,7 +64,7 @@ public final class MetricsSettingsScreen extends BaseScreen {
 
         int left = centeredX(defaultButtonWidth());
         drawSectionTitle(context, left, CONTENT_TOP - 18, "Observability");
-        drawLine(context, left, CONTENT_TOP - 6, "Live v2 runtime counters for review and stateful stages.");
+        drawLine(context, left, CONTENT_TOP - 6, "Live runtime counters from review and state stores.");
     }
 
     private ButtonWidget infoButton(int x, int y, int width) {

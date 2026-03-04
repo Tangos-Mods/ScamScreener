@@ -89,12 +89,14 @@ public final class LevenshteinStage extends Stage {
 
         int totalScore = 0;
         List<String> reasonParts = new ArrayList<>();
+        List<String> reasonIds = new ArrayList<>();
         for (PhraseMatch match : bestMatchesByCategory.values()) {
             totalScore += match.entry().score();
             reasonParts.add(match.entry().reason(match.similarity()));
+            reasonIds.add(match.entry().reasonId());
         }
 
-        return score(totalScore, String.join("; ", reasonParts));
+        return score(totalScore, reasonIds, String.join("; ", reasonParts));
     }
 
     private static double bestSimilarity(String normalizedMessage, List<String> messageTokens, String phrase, int phraseTokenCount) {

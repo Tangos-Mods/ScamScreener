@@ -9,7 +9,7 @@ import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.text.Text;
 
 /**
- * Review queue behavior and maintenance screen using the classic v1 single-column layout.
+ * Review queue behavior and maintenance screen.
  */
 public final class ReviewSettingsScreen extends BaseScreen {
     private static final int MIN_REVIEW_CAPACITY = 25;
@@ -103,7 +103,9 @@ public final class ReviewSettingsScreen extends BaseScreen {
 
         drawSectionTitle(context, left, y, "Review Queue");
         y += 12;
-        drawLine(context, left, y, "Capture can be disabled without disabling REVIEW decisions.");
+        drawLine(context, left, y, "Auto-capture stores REVIEW outcomes as queue cases.");
+        y += 12;
+        drawLine(context, left, y, "It does not auto-open the case-review screen.");
         y += 12;
         drawLine(context, left, y, "Current Entries: " + runtime.reviewStore().entries().size() + " / " + runtime.reviewStore().maxEntries());
     }
@@ -142,7 +144,7 @@ public final class ReviewSettingsScreen extends BaseScreen {
         RuntimeConfig.ReviewSettings review = runtime.config().review();
 
         if (captureEnabledButton != null) {
-            captureEnabledButton.setMessage(toggleText("Capture Review Entries: ", review.isCaptureEnabled()));
+            captureEnabledButton.setMessage(toggleText("Auto-Capture Cases: ", review.isCaptureEnabled()));
         }
         if (maxEntriesButton != null) {
             maxEntriesButton.setMessage(Text.literal("Review Queue Capacity: " + review.maxEntries()));

@@ -91,15 +91,18 @@ public final class FunnelStage extends Stage {
 
         int totalScore = 0;
         List<String> reasonParts = new ArrayList<>();
+        List<String> reasonIds = new ArrayList<>();
         FunnelRules funnel = rules.funnel();
 
         if (currentStep == FunnelStore.FunnelStep.EXTERNAL_PLATFORM && hasPriorContact) {
             totalScore += funnel.externalAfterContactScore();
             reasonParts.add(funnel.externalAfterContactReason());
+            reasonIds.add("funnel.external_after_contact");
 
             if (hasTrust) {
                 totalScore += funnel.trustBridgeBonus();
                 reasonParts.add(funnel.externalAfterTrustReason());
+                reasonIds.add("funnel.external_after_trust");
             }
         }
 
@@ -107,9 +110,11 @@ public final class FunnelStage extends Stage {
             if (hasExternal) {
                 totalScore += funnel.paymentAfterExternalScore();
                 reasonParts.add(funnel.paymentAfterExternalReason());
+                reasonIds.add("funnel.payment_after_external");
             } else if (hasTrust) {
                 totalScore += funnel.paymentAfterTrustScore();
                 reasonParts.add(funnel.paymentAfterTrustReason());
+                reasonIds.add("funnel.payment_after_trust");
             }
         }
 
@@ -117,9 +122,11 @@ public final class FunnelStage extends Stage {
             if (hasExternal) {
                 totalScore += funnel.accountAfterExternalScore();
                 reasonParts.add(funnel.accountAfterExternalReason());
+                reasonIds.add("funnel.account_after_external");
             } else if (hasTrust) {
                 totalScore += funnel.accountAfterTrustScore();
                 reasonParts.add(funnel.accountAfterTrustReason());
+                reasonIds.add("funnel.account_after_trust");
             }
         }
 
@@ -127,6 +134,7 @@ public final class FunnelStage extends Stage {
             && hasTrust && hasExternal) {
             totalScore += funnel.fullChainBonusScore();
             reasonParts.add(funnel.fullChainReason());
+            reasonIds.add("funnel.full_chain");
         }
 
         // Record the classified step after evaluation so the snapshot remains pre-message.
@@ -136,7 +144,7 @@ public final class FunnelStage extends Stage {
             return pass();
         }
 
-        return score(totalScore, String.join("; ", reasonParts));
+        return score(totalScore, reasonIds, String.join("; ", reasonParts));
     }
 
     private FunnelStore.FunnelStep classifyStep(String message) {

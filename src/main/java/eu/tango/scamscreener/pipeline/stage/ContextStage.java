@@ -19,8 +19,6 @@ import java.util.Set;
  * Lightweight context-aware stage that scores signal blends across recent messages from the same sender.
  */
 public final class ContextStage extends Stage {
-    private static final int MAX_CONTEXT_MESSAGES = 6;
-
     private final RecentChatCache recentChatCache;
     private final RuleCatalog rules;
 
@@ -56,6 +54,9 @@ public final class ContextStage extends Stage {
 
     @Override
     protected StageResult evaluate(ChatEvent chatEvent) {
+        if (!rules.contextStageEnabled()) {
+            return pass();
+        }
         if (chatEvent == null || !chatEvent.isPlayerSource()) {
             return pass();
         }
@@ -65,8 +66,9 @@ public final class ContextStage extends Stage {
             return pass();
         }
 
-        List<String> senderMessages = recentMessagesForSender(senderName);
-        if (senderMessages.size() < 2) {
+        RulesConfig.ContextStageSettings contextSettings = rules.context();
+        List<String> senderMessages = recentMessagesForSender(senderName, contextSettings.getMaxContextMessages());
+        if (senderMessages.size() < Math.max(1, contextSettings.getMinSenderMessages())) {
             return pass();
         }
 
@@ -80,21 +82,28 @@ public final class ContextStage extends Stage {
             }
         }
 
-        if (signalMessages < 2 || signalKinds.size() < 2) {
+        if (signalMessages < Math.max(1, contextSettings.getMinSignalMessages())
+            || signalKinds.size() < Math.max(1, contextSettings.getMinSignalKinds())) {
             return pass();
         }
 
-        int score = signalKinds.size() >= 3 ? 3 : 2;
+        int score = Math.max(0, contextSettings.getSignalBlendScore());
         List<String> reasons = new ArrayList<>();
+        List<String> reasonIds = new ArrayList<>();
         reasons.add("Context signal blend: " + String.join(" + ", signalKinds));
-        if (signalKinds.size() >= 3 || signalMessages >= 3) {
+        reasonIds.add("context.signal_blend");
+        if (signalKinds.size() >= Math.max(1, contextSettings.getEscalationMinSignalKinds())
+            || signalMessages >= Math.max(1, contextSettings.getEscalationMinSignalMessages())) {
+            score += Math.max(0, contextSettings.getEscalationBonusScore());
             reasons.add("Context escalation: " + signalKinds.size() + " signals across " + signalMessages + " messages");
+            reasonIds.add("context.escalation");
         }
-        return score(score, String.join("; ", reasons));
+        return score(score, reasonIds, String.join("; ", reasons));
     }
 
-    private List<String> recentMessagesForSender(String normalizedSenderName) {
-        List<String> messages = new ArrayList<>(MAX_CONTEXT_MESSAGES);
+    private List<String> recentMessagesForSender(String normalizedSenderName, int maxContextMessages) {
+        int boundedMaxContextMessages = Math.max(1, maxContextMessages);
+        List<String> messages = new ArrayList<>(boundedMaxContextMessages);
         for (RecentChatCache.CachedChatMessage entry : recentChatCache.entries()) {
             if (entry == null || entry.sourceType() != ChatSourceType.PLAYER) {
                 continue;
@@ -104,7 +113,7 @@ public final class ContextStage extends Stage {
             }
 
             messages.add(entry.cleanText().toLowerCase(Locale.ROOT));
-            if (messages.size() >= MAX_CONTEXT_MESSAGES) {
+            if (messages.size() >= boundedMaxContextMessages) {
                 break;
             }
         }

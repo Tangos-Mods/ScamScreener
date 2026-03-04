@@ -20,7 +20,15 @@ public final class BlacklistConfigStore extends BaseConfig<BlacklistConfig> {
      * @param blacklist the runtime blacklist to populate
      */
     public void loadInto(Blacklist blacklist) {
-        blacklist.replaceAll(loadOrCreate().entries());
+        applyToBlacklist(loadOrCreate(), blacklist);
+    }
+
+    static void applyToBlacklist(BlacklistConfig config, Blacklist blacklist) {
+        if (blacklist == null) {
+            return;
+        }
+
+        blacklist.replaceAll(config == null ? java.util.List.of() : config.entries());
     }
 
     /**
@@ -29,9 +37,17 @@ public final class BlacklistConfigStore extends BaseConfig<BlacklistConfig> {
      * @param blacklist the runtime blacklist to persist
      */
     public void saveFrom(Blacklist blacklist) {
+        save(fromBlacklist(blacklist));
+    }
+
+    static BlacklistConfig fromBlacklist(Blacklist blacklist) {
         BlacklistConfig config = new BlacklistConfig();
+        if (blacklist == null) {
+            return config;
+        }
+
         config.getEntries().addAll(blacklist.entries());
-        save(config);
+        return config;
     }
 
     @Override

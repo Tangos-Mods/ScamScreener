@@ -24,6 +24,7 @@ public final class RuleCatalog {
     private final boolean behaviorStageEnabled;
     private final boolean trendStageEnabled;
     private final boolean funnelStageEnabled;
+    private final boolean contextStageEnabled;
     private final MuteRules mute;
     private final Rule suspiciousLink;
     private final Rule externalPlatform;
@@ -50,6 +51,7 @@ public final class RuleCatalog {
     private final BehaviorRules behavior;
     private final TrendRules trend;
     private final FunnelRules funnel;
+    private final RulesConfig.ContextStageSettings context;
 
     /**
      * Builds the shared compiled rule catalog from one rules config.
@@ -64,6 +66,7 @@ public final class RuleCatalog {
         behaviorStageEnabled = safeConfig.isBehaviorStageEnabled();
         trendStageEnabled = safeConfig.isTrendStageEnabled();
         funnelStageEnabled = safeConfig.isFunnelStageEnabled();
+        contextStageEnabled = safeConfig.isContextStageEnabled();
         RulesConfig.MuteStageSettings muteSettings = safeConfig.muteStage();
         mute = new MuteRules(
             compileOptionalPattern(muteSettings.getHarmlessMessagePattern()),
@@ -229,6 +232,8 @@ public final class RuleCatalog {
             Math.max(1L, funnelSettings.getWindowMs()),
             Math.max(1, funnelSettings.getMaxHistory())
         );
+
+        context = safeConfig.contextStage();
     }
 
     private static List<SimilarityRule> buildSimilarityRules(List<RulesConfig.SimilarityPhrase> configuredPhrases) {

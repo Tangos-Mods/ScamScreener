@@ -6,7 +6,7 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Small shared registry for the legacy v1 debug toggles.
+ * Small shared registry for local debug toggles.
  */
 public final class DebugKeys {
     private static final List<String> KEYS = List.of("updater", "trade", "mute", "chatcolor");

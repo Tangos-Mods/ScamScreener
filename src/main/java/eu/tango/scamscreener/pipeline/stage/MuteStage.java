@@ -60,16 +60,16 @@ public final class MuteStage extends Stage {
         MuteRules mute = rules.mute();
         if (chatEvent.isSystemSource()) {
             // System and NPC messages should bypass risk checks, not be treated as hidden chat.
-            return allow(mute.systemBypassReason());
+            return allow(mute.systemBypassReason(), "mute.system_bypass");
         }
 
         String normalizedMessage = chatEvent.getNormalizedMessage();
         if (chatEvent.isPlayerSource() && mute.matchesHarmlessMessage(normalizedMessage)) {
-            return allow(mute.harmlessBypassReason());
+            return allow(mute.harmlessBypassReason(), "mute.noise_bypass");
         }
 
         if (shouldBypassAsDuplicate(chatEvent, mute, normalizedMessage)) {
-            return allow(mute.duplicateBypassReason());
+            return allow(mute.duplicateBypassReason(), "mute.duplicate_bypass");
         }
 
         // Player and unknown messages continue through the normal pipeline.

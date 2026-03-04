@@ -16,7 +16,7 @@ import java.util.Locale;
 import java.util.UUID;
 
 /**
- * Restored v1-style whitelist management screen.
+ * Whitelist management screen.
  */
 public final class WhitelistScreen extends BaseScreen {
     private static final int ENTRIES_PER_PAGE = 8;

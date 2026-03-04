@@ -4,6 +4,7 @@ import eu.tango.scamscreener.config.data.WhitelistConfig;
 import eu.tango.scamscreener.lists.Whitelist;
 
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -24,9 +25,16 @@ public final class WhitelistConfigStore extends BaseConfig<WhitelistConfig> {
      * @param whitelist the runtime whitelist to populate
      */
     public void loadInto(Whitelist whitelist) {
-        WhitelistConfig config = loadOrCreate();
+        applyToWhitelist(loadOrCreate(), whitelist);
+    }
+
+    static void applyToWhitelist(WhitelistConfig config, Whitelist whitelist) {
+        if (whitelist == null) {
+            return;
+        }
+
         Set<UUID> uuids = new LinkedHashSet<>();
-        for (String rawUuid : config.playerUuids()) {
+        for (String rawUuid : config == null ? List.<String>of() : config.playerUuids()) {
             if (rawUuid == null || rawUuid.isBlank()) {
                 continue;
             }
@@ -38,7 +46,7 @@ public final class WhitelistConfigStore extends BaseConfig<WhitelistConfig> {
             }
         }
 
-        whitelist.replaceAll(uuids, config.playerNames());
+        whitelist.replaceAll(uuids, config == null ? List.of() : config.playerNames());
     }
 
     /**
@@ -47,12 +55,18 @@ public final class WhitelistConfigStore extends BaseConfig<WhitelistConfig> {
      * @param whitelist the runtime whitelist to persist
      */
     public void saveFrom(Whitelist whitelist) {
+        save(fromWhitelist(whitelist));
+    }
+
+    static WhitelistConfig fromWhitelist(Whitelist whitelist) {
         WhitelistConfig config = new WhitelistConfig();
-        config.getPlayerUuids().addAll(
-            whitelist.playerUuids().stream().map(UUID::toString).toList()
-        );
+        if (whitelist == null) {
+            return config;
+        }
+
+        config.getPlayerUuids().addAll(whitelist.playerUuids().stream().map(UUID::toString).toList());
         config.getPlayerNames().addAll(whitelist.playerNames());
-        save(config);
+        return config;
     }
 
     @Override

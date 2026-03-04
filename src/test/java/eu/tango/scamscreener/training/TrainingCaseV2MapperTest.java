@@ -79,7 +79,7 @@ class TrainingCaseV2MapperTest {
         assertEquals("case.review-7", trainingCase.caseId());
         assertEquals("risk", trainingCase.caseData().label());
         assertEquals(2, trainingCase.caseData().messages().size());
-        assertEquals("<player> add me on discord", trainingCase.caseData().messages().get(1).text());
+        assertEquals("Alpha add me on discord", trainingCase.caseData().messages().get(1).text());
         assertEquals(
             List.of("stage.rule::rule.external_platform", "stage.behavior::behavior.repeated_message"),
             trainingCase.caseData().messages().get(1).mappingIds()

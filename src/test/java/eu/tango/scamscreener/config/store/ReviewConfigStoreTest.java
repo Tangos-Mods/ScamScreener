@@ -43,13 +43,13 @@ class ReviewConfigStoreTest {
 
         assertEquals("", storedEntry.getSenderUuid());
         assertEquals("", storedEntry.getSenderName());
-        assertEquals("trade with <player> and <uuid>", storedEntry.getMessage());
-        assertEquals("reported by <player>", storedEntry.getReasons().getFirst());
+        assertEquals("trade with Alpha and <uuid>", storedEntry.getMessage());
+        assertEquals("reported by Alpha", storedEntry.getReasons().getFirst());
         assertEquals("seen with <uuid>", storedEntry.getReasons().get(1));
         assertEquals("stage.rule", storedEntry.getStageResults().getFirst().getStageId());
-        assertEquals("External platform push: \"<player>\"", storedEntry.getStageResults().getFirst().getReason());
+        assertEquals("External platform push: \"Alpha\"", storedEntry.getStageResults().getFirst().getReason());
         assertEquals(List.of("rule.external_platform"), storedEntry.getStageResults().getFirst().getReasonIds());
-        assertEquals("<player> can carry <uuid>", storedEntry.getCaseMessages().getFirst().getCleanText());
+        assertEquals("Alpha can carry <uuid>", storedEntry.getCaseMessages().getFirst().getCleanText());
         assertEquals("stage.rule::rule.external_platform", storedEntry.getCaseMessages().getFirst().getAdvancedRuleSelections().getFirst());
     }
 
@@ -85,12 +85,12 @@ class ReviewConfigStoreTest {
 
         assertNull(runtimeEntry.getSenderUuid());
         assertEquals("", runtimeEntry.getSenderName());
-        assertEquals("trade with <player>", runtimeEntry.getMessage());
-        assertEquals("reported by <player>", runtimeEntry.getReasons().getFirst());
+        assertEquals("trade with Alpha", runtimeEntry.getMessage());
+        assertEquals("reported by Alpha", runtimeEntry.getReasons().getFirst());
         assertEquals("stage.rule", runtimeEntry.getStageResults().getFirst().getStageId());
-        assertEquals("External platform push: \"<player>\"", runtimeEntry.getStageResults().getFirst().getReason());
+        assertEquals("External platform push: \"Alpha\"", runtimeEntry.getStageResults().getFirst().getReason());
         assertEquals(List.of("rule.external_platform"), runtimeEntry.getStageResults().getFirst().getReasonIds());
-        assertEquals("<player> can carry <uuid>", runtimeEntry.getCaseMessages().getFirst().getCleanText());
+        assertEquals("Alpha can carry <uuid>", runtimeEntry.getCaseMessages().getFirst().getCleanText());
         assertEquals("stage.rule::rule.external_platform", runtimeEntry.getCaseMessages().getFirst().getAdvancedRuleSelections().getFirst());
     }
 }

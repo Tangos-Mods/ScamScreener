@@ -198,24 +198,21 @@ public final class ClientMessages {
 
     public static MutableText commandHelp() {
         return prefixed().append(Text.literal(
-            "Commands: add/remove/list, whitelist, blacklist, review, review export, alertlevel, autoleave, mute, unmute, debug, settings."
+            "Commands: whitelist, blacklist, review, review export, alertlevel, autoleave, mute, unmute, debug, metrics, rules, runtime, messages, settings."
         ).formatted(Formatting.GRAY));
     }
 
     public static MutableText trainingCasesExported(TrainingCaseExportService.TrainingCaseExportResult result) {
         int caseCount = result == null ? 0 : Math.max(0, result.exportedCaseCount());
-        int calibrationCount = result == null ? 0 : Math.max(0, result.exportedCalibrationCount());
-        String directory = result == null || result.trainingCasesFile() == null || result.trainingCasesFile().getParent() == null
+        String exportPath = result == null || result.trainingCasesFile() == null
             ? "<unknown>"
-            : result.trainingCasesFile().getParent().toString();
+            : result.trainingCasesFile().toString();
 
         return prefixed()
             .append(Text.literal("Exported ").formatted(Formatting.GRAY))
             .append(Text.literal(String.valueOf(caseCount)).formatted(Formatting.AQUA, Formatting.BOLD))
-            .append(Text.literal(" training cases and ").formatted(Formatting.GRAY))
-            .append(Text.literal(String.valueOf(calibrationCount)).formatted(Formatting.GOLD, Formatting.BOLD))
-            .append(Text.literal(" calibration rows to ").formatted(Formatting.GRAY))
-            .append(Text.literal(directory).formatted(Formatting.YELLOW))
+            .append(Text.literal(" reviewed cases for IDE training to ").formatted(Formatting.GRAY))
+            .append(Text.literal(exportPath).formatted(Formatting.YELLOW))
             .append(Text.literal(".").formatted(Formatting.GRAY));
     }
 

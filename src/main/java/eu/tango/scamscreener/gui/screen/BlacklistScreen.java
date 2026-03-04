@@ -16,7 +16,7 @@ import java.util.Locale;
 import java.util.UUID;
 
 /**
- * Restored v1-style blacklist management screen.
+ * Blacklist management screen.
  */
 public final class BlacklistScreen extends BaseScreen {
     private static final int ENTRIES_PER_PAGE = 7;

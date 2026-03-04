@@ -39,7 +39,7 @@ public final class RulesSettingsScreen extends BaseScreen {
         int columnWidth = splitWidth(contentWidth, 2, DEFAULT_SPLIT_GAP);
         int leftX = columnX(x, columnWidth, DEFAULT_SPLIT_GAP, 0);
         int rightX = columnX(x, columnWidth, DEFAULT_SPLIT_GAP, 1);
-        int y = CONTENT_TOP + 20;
+        int y = CONTENT_TOP + 34;
 
         List<ToggleAction> actions = buildActions();
         for (int index = 0; index < actions.size(); index++) {
@@ -89,11 +89,11 @@ public final class RulesSettingsScreen extends BaseScreen {
 
         drawSectionTitle(context, left, y, section.label());
         y += 12;
-        drawLine(context, left, y, "This screen only enables or disables rules and triggers.");
+        drawLine(context, left, y, "Enable or disable rule families and triggers.");
         y += 12;
         drawLine(context, left, y, section.summary());
         y += 12;
-        drawLine(context, left, y, "Use Advanced only if you are intentionally changing the pipeline internals.");
+        drawLine(context, left, y, "Advanced changes scores, thresholds and internals.");
     }
 
     private List<ToggleAction> buildActions() {
@@ -116,6 +116,7 @@ public final class RulesSettingsScreen extends BaseScreen {
         addToggleAction(actions, "Behavior Stage: ", rules.isBehaviorStageEnabled(), () -> rules.setBehaviorStageEnabled(!rules.isBehaviorStageEnabled()));
         addToggleAction(actions, "Trend Stage: ", rules.isTrendStageEnabled(), () -> rules.setTrendStageEnabled(!rules.isTrendStageEnabled()));
         addToggleAction(actions, "Funnel Stage: ", rules.isFunnelStageEnabled(), () -> rules.setFunnelStageEnabled(!rules.isFunnelStageEnabled()));
+        addToggleAction(actions, "Context Stage: ", rules.isContextStageEnabled(), () -> rules.setContextStageEnabled(!rules.isContextStageEnabled()));
     }
 
     private void buildCoreTriggerActions(List<ToggleAction> actions) {
@@ -196,10 +197,10 @@ public final class RulesSettingsScreen extends BaseScreen {
     }
 
     private enum Section {
-        STAGES("Stages", "Turn whole pipeline stages on or off without changing their tuning."),
-        CORE_TRIGGERS("Core Triggers", "Basic high-signal trigger families for links, payment and account theft."),
-        SOCIAL_TRIGGERS("Social Triggers", "Trust, middleman and social-engineering trigger families."),
-        COMBOS("Combos", "Compound rule bonuses that only fire when multiple triggers align.");
+        STAGES("Stages", "Enable or disable full pipeline stages."),
+        CORE_TRIGGERS("Core Triggers", "Enable or disable link, payment and account-data trigger families."),
+        SOCIAL_TRIGGERS("Social Triggers", "Enable or disable social-engineering trigger families."),
+        COMBOS("Combos", "Enable or disable compound combo bonuses.");
 
         private static final Section[] VALUES = values();
 

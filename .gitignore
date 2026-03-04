@@ -49,6 +49,7 @@ replay_*.log
 
 .env
 .env.*
+!.env.example
 *.local
 *.tmp
 *.temp
@@ -58,3 +59,8 @@ replay_*.log
 *.swp
 *.swo
 /.idea
+
+# local tuning/training payloads
+trainingdata/**
+!trainingdata/
+!trainingdata/README.md

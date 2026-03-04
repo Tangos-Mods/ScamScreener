@@ -76,7 +76,7 @@ public final class ReviewStore {
      *
      * @param chatEvent the reviewed chat event
      * @param decision the final pipeline decision
-     * @param caseMessages the anonymized case messages captured with the event
+     * @param caseMessages the normalized case messages captured with the event
      * @return the created review entry, when one was captured
      */
     public synchronized Optional<ReviewEntry> capture(ChatEvent chatEvent, PipelineDecision decision, List<ReviewCaseMessage> caseMessages) {

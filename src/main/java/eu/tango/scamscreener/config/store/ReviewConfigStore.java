@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * JSON-backed store for the persisted anonymized review queue.
+ * JSON-backed store for the persisted sanitized review queue.
  */
 public final class ReviewConfigStore extends BaseConfig<ReviewConfig> {
     /**

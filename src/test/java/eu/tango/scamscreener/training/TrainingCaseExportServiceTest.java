@@ -21,38 +21,28 @@ class TrainingCaseExportServiceTest {
     Path tempDir;
 
     @Test
-    void exportsCanonicalAndDerivedTrainingFiles() throws IOException {
+    void exportsSingleCanonicalTrainingFile() throws IOException {
         ReviewEntry pending = reviewedEntry("review-1", ReviewVerdict.PENDING, 1_000L);
         ReviewEntry risk = reviewedEntry("review-2", ReviewVerdict.RISK, 2_000L);
         ReviewEntry safe = reviewedEntry("review-3", ReviewVerdict.SAFE, 3_000L);
 
         Path trainingCasesFile = tempDir.resolve("training-cases-v2.jsonl");
-        Path contextStageFile = tempDir.resolve("context-stage-cases-v2.jsonl");
-        Path fixedStageFile = tempDir.resolve("fixed-stage-calibrations-v2.jsonl");
 
         TrainingCaseExportService.TrainingCaseExportResult result = new TrainingCaseExportService().exportReviewedCases(
             List.of(pending, risk, safe),
-            trainingCasesFile,
-            contextStageFile,
-            fixedStageFile
+            trainingCasesFile
         );
 
         assertEquals(2, result.exportedCaseCount());
-        assertEquals(2, result.exportedContextCaseCount());
-        assertEquals(2, result.exportedCalibrationCount());
 
         List<String> trainingLines = Files.readAllLines(trainingCasesFile);
-        List<String> contextLines = Files.readAllLines(contextStageFile);
-        List<String> fixedLines = Files.readAllLines(fixedStageFile);
 
         assertEquals(2, trainingLines.size());
-        assertEquals(2, contextLines.size());
-        assertEquals(2, fixedLines.size());
         assertTrue(trainingLines.getFirst().contains("\"caseId\":\"case_000001\""));
         assertTrue(trainingLines.get(1).contains("\"caseId\":\"case_000002\""));
-        assertTrue(contextLines.getFirst().contains("\"format\":\"context_stage_case_v2\""));
-        assertTrue(fixedLines.getFirst().contains("\"format\":\"fixed_stage_calibration_v2\""));
-        assertTrue(fixedLines.getFirst().contains("\"mappingId\":\"stage.rule::rule.external_platform\""));
+        assertTrue(trainingLines.getFirst().contains("\"format\":\"training_case_v2\""));
+        assertTrue(trainingLines.getFirst().contains("\"fixedStageCalibrations\""));
+        assertTrue(trainingLines.getFirst().contains("\"mappingId\":\"stage.rule::rule.external_platform\""));
     }
 
     private static ReviewEntry reviewedEntry(String id, ReviewVerdict verdict, long capturedAtMs) {

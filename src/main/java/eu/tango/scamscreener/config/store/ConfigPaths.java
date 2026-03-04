@@ -17,8 +17,6 @@ public class ConfigPaths {
     private static final String BLACKLIST_FILE_NAME = "blacklist.json";
     private static final String REVIEW_FILE_NAME = "review.json";
     private static final String TRAINING_CASES_V2_FILE_NAME = "training-cases-v2.jsonl";
-    private static final String CONTEXT_STAGE_CASES_V2_FILE_NAME = "context-stage-cases-v2.jsonl";
-    private static final String FIXED_STAGE_CALIBRATIONS_V2_FILE_NAME = "fixed-stage-calibrations-v2.jsonl";
 
     /**
      * Returns the base config directory for ScamScreener.
@@ -83,23 +81,5 @@ public class ConfigPaths {
      */
     public Path trainingCasesV2File() {
         return baseDirectory().resolve(TRAINING_CASES_V2_FILE_NAME);
-    }
-
-    /**
-     * Returns the path to the context-stage training export file.
-     *
-     * @return the context-stage JSONL path
-     */
-    public Path contextStageCasesV2File() {
-        return baseDirectory().resolve(CONTEXT_STAGE_CASES_V2_FILE_NAME);
-    }
-
-    /**
-     * Returns the path to the fixed-stage calibration export file.
-     *
-     * @return the fixed-stage calibration JSONL path
-     */
-    public Path fixedStageCalibrationsV2File() {
-        return baseDirectory().resolve(FIXED_STAGE_CALIBRATIONS_V2_FILE_NAME);
     }
 }

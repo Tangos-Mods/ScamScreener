@@ -36,12 +36,12 @@ public final class PlayerListStage extends Stage {
     protected StageResult evaluate(ChatEvent chatEvent) {
         if (whitelistList.contains(chatEvent.getSenderUuid(), chatEvent.getSenderName())) {
             // Whitelist wins first because it is the strongest explicit trust override.
-            return whitelist("WHITELIST_MATCH");
+            return whitelist("WHITELIST_MATCH", "player_list.whitelist_match");
         }
 
         if (blacklistList.contains(chatEvent.getSenderUuid(), chatEvent.getSenderName())) {
             // Blacklist is an explicit deny-list decision, distinct from heuristic blocking.
-            return blacklist("BLACKLIST_MATCH");
+            return blacklist("BLACKLIST_MATCH", "player_list.blacklist_match");
         }
 
         return pass();

@@ -3,7 +3,7 @@ package eu.tango.scamscreener.training;
 import java.util.List;
 
 /**
- * Canonical anonymous training case used for context-stage training and fixed-stage calibration.
+ * Canonical training case used for context-stage training and fixed-stage calibration.
  */
 public record TrainingCaseV2(
     String format,
@@ -17,7 +17,7 @@ public record TrainingCaseV2(
      * One canonical case payload.
      *
      * @param label final reviewed case label
-     * @param messages ordered anonymized case messages
+     * @param messages ordered persisted case messages
      * @param caseSignalTagIds deduplicated signal tags present in the case
      */
     public record CaseData(
@@ -31,7 +31,7 @@ public record TrainingCaseV2(
      * One canonical case message.
      *
      * @param index stable message order inside the case
-     * @param text anonymized message text
+     * @param text persisted message text (UUID-sanitized)
      * @param sourceType message source type id
      * @param speakerRole message speaker role id
      * @param trigger indicates whether the message triggered the review

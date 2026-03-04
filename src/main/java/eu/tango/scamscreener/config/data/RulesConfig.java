@@ -24,12 +24,14 @@ public final class RulesConfig {
     private boolean behaviorStageEnabled = true;
     private boolean trendStageEnabled = true;
     private boolean funnelStageEnabled = true;
+    private boolean contextStageEnabled = true;
     private MuteStageSettings muteStage = new MuteStageSettings();
     private RuleStageSettings ruleStage = new RuleStageSettings();
     private SimilarityStageSettings similarityStage = new SimilarityStageSettings();
     private BehaviorStageSettings behaviorStage = new BehaviorStageSettings();
     private TrendStageSettings trendStage = new TrendStageSettings();
     private FunnelStageSettings funnelStage = new FunnelStageSettings();
+    private ContextStageSettings contextStage = new ContextStageSettings();
 
     /**
      * Returns the normalized mute stage settings.
@@ -107,6 +109,19 @@ public final class RulesConfig {
         }
 
         return funnelStage;
+    }
+
+    /**
+     * Returns the normalized context stage settings.
+     *
+     * @return non-null context stage settings
+     */
+    public ContextStageSettings contextStage() {
+        if (contextStage == null) {
+            contextStage = new ContextStageSettings();
+        }
+
+        return contextStage;
     }
 
     /**
@@ -396,5 +411,22 @@ public final class RulesConfig {
         private int trustBridgeBonusDivisor = 2;
         private long windowMs = 300_000L;
         private int maxHistory = 8;
+    }
+
+    /**
+     * Context configuration for {@code ContextStage}.
+     */
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    public static final class ContextStageSettings {
+        private int signalBlendScore = 2;
+        private int escalationBonusScore = 1;
+        private int maxContextMessages = 6;
+        private int minSenderMessages = 2;
+        private int minSignalMessages = 2;
+        private int minSignalKinds = 2;
+        private int escalationMinSignalKinds = 3;
+        private int escalationMinSignalMessages = 3;
     }
 }

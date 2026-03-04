@@ -9,7 +9,7 @@ import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.text.Text;
 
 /**
- * User-facing output settings screen using the classic v1 single-column layout.
+ * User-facing output settings screen.
  */
 public final class MessageSettingsScreen extends BaseScreen {
     private ButtonWidget scamWarningMessageButton;

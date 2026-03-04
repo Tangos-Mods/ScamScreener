@@ -12,7 +12,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Restored v1-style debug toggle screen.
+ * Debug toggle screen.
  */
 public final class DebugSettingsScreen extends BaseScreen {
     private ButtonWidget allButton;
@@ -33,7 +33,7 @@ public final class DebugSettingsScreen extends BaseScreen {
         ColumnState column = defaultColumnState();
         int buttonWidth = column.buttonWidth();
         int x = column.x();
-        int y = column.y();
+        int y = column.y() + 16;
 
         allButton = addDrawableChild(
             ButtonWidget.builder(Text.empty(), button -> {
@@ -68,7 +68,7 @@ public final class DebugSettingsScreen extends BaseScreen {
 
         int left = centeredX(defaultButtonWidth());
         drawSectionTitle(context, left, CONTENT_TOP - 18, "Debug");
-        drawLine(context, left, CONTENT_TOP - 6, "Legacy v1 debug toggles are persisted again.");
+        drawLine(context, left, CONTENT_TOP - 6, "Debug toggles are stored in local runtime config.");
     }
 
     private void refreshButtons() {

@@ -87,20 +87,24 @@ public final class TrendStage extends Stage {
 
         int totalScore = 0;
         List<String> reasonParts = new ArrayList<>();
+        List<String> reasonIds = new ArrayList<>();
 
         if (snapshot.distinctSenderCount() >= trend.multiSenderWaveThreshold()) {
             totalScore += trend.multiSenderWaveScore();
             reasonParts.add(trend.waveReason(snapshot.distinctSenderCount()));
+            reasonIds.add("trend.multi_sender_wave");
 
             int extraWaveSenders = snapshot.distinctSenderCount() - trend.multiSenderWaveThreshold();
             if (extraWaveSenders > 0) {
                 int intensityBonus = trend.escalationBonus(extraWaveSenders);
                 totalScore += intensityBonus;
                 reasonParts.add(trend.escalationReason(intensityBonus));
+                reasonIds.add("trend.wave_escalation");
             }
         } else if (snapshot.distinctSenderCount() == 1) {
             totalScore += trend.singleSenderRepeatScore();
             reasonParts.add(trend.singleRepeatReason());
+            reasonIds.add("trend.single_cross_sender_repeat");
         }
 
         // Always record after evaluating so the snapshot represents the state before the current message.
@@ -110,6 +114,6 @@ public final class TrendStage extends Stage {
             return pass();
         }
 
-        return score(totalScore, String.join("; ", reasonParts));
+        return score(totalScore, reasonIds, String.join("; ", reasonParts));
     }
 }

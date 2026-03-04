@@ -5,6 +5,63 @@ plugins {
     // id("me.modmuss50.mod-publish-plugin")
 }
 
+fun loadDotEnv(file: File): Map<String, String> {
+    if (!file.isFile) {
+        return emptyMap()
+    }
+
+    val values = mutableMapOf<String, String>()
+    file.forEachLine { rawLine ->
+        val line = rawLine.trim()
+        if (line.isEmpty() || line.startsWith("#")) {
+            return@forEachLine
+        }
+
+        val separator = line.indexOf('=')
+        if (separator <= 0) {
+            return@forEachLine
+        }
+
+        val key = line.substring(0, separator).trim()
+        if (key.isBlank()) {
+            return@forEachLine
+        }
+
+        var value = line.substring(separator + 1).trim()
+        if (value.length >= 2) {
+            val quoted = (value.startsWith('"') && value.endsWith('"'))
+                || (value.startsWith('\'') && value.endsWith('\''))
+            if (quoted) {
+                value = value.substring(1, value.length - 1)
+            }
+        }
+
+        values[key] = value
+    }
+
+    return values
+}
+
+val dotEnvValues = loadDotEnv(rootProject.file(".env"))
+
+fun resolveSecret(name: String): String? {
+    val fromEnvironment = providers.environmentVariable(name).orNull?.trim().orEmpty()
+    if (fromEnvironment.isNotEmpty()) {
+        return fromEnvironment
+    }
+
+    val fromGradleProperty = providers.gradleProperty(name).orNull?.trim().orEmpty()
+    if (fromGradleProperty.isNotEmpty()) {
+        return fromGradleProperty
+    }
+
+    val fromDotEnv = dotEnvValues[name]?.trim().orEmpty()
+    return fromDotEnv.ifEmpty { null }
+}
+
+val modrinthToken = resolveSecret("MODRINTH_TOKEN")
+val curseforgeToken = resolveSecret("CURSEFORGE_TOKEN")
+
 version = "${property("mod.version")}+${sc.current.version}"
 base.archivesName = property("mod.id") as String
 
@@ -129,12 +186,11 @@ publishMods {
     type = STABLE
     modLoaders.add("fabric")
 
-    dryRun = providers.environmentVariable("MODRINTH_TOKEN").getOrNull() == null
-        || providers.environmentVariable("CURSEFORGE_TOKEN").getOrNull() == null
+    dryRun = modrinthToken == null || curseforgeToken == null
 
     modrinth {
         projectId = property("publish.modrinth") as String
-        accessToken = providers.environmentVariable("MODRINTH_TOKEN")
+        accessToken = providers.provider { modrinthToken.orEmpty() }
         minecraftVersions.addAll(property("mod.mc_targets").toString().split(' '))
         requires {
             slug = "fabric-api"
@@ -143,7 +199,7 @@ publishMods {
 
     curseforge {
         projectId = property("publish.curseforge") as String
-        accessToken = providers.environmentVariable("CURSEFORGE_TOKEN")
+        accessToken = providers.provider { curseforgeToken.orEmpty() }
         minecraftVersions.addAll(property("mod.mc_targets").toString().split(' '))
         requires {
             slug = "fabric-api"

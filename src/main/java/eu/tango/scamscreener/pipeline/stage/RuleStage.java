@@ -64,41 +64,48 @@ public final class RuleStage extends Stage {
 
         int totalScore = 0;
         List<String> reasonParts = new ArrayList<>();
+        List<String> reasonIds = new ArrayList<>();
 
         String linkMatch = rules.suspiciousLink().firstPatternMatch(message);
         if (linkMatch != null) {
             totalScore += rules.suspiciousLink().score();
             reasonParts.add(rules.suspiciousLink().reason(linkMatch));
+            reasonIds.add("rule.suspicious_link");
         }
 
         String externalPlatformMatch = rules.externalPlatform().firstPatternMatch(message);
         if (externalPlatformMatch != null) {
             totalScore += rules.externalPlatform().score();
             reasonParts.add(rules.externalPlatform().reason(externalPlatformMatch));
+            reasonIds.add("rule.external_platform");
         }
 
         String paymentMatch = rules.upfrontPayment().firstPatternMatch(message);
         if (paymentMatch != null) {
             totalScore += rules.upfrontPayment().score();
             reasonParts.add(rules.upfrontPayment().reason(paymentMatch));
+            reasonIds.add("rule.upfront_payment");
         }
 
         String accountMatch = rules.accountData().firstPatternMatch(message);
         if (accountMatch != null) {
             totalScore += rules.accountData().score();
             reasonParts.add(rules.accountData().reason(accountMatch));
+            reasonIds.add("rule.account_data");
         }
 
         String tooGoodMatch = rules.tooGood().firstPatternMatch(message);
         if (tooGoodMatch != null) {
             totalScore += rules.tooGood().score();
             reasonParts.add(rules.tooGood().reason(tooGoodMatch));
+            reasonIds.add("rule.too_good");
         }
 
         String coercionThreatMatch = rules.coercionThreat().firstPatternMatch(message);
         if (coercionThreatMatch != null) {
             totalScore += rules.coercionThreat().score();
             reasonParts.add(rules.coercionThreat().reason(coercionThreatMatch));
+            reasonIds.add("rule.coercion_threat");
         }
 
         String middlemanMatch = rules.middleman().firstPatternMatch(message);
@@ -106,12 +113,14 @@ public final class RuleStage extends Stage {
         if (middlemanClaimMatch != null) {
             totalScore += rules.middlemanClaim().score();
             reasonParts.add(rules.middlemanClaim().reason(middlemanClaimMatch));
+            reasonIds.add("rule.middleman_claim");
         }
 
         String proofBaitMatch = rules.proofBait().firstPatternMatch(message);
         if (proofBaitMatch != null) {
             totalScore += rules.proofBait().score();
             reasonParts.add(rules.proofBait().reason(proofBaitMatch));
+            reasonIds.add("rule.proof_bait");
         }
 
         boolean riskContext = linkMatch != null
@@ -135,6 +144,7 @@ public final class RuleStage extends Stage {
             totalScore += rules.urgency().score();
             reasonParts.add(rules.urgency().reason(urgency.match()));
             urgencyTriggered = true;
+            reasonIds.add("rule.urgency");
         }
 
         Rule.PhraseScore trust = rules.trust().phraseMatch(message);
@@ -145,38 +155,44 @@ public final class RuleStage extends Stage {
             totalScore += rules.trust().score();
             reasonParts.add(rules.trust().reason(trust.match()));
             trustTriggered = true;
+            reasonIds.add("rule.trust");
         }
 
         String discordHandleMatch = rules.discordHandle().firstPatternMatch(message);
         if (externalPlatformMatch != null && discordHandleMatch != null) {
             totalScore += rules.discordHandle().score();
             reasonParts.add(rules.discordHandle().reason(discordHandleMatch));
+            reasonIds.add("rule.discord_handle");
         }
 
         if (linkMatch != null && externalPlatformMatch != null) {
             totalScore += rules.linkRedirectCombo().score();
             reasonParts.add(rules.linkRedirectCombo().reason(null));
+            reasonIds.add("rule.link_redirect_combo");
         }
 
         if (trustTriggered && paymentMatch != null) {
             totalScore += rules.trustPaymentCombo().score();
             reasonParts.add(rules.trustPaymentCombo().reason(null));
+            reasonIds.add("rule.trust_payment_combo");
         }
 
         if (urgencyTriggered && accountMatch != null) {
             totalScore += rules.urgencyAccountCombo().score();
             reasonParts.add(rules.urgencyAccountCombo().reason(null));
+            reasonIds.add("rule.urgency_account_combo");
         }
 
         if ((middlemanMatch != null || middlemanClaimMatch != null) && proofBaitMatch != null) {
             totalScore += rules.middlemanProofCombo().score();
             reasonParts.add(rules.middlemanProofCombo().reason(null));
+            reasonIds.add("rule.middleman_proof_combo");
         }
 
         if (totalScore <= 0 || reasonParts.isEmpty()) {
             return pass();
         }
 
-        return score(totalScore, String.join("; ", reasonParts));
+        return score(totalScore, reasonIds, String.join("; ", reasonParts));
     }
 }
