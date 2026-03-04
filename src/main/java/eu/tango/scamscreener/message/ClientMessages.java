@@ -3,6 +3,7 @@ package eu.tango.scamscreener.message;
 import eu.tango.scamscreener.ScamScreenerMod;
 import eu.tango.scamscreener.config.data.AlertRiskLevel;
 import eu.tango.scamscreener.review.ReviewVerdict;
+import eu.tango.scamscreener.training.TrainingCaseExportService;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
@@ -195,18 +196,31 @@ public final class ClientMessages {
             .append(Text.literal(".").formatted(Formatting.GRAY));
     }
 
-    public static MutableText previewStarted() {
-        return prefixed().append(Text.literal("Preview dry run started.").formatted(Formatting.GRAY));
-    }
-
-    public static MutableText previewFinished() {
-        return prefixed().append(Text.literal("Preview dry run finished.").formatted(Formatting.GRAY));
-    }
-
     public static MutableText commandHelp() {
         return prefixed().append(Text.literal(
-            "Commands: add/remove/list, whitelist, blacklist, review, alertlevel, autoleave, mute, unmute, debug, settings."
+            "Commands: add/remove/list, whitelist, blacklist, review, review export, alertlevel, autoleave, mute, unmute, debug, settings."
         ).formatted(Formatting.GRAY));
+    }
+
+    public static MutableText trainingCasesExported(TrainingCaseExportService.TrainingCaseExportResult result) {
+        int caseCount = result == null ? 0 : Math.max(0, result.exportedCaseCount());
+        int calibrationCount = result == null ? 0 : Math.max(0, result.exportedCalibrationCount());
+        String directory = result == null || result.trainingCasesFile() == null || result.trainingCasesFile().getParent() == null
+            ? "<unknown>"
+            : result.trainingCasesFile().getParent().toString();
+
+        return prefixed()
+            .append(Text.literal("Exported ").formatted(Formatting.GRAY))
+            .append(Text.literal(String.valueOf(caseCount)).formatted(Formatting.AQUA, Formatting.BOLD))
+            .append(Text.literal(" training cases and ").formatted(Formatting.GRAY))
+            .append(Text.literal(String.valueOf(calibrationCount)).formatted(Formatting.GOLD, Formatting.BOLD))
+            .append(Text.literal(" calibration rows to ").formatted(Formatting.GRAY))
+            .append(Text.literal(directory).formatted(Formatting.YELLOW))
+            .append(Text.literal(".").formatted(Formatting.GRAY));
+    }
+
+    public static MutableText trainingCasesExportFailed(String message) {
+        return error("Training export failed: " + displayValue(message) + ".");
     }
 
     public static MutableText reviewSelectionRequired() {

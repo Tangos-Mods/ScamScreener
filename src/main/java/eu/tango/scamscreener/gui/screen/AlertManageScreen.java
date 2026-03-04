@@ -12,6 +12,7 @@ import eu.tango.scamscreener.review.ReviewCaseRole;
 import eu.tango.scamscreener.review.ReviewEntry;
 import eu.tango.scamscreener.review.ReviewSignalTag;
 import eu.tango.scamscreener.review.ReviewVerdict;
+import eu.tango.scamscreener.training.TrainingCaseMappings;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
@@ -19,10 +20,8 @@ import net.minecraft.text.Text;
 
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 public final class AlertManageScreen extends BaseScreen {
     private static final int LIST_TOP = 48;
@@ -34,7 +33,7 @@ public final class AlertManageScreen extends BaseScreen {
 
     private final AlertContextRegistry.AlertContext context;
     private final List<ReviewCaseMessage> caseMessages = new ArrayList<>();
-    private final List<String> advancedRuleOptions = new ArrayList<>();
+    private final List<TrainingCaseMappings.MappingOption> advancedRuleOptions = new ArrayList<>();
     private final List<SignalCheckbox> signalCheckboxes = new ArrayList<>();
 
     private int listX;
@@ -69,7 +68,7 @@ public final class AlertManageScreen extends BaseScreen {
         super(Text.literal("Manage Alert"), parent);
         this.context = context;
         caseMessages.addAll(copyCaseMessages(context));
-        advancedRuleOptions.addAll(advancedRuleOptions(context));
+        advancedRuleOptions.addAll(TrainingCaseMappings.optionsForStageResults(context == null ? List.of() : context.stageResults()));
         selectedMessageIndex = findInitialSelection(caseMessages);
     }
 
@@ -182,7 +181,7 @@ public final class AlertManageScreen extends BaseScreen {
                 int row = ((int) mouseY - advancedY) / CHECKBOX_HEIGHT;
                 int absolute = advancedScrollOffset + row;
                 if (absolute >= 0 && absolute < advancedRuleOptions.size()) {
-                    selected.toggleAdvancedRuleSelection(advancedRuleOptions.get(absolute));
+                    selected.toggleAdvancedRuleSelection(advancedRuleOptions.get(absolute).id());
                     return true;
                 }
             }
@@ -361,8 +360,18 @@ public final class AlertManageScreen extends BaseScreen {
         for (int index = 0; index < visibleRows; index++) {
             int absolute = advancedScrollOffset + index;
             int rowY = advancedY + (index * CHECKBOX_HEIGHT);
-            String option = advancedRuleOptions.get(absolute);
-            renderCheckbox(context, mouseX, mouseY, advancedX + 2, rowY, advancedWidth - 4, compact(option, 88), selected.hasAdvancedRuleSelection(option), true);
+            TrainingCaseMappings.MappingOption option = advancedRuleOptions.get(absolute);
+            renderCheckbox(
+                context,
+                mouseX,
+                mouseY,
+                advancedX + 2,
+                rowY,
+                advancedWidth - 4,
+                compact(option.label(), 88),
+                selected.hasAdvancedRuleSelection(option.id()),
+                true
+            );
         }
         if (advancedRuleOptions.size() > ADVANCED_VISIBLE_ROWS) {
             renderScrollBar(context, advancedX + advancedWidth - 4, advancedY + 2, advancedHeight - 4, advancedScrollOffset, advancedRuleOptions.size(), ADVANCED_VISIBLE_ROWS);
@@ -654,19 +663,6 @@ public final class AlertManageScreen extends BaseScreen {
             }
         }
         return List.copyOf(copies);
-    }
-
-    private static List<String> advancedRuleOptions(AlertContextRegistry.AlertContext context) {
-        Set<String> options = new LinkedHashSet<>();
-        if (context != null) {
-            for (AlertContextRegistry.RuleDetail detail : context.ruleDetails()) {
-                if (detail == null || detail.detail().isBlank()) {
-                    continue;
-                }
-                options.add(detail.source().isBlank() || "Pipeline".equals(detail.source()) ? detail.detail() : detail.source() + " - " + detail.detail());
-            }
-        }
-        return List.copyOf(options);
     }
 
     private static int findInitialSelection(List<ReviewCaseMessage> messages) {

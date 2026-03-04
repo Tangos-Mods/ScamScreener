@@ -2,6 +2,7 @@ package eu.tango.scamscreener.review;
 
 import eu.tango.scamscreener.chat.ChatLineClassifier;
 import eu.tango.scamscreener.pipeline.data.ChatSourceType;
+import eu.tango.scamscreener.training.TrainingCaseMappings;
 import lombok.Getter;
 
 import java.util.ArrayList;
@@ -40,7 +41,7 @@ public final class ReviewCaseMessage {
         this.triggerMessage = triggerMessage;
         this.caseRole = caseRole == null ? defaultRole(triggerMessage) : caseRole;
         this.signalTagIds = normalizeList(signalTagIds);
-        this.advancedRuleSelections = normalizeList(advancedRuleSelections);
+        this.advancedRuleSelections = normalizeAdvancedRuleSelections(advancedRuleSelections);
     }
 
     public void setCaseRole(ReviewCaseRole caseRole) {
@@ -187,6 +188,22 @@ public final class ReviewCaseMessage {
         Set<String> deduplicated = new LinkedHashSet<>();
         for (String value : values) {
             String normalizedValue = normalizeValue(value, "");
+            if (!normalizedValue.isBlank()) {
+                deduplicated.add(normalizedValue);
+            }
+        }
+
+        return new ArrayList<>(deduplicated);
+    }
+
+    private static List<String> normalizeAdvancedRuleSelections(List<String> values) {
+        if (values == null || values.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        Set<String> deduplicated = new LinkedHashSet<>();
+        for (String value : values) {
+            String normalizedValue = TrainingCaseMappings.normalizeSelectionId(value);
             if (!normalizedValue.isBlank()) {
                 deduplicated.add(normalizedValue);
             }

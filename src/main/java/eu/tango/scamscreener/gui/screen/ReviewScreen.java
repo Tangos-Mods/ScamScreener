@@ -5,6 +5,8 @@ import eu.tango.scamscreener.gui.base.BaseListScreen;
 import eu.tango.scamscreener.gui.data.ReviewRow;
 import eu.tango.scamscreener.gui.widget.SelectableListWidget;
 import eu.tango.scamscreener.message.AlertContextRegistry;
+import eu.tango.scamscreener.message.ClientMessages;
+import eu.tango.scamscreener.message.MessageDispatcher;
 import eu.tango.scamscreener.review.ReviewActionHandler;
 import eu.tango.scamscreener.review.ReviewEntry;
 import eu.tango.scamscreener.review.ReviewVerdict;
@@ -125,10 +127,16 @@ public final class ReviewScreen extends BaseListScreen {
                 .build()
         );
 
-        int footerButtonWidth = splitWidth(contentWidth, 2, DEFAULT_SPLIT_GAP);
+        int footerButtonWidth = splitWidth(contentWidth, 3, DEFAULT_SPLIT_GAP);
         addFooterButton(contentX, footerButtonWidth, Text.literal("Review Settings"), button -> this.client.setScreen(new ReviewSettingsScreen(this)));
         addFooterButton(
             columnX(contentX, footerButtonWidth, DEFAULT_SPLIT_GAP, 1),
+            footerButtonWidth,
+            Text.literal("Export Cases"),
+            button -> exportTrainingCases()
+        );
+        addFooterButton(
+            columnX(contentX, footerButtonWidth, DEFAULT_SPLIT_GAP, 2),
             footerButtonWidth,
             Text.literal("Back"),
             button -> close()
@@ -284,6 +292,17 @@ public final class ReviewScreen extends BaseListScreen {
         }
 
         this.client.setScreen(new AlertManageScreen(this, null));
+    }
+
+    private void exportTrainingCases() {
+        try {
+            MessageDispatcher.reply(ClientMessages.trainingCasesExported(
+                ScamScreenerRuntime.getInstance().trainingCaseExportService()
+                    .exportReviewedCases(ScamScreenerRuntime.getInstance().reviewStore().entries())
+            ));
+        } catch (IllegalStateException exception) {
+            MessageDispatcher.reply(ClientMessages.trainingCasesExportFailed(exception.getMessage()));
+        }
     }
 
     private void updateActionState() {

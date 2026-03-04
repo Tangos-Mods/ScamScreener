@@ -22,7 +22,7 @@ public final class MetricsSettingsScreen extends BaseScreen {
      * @param parent the parent screen
      */
     public MetricsSettingsScreen(Screen parent) {
-        super(Text.literal("ScamScreener Metrics"), parent);
+        super(Text.literal("ScamScreener Observability"), parent);
     }
 
     @Override
@@ -63,8 +63,8 @@ public final class MetricsSettingsScreen extends BaseScreen {
         super.render(context, mouseX, mouseY, deltaTicks);
 
         int left = centeredX(defaultButtonWidth());
-        drawSectionTitle(context, left, CONTENT_TOP - 18, "Metrics");
-        drawLine(context, left, CONTENT_TOP - 6, "Current v2 runtime counters in the old v1 screen slot.");
+        drawSectionTitle(context, left, CONTENT_TOP - 18, "Observability");
+        drawLine(context, left, CONTENT_TOP - 6, "Live v2 runtime counters for review and stateful stages.");
     }
 
     private ButtonWidget infoButton(int x, int y, int width) {

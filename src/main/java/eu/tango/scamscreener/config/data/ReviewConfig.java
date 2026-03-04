@@ -36,8 +36,8 @@ public final class ReviewConfig {
     @NoArgsConstructor
     public static final class ReviewConfigEntry {
         private String id = "";
-        private String senderUuid = "";
-        private String senderName = "";
+        private transient String senderUuid = "";
+        private transient String senderName = "";
         private String message = "";
         private int score;
         private String decidedByStage = "";
@@ -83,9 +83,15 @@ public final class ReviewConfig {
     @NoArgsConstructor
     public static final class ReviewStageResult {
         private String stageName = "";
+        private String stageId = "";
         private Stage.Decision decision = Stage.Decision.PASS;
         private int scoreDelta;
         private String reason = "";
+        private List<String> reasonIds = new ArrayList<>();
+
+        public List<String> reasonIds() {
+            return reasonIds == null ? new ArrayList<>() : reasonIds;
+        }
     }
 
     /**

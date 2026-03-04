@@ -21,6 +21,7 @@ import eu.tango.scamscreener.pipeline.state.BehaviorStore;
 import eu.tango.scamscreener.pipeline.state.FunnelStore;
 import eu.tango.scamscreener.pipeline.state.TrendStore;
 import eu.tango.scamscreener.review.ReviewStore;
+import eu.tango.scamscreener.training.TrainingCaseExportService;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
@@ -62,6 +63,9 @@ public final class ScamScreenerRuntime {
     @Getter
     @Accessors(fluent = true)
     private final MutePatternManager mutePatternManager;
+    @Getter
+    @Accessors(fluent = true)
+    private final TrainingCaseExportService trainingCaseExportService;
     private volatile RuntimeConfig runtimeConfig;
     private volatile RulesConfig rulesConfig;
     @Getter
@@ -85,6 +89,7 @@ public final class ScamScreenerRuntime {
         funnelStore = new FunnelStore();
         recentChatCache = new RecentChatCache();
         mutePatternManager = new MutePatternManager();
+        trainingCaseExportService = new TrainingCaseExportService();
         mutePatternManager.reloadFromConfig(runtimeConfig);
         applyRuleStoreSettings();
         whitelistConfigStore.loadInto(whitelist);
@@ -97,6 +102,7 @@ public final class ScamScreenerRuntime {
             behaviorStore,
             trendStore,
             funnelStore,
+            recentChatCache,
             runtimeConfig.pipeline().reviewThreshold()
         );
     }
@@ -208,6 +214,7 @@ public final class ScamScreenerRuntime {
             behaviorStore,
             trendStore,
             funnelStore,
+            recentChatCache,
             runtimeConfig.pipeline().reviewThreshold()
         );
     }

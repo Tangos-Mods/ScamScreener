@@ -4,15 +4,15 @@ import eu.tango.scamscreener.config.data.ReviewConfig;
 import eu.tango.scamscreener.pipeline.data.StageResult;
 import eu.tango.scamscreener.review.ReviewCaseMessage;
 import eu.tango.scamscreener.review.ReviewEntry;
+import eu.tango.scamscreener.review.ReviewPersistenceSanitizer;
 import eu.tango.scamscreener.review.ReviewStore;
 import eu.tango.scamscreener.review.ReviewVerdict;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 /**
- * JSON-backed store for the persisted review queue.
+ * JSON-backed store for the persisted anonymized review queue.
  */
 public final class ReviewConfigStore extends BaseConfig<ReviewConfig> {
     /**
@@ -38,6 +38,7 @@ public final class ReviewConfigStore extends BaseConfig<ReviewConfig> {
         }
 
         reviewStore.replaceAll(entries);
+        saveFrom(reviewStore);
     }
 
     /**
@@ -62,12 +63,12 @@ public final class ReviewConfigStore extends BaseConfig<ReviewConfig> {
         return new ReviewConfig();
     }
 
-    private static ReviewEntry toRuntimeEntry(ReviewConfig.ReviewConfigEntry storedEntry) {
+    static ReviewEntry toRuntimeEntry(ReviewConfig.ReviewConfigEntry storedEntry) {
         if (storedEntry == null || storedEntry.getId() == null || storedEntry.getId().isBlank()) {
             return null;
         }
 
-        UUID senderUuid = parseUuid(storedEntry.getSenderUuid());
+        String legacySenderName = storedEntry.getSenderName();
         List<StageResult> stageResults = new ArrayList<>();
         for (ReviewConfig.ReviewStageResult storedStageResult : storedEntry.stageResults()) {
             if (storedStageResult == null || storedStageResult.getStageName() == null || storedStageResult.getStageName().isBlank()) {
@@ -77,16 +78,23 @@ public final class ReviewConfigStore extends BaseConfig<ReviewConfig> {
             stageResults.add(
                 StageResult.of(
                     storedStageResult.getStageName(),
+                    storedStageResult.getStageId(),
                     storedStageResult.getDecision(),
                     storedStageResult.getScoreDelta(),
-                    storedStageResult.getReason()
+                    ReviewPersistenceSanitizer.sanitizePersistedText(storedStageResult.getReason(), legacySenderName),
+                    storedStageResult.reasonIds()
                 )
             );
         }
 
         List<ReviewCaseMessage> caseMessages = new ArrayList<>();
         for (ReviewConfig.ReviewCaseMessageConfig storedCaseMessage : storedEntry.caseMessages()) {
-            if (storedCaseMessage == null || storedCaseMessage.getCleanText() == null || storedCaseMessage.getCleanText().isBlank()) {
+            if (storedCaseMessage == null) {
+                continue;
+            }
+
+            String cleanText = ReviewPersistenceSanitizer.sanitizePersistedText(storedCaseMessage.getCleanText(), legacySenderName);
+            if (cleanText.isBlank()) {
                 continue;
             }
 
@@ -94,23 +102,23 @@ public final class ReviewConfigStore extends BaseConfig<ReviewConfig> {
                 storedCaseMessage.getMessageIndex(),
                 storedCaseMessage.getSpeakerRole(),
                 storedCaseMessage.getMessageSourceType(),
-                storedCaseMessage.getCleanText(),
+                cleanText,
                 storedCaseMessage.isTriggerMessage(),
                 storedCaseMessage.getCaseRole(),
                 storedCaseMessage.signalTagIds(),
-                storedCaseMessage.advancedRuleSelections()
+                ReviewPersistenceSanitizer.sanitizePersistedTextList(storedCaseMessage.advancedRuleSelections(), legacySenderName)
             ));
         }
 
         ReviewEntry entry = new ReviewEntry(
             storedEntry.getId(),
-            senderUuid,
-            storedEntry.getSenderName(),
-            storedEntry.getMessage(),
+            null,
+            "",
+            ReviewPersistenceSanitizer.sanitizePersistedMessage(storedEntry.getMessage(), legacySenderName),
             storedEntry.getScore(),
             storedEntry.getDecidedByStage(),
             storedEntry.getCapturedAtMs(),
-            storedEntry.reasons(),
+            ReviewPersistenceSanitizer.sanitizePersistedTextList(storedEntry.reasons(), legacySenderName),
             stageResults,
             caseMessages
         );
@@ -118,21 +126,19 @@ public final class ReviewConfigStore extends BaseConfig<ReviewConfig> {
         return entry;
     }
 
-    private static ReviewConfig.ReviewConfigEntry toStoredEntry(ReviewEntry entry) {
+    static ReviewConfig.ReviewConfigEntry toStoredEntry(ReviewEntry entry) {
         if (entry == null || entry.getId().isBlank()) {
             return null;
         }
 
         ReviewConfig.ReviewConfigEntry storedEntry = new ReviewConfig.ReviewConfigEntry();
         storedEntry.setId(entry.getId());
-        storedEntry.setSenderUuid(entry.getSenderUuid() == null ? "" : entry.getSenderUuid().toString());
-        storedEntry.setSenderName(entry.getSenderName());
-        storedEntry.setMessage(entry.getMessage());
+        storedEntry.setMessage(ReviewPersistenceSanitizer.sanitizePersistedMessage(entry.getMessage(), entry.getSenderName()));
         storedEntry.setScore(entry.getScore());
         storedEntry.setDecidedByStage(entry.getDecidedByStage());
         storedEntry.setCapturedAtMs(entry.getCapturedAtMs());
         storedEntry.setVerdict(entry.getVerdict());
-        storedEntry.getReasons().addAll(entry.getReasons());
+        storedEntry.getReasons().addAll(ReviewPersistenceSanitizer.sanitizePersistedTextList(entry.getReasons(), entry.getSenderName()));
 
         for (StageResult stageResult : entry.getStageResults()) {
             if (stageResult == null) {
@@ -141,14 +147,21 @@ public final class ReviewConfigStore extends BaseConfig<ReviewConfig> {
 
             ReviewConfig.ReviewStageResult storedStageResult = new ReviewConfig.ReviewStageResult();
             storedStageResult.setStageName(stageResult.getStageName());
+            storedStageResult.setStageId(stageResult.getStageId());
             storedStageResult.setDecision(stageResult.getDecision());
             storedStageResult.setScoreDelta(stageResult.getScoreDelta());
-            storedStageResult.setReason(stageResult.getReason());
+            storedStageResult.setReason(ReviewPersistenceSanitizer.sanitizePersistedText(stageResult.getReason(), entry.getSenderName()));
+            storedStageResult.getReasonIds().addAll(stageResult.getReasonIds());
             storedEntry.getStageResults().add(storedStageResult);
         }
 
         for (ReviewCaseMessage caseMessage : entry.getCaseMessages()) {
-            if (caseMessage == null || caseMessage.getCleanText().isBlank()) {
+            if (caseMessage == null) {
+                continue;
+            }
+
+            String cleanText = ReviewPersistenceSanitizer.sanitizePersistedText(caseMessage.getCleanText(), entry.getSenderName());
+            if (cleanText.isBlank()) {
                 continue;
             }
 
@@ -156,26 +169,16 @@ public final class ReviewConfigStore extends BaseConfig<ReviewConfig> {
             storedCaseMessage.setMessageIndex(caseMessage.getMessageIndex());
             storedCaseMessage.setSpeakerRole(caseMessage.getSpeakerRole());
             storedCaseMessage.setMessageSourceType(caseMessage.getMessageSourceType());
-            storedCaseMessage.setCleanText(caseMessage.getCleanText());
+            storedCaseMessage.setCleanText(cleanText);
             storedCaseMessage.setTriggerMessage(caseMessage.isTriggerMessage());
             storedCaseMessage.setCaseRole(caseMessage.getCaseRole());
             storedCaseMessage.getSignalTagIds().addAll(caseMessage.getSignalTagIds());
-            storedCaseMessage.getAdvancedRuleSelections().addAll(caseMessage.getAdvancedRuleSelections());
+            storedCaseMessage.getAdvancedRuleSelections().addAll(
+                ReviewPersistenceSanitizer.sanitizePersistedTextList(caseMessage.getAdvancedRuleSelections(), entry.getSenderName())
+            );
             storedEntry.getCaseMessages().add(storedCaseMessage);
         }
 
         return storedEntry;
-    }
-
-    private static UUID parseUuid(String rawUuid) {
-        if (rawUuid == null || rawUuid.isBlank()) {
-            return null;
-        }
-
-        try {
-            return UUID.fromString(rawUuid.trim());
-        } catch (IllegalArgumentException ignored) {
-            return null;
-        }
     }
 }

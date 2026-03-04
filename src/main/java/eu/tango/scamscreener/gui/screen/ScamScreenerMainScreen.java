@@ -5,6 +5,8 @@ import eu.tango.scamscreener.config.data.AlertRiskLevel;
 import eu.tango.scamscreener.config.data.AutoCaptureAlertLevel;
 import eu.tango.scamscreener.config.data.RuntimeConfig;
 import eu.tango.scamscreener.gui.base.BaseScreen;
+import eu.tango.scamscreener.message.ClientMessages;
+import eu.tango.scamscreener.message.MessageDispatcher;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.text.Text;
@@ -92,7 +94,7 @@ public final class ScamScreenerMainScreen extends BaseScreen {
                 .build()
         );
         addDrawableChild(
-            ButtonWidget.builder(Text.literal("Metrics"), button -> this.client.setScreen(new MetricsSettingsScreen(this)))
+            ButtonWidget.builder(Text.literal("Observability"), button -> this.client.setScreen(new MetricsSettingsScreen(this)))
                 .dimensions(columnX(menuX, menuButtonWidth, DEFAULT_SPLIT_GAP, 1), y, menuButtonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
@@ -112,17 +114,15 @@ public final class ScamScreenerMainScreen extends BaseScreen {
 
         int halfWidth = splitWidth(buttonWidth, 2, DEFAULT_SPLIT_GAP);
         addDrawableChild(
-            ButtonWidget.builder(Text.literal("Review Training CSV"), button -> this.client.setScreen(new ReviewScreen(this)))
+            ButtonWidget.builder(Text.literal("Case Review"), button -> this.client.setScreen(new ReviewScreen(this)))
                 .dimensions(x, y, halfWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
-        ButtonWidget uploadButton = addDrawableChild(
-            ButtonWidget.builder(Text.literal("Upload Training Data"), button -> {
-            })
+        addDrawableChild(
+            ButtonWidget.builder(Text.literal("Export Training"), button -> exportTrainingCases())
                 .dimensions(columnX(x, halfWidth, DEFAULT_SPLIT_GAP, 1), y, halfWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
-        uploadButton.active = false;
 
         addCloseButton(buttonWidth);
         refreshButtons();
@@ -156,6 +156,17 @@ public final class ScamScreenerMainScreen extends BaseScreen {
     private void toggleMuteFilter() {
         ScamScreenerRuntime.getInstance().mutePatternManager().setEnabled(!ScamScreenerRuntime.getInstance().mutePatternManager().isEnabled());
         refreshButtons();
+    }
+
+    private void exportTrainingCases() {
+        try {
+            MessageDispatcher.reply(ClientMessages.trainingCasesExported(
+                ScamScreenerRuntime.getInstance().trainingCaseExportService()
+                    .exportReviewedCases(ScamScreenerRuntime.getInstance().reviewStore().entries())
+            ));
+        } catch (IllegalStateException exception) {
+            MessageDispatcher.reply(ClientMessages.trainingCasesExportFailed(exception.getMessage()));
+        }
     }
 
     private void refreshButtons() {

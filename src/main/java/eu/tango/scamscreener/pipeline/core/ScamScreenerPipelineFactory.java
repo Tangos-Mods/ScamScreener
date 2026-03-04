@@ -1,5 +1,6 @@
 package eu.tango.scamscreener.pipeline.core;
 
+import eu.tango.scamscreener.chat.RecentChatCache;
 import eu.tango.scamscreener.config.data.RulesConfig;
 import eu.tango.scamscreener.lists.Blacklist;
 import eu.tango.scamscreener.lists.Whitelist;
@@ -8,6 +9,7 @@ import eu.tango.scamscreener.pipeline.state.BehaviorStore;
 import eu.tango.scamscreener.pipeline.state.FunnelStore;
 import eu.tango.scamscreener.pipeline.state.TrendStore;
 import eu.tango.scamscreener.pipeline.stage.BehaviorStage;
+import eu.tango.scamscreener.pipeline.stage.ContextStage;
 import eu.tango.scamscreener.pipeline.stage.FunnelStage;
 import eu.tango.scamscreener.pipeline.stage.LevenshteinStage;
 import eu.tango.scamscreener.pipeline.stage.MuteStage;
@@ -35,6 +37,7 @@ public class ScamScreenerPipelineFactory {
      * @param behaviorStore the shared sender-local behavior store
      * @param trendStore the shared cross-sender trend store
      * @param funnelStore the shared sender-local funnel store
+     * @param recentChatCache the shared recent-chat cache
      * @return the built-in ScamScreener v2 stage order
      */
     public List<Stage> createDefaultStages(
@@ -43,7 +46,8 @@ public class ScamScreenerPipelineFactory {
         RulesConfig rulesConfig,
         BehaviorStore behaviorStore,
         TrendStore trendStore,
-        FunnelStore funnelStore
+        FunnelStore funnelStore,
+        RecentChatCache recentChatCache
     ) {
         RuleCatalog ruleCatalog = new RuleCatalog(rulesConfig);
 
@@ -55,7 +59,8 @@ public class ScamScreenerPipelineFactory {
             new LevenshteinStage(ruleCatalog),
             new BehaviorStage(behaviorStore, ruleCatalog),
             new TrendStage(trendStore, ruleCatalog),
-            new FunnelStage(funnelStore, ruleCatalog)
+            new FunnelStage(funnelStore, ruleCatalog),
+            new ContextStage(recentChatCache, ruleCatalog)
         );
     }
 
@@ -68,6 +73,7 @@ public class ScamScreenerPipelineFactory {
      * @param behaviorStore the shared sender-local behavior store
      * @param trendStore the shared cross-sender trend store
      * @param funnelStore the shared sender-local funnel store
+     * @param recentChatCache the shared recent-chat cache
      * @return a pipeline engine ready to execute the core stage sequence
      */
     public PipelineEngine createDefaultEngine(
@@ -76,7 +82,8 @@ public class ScamScreenerPipelineFactory {
         RulesConfig rulesConfig,
         BehaviorStore behaviorStore,
         TrendStore trendStore,
-        FunnelStore funnelStore
+        FunnelStore funnelStore,
+        RecentChatCache recentChatCache
     ) {
         // Use the engine defaults until the dedicated v2 config object exists.
         return new PipelineEngine(createDefaultStages(
@@ -85,7 +92,8 @@ public class ScamScreenerPipelineFactory {
             rulesConfig,
             behaviorStore,
             trendStore,
-            funnelStore
+            funnelStore,
+            recentChatCache
         ));
     }
 
@@ -98,6 +106,7 @@ public class ScamScreenerPipelineFactory {
      * @param behaviorStore the shared sender-local behavior store
      * @param trendStore the shared cross-sender trend store
      * @param funnelStore the shared sender-local funnel store
+     * @param recentChatCache the shared recent-chat cache
      * @param reviewThreshold the score needed for a review outcome
      * @return a pipeline engine with the configured review threshold
      */
@@ -108,6 +117,7 @@ public class ScamScreenerPipelineFactory {
         BehaviorStore behaviorStore,
         TrendStore trendStore,
         FunnelStore funnelStore,
+        RecentChatCache recentChatCache,
         int reviewThreshold
     ) {
         // Allow callers to override the default threshold without rebuilding the stage list.
@@ -117,7 +127,8 @@ public class ScamScreenerPipelineFactory {
             rulesConfig,
             behaviorStore,
             trendStore,
-            funnelStore
+            funnelStore,
+            recentChatCache
         ), reviewThreshold);
     }
 }

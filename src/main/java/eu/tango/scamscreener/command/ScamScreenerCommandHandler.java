@@ -10,7 +10,6 @@ import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import eu.tango.scamscreener.ScamScreenerRuntime;
 import eu.tango.scamscreener.api.BlacklistAccess;
 import eu.tango.scamscreener.api.WhitelistAccess;
-import eu.tango.scamscreener.chat.ChatPipelineListener;
 import eu.tango.scamscreener.config.data.AlertRiskLevel;
 import eu.tango.scamscreener.gui.ScamScreenerScreens;
 import eu.tango.scamscreener.gui.screen.AlertInfoScreen;
@@ -25,12 +24,8 @@ import eu.tango.scamscreener.gui.screen.RuntimeSettingsScreen;
 import eu.tango.scamscreener.gui.screen.WhitelistScreen;
 import eu.tango.scamscreener.lists.BlacklistEntry;
 import eu.tango.scamscreener.lists.WhitelistEntry;
-import eu.tango.scamscreener.message.DecisionMessages;
 import eu.tango.scamscreener.message.AlertContextRegistry;
 import eu.tango.scamscreener.message.ClientMessages;
-import eu.tango.scamscreener.message.MessageDispatcher;
-import eu.tango.scamscreener.pipeline.data.ChatEvent;
-import eu.tango.scamscreener.pipeline.data.PipelineDecision;
 import eu.tango.scamscreener.debug.DebugKeys;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
@@ -90,7 +85,6 @@ public final class ScamScreenerCommandHandler {
             .then(buildDebugCommand())
             .then(literal("metrics").executes(context -> openMetrics(context.getSource())))
             .then(literal("version").executes(context -> showVersion(context.getSource())))
-            .then(literal("preview").executes(context -> previewWarnings(context.getSource())))
             .then(literal("rules").executes(context -> openRules(context.getSource())))
             .then(literal("runtime").executes(context -> openRuntime(context.getSource())))
             .then(literal("settings").executes(context -> openSettings(context.getSource())))
@@ -101,6 +95,7 @@ public final class ScamScreenerCommandHandler {
     private static LiteralArgumentBuilder<FabricClientCommandSource> buildReviewCommand() {
         return literal("review")
             .executes(context -> openReview(context.getSource()))
+            .then(literal("export").executes(context -> exportTrainingCases(context.getSource())))
             .then(literal("manage")
                 .then(argument("alertId", StringArgumentType.word())
                     .executes(context -> openReviewManage(context.getSource(), StringArgumentType.getString(context, "alertId")))))
@@ -421,31 +416,16 @@ public final class ScamScreenerCommandHandler {
         return 1;
     }
 
-    private static int previewWarnings(FabricClientCommandSource source) {
-        source.sendFeedback(ClientMessages.previewStarted());
-
-        ChatEvent chatEvent = ChatPipelineListener.getLastChatEvent().orElse(ChatEvent.messageOnly("legit middleman"));
-        PipelineDecision riskDecision = ChatPipelineListener.getLastPipelineDecision().orElse(
-            new PipelineDecision(
-                PipelineDecision.Outcome.REVIEW,
-                55,
-                "preview",
-                java.util.List.of(),
-                java.util.List.of("Preview warning")
-            )
-        );
-        PipelineDecision blacklistDecision = new PipelineDecision(
-            PipelineDecision.Outcome.BLACKLISTED,
-            Math.max(50, riskDecision.getTotalScore()),
-            "preview",
-            java.util.List.of(),
-            java.util.List.of("Preview blacklist warning")
-        );
-
-        MessageDispatcher.reply(DecisionMessages.riskWarning(chatEvent, riskDecision));
-        MessageDispatcher.reply(DecisionMessages.blacklistWarning(chatEvent, blacklistDecision));
-        source.sendFeedback(ClientMessages.previewFinished());
-        return 1;
+    private static int exportTrainingCases(FabricClientCommandSource source) {
+        try {
+            var result = ScamScreenerRuntime.getInstance().trainingCaseExportService()
+                .exportReviewedCases(ScamScreenerRuntime.getInstance().reviewStore().entries());
+            source.sendFeedback(ClientMessages.trainingCasesExported(result));
+            return 1;
+        } catch (IllegalStateException exception) {
+            source.sendError(ClientMessages.trainingCasesExportFailed(exception.getMessage()));
+            return 0;
+        }
     }
 
     private static int queueScreen(FabricClientCommandSource source, Runnable action) {

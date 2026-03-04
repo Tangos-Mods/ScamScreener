@@ -1,8 +1,11 @@
 package eu.tango.scamscreener.pipeline.data;
 
 import eu.tango.scamscreener.pipeline.core.Stage;
+import eu.tango.scamscreener.training.TrainingCaseMappings;
 import lombok.Getter;
 import lombok.NonNull;
+
+import java.util.List;
 
 /**
  * Immutable result returned by a pipeline stage.
@@ -13,16 +16,27 @@ import lombok.NonNull;
 @Getter
 public final class StageResult {
     private final String stageName;
+    private final String stageId;
     private final Stage.Decision decision;
     private final int scoreDelta;
     private final String reason;
+    private final List<String> reasonIds;
 
-    private StageResult(@NonNull String stageName, @NonNull Stage.Decision decision, int scoreDelta, String reason) {
+    private StageResult(
+        @NonNull String stageName,
+        @NonNull String stageId,
+        @NonNull Stage.Decision decision,
+        int scoreDelta,
+        String reason,
+        List<String> reasonIds
+    ) {
         this.stageName = stageName;
+        this.stageId = stageId;
         this.decision = decision;
         this.scoreDelta = scoreDelta;
         // Normalize missing reasons so callers never need null checks.
         this.reason = reason == null ? "" : reason.trim();
+        this.reasonIds = reasonIds == null ? List.of() : List.copyOf(reasonIds);
     }
 
     /**
@@ -36,7 +50,45 @@ public final class StageResult {
      */
     public static StageResult of(String stageName, Stage.Decision decision, int scoreDelta, String reason) {
         // Route all creation through the constructor so validation stays in one place.
-        return new StageResult(stageName, decision, scoreDelta, reason);
+        return of(
+            stageName,
+            TrainingCaseMappings.stageId(stageName),
+            decision,
+            scoreDelta,
+            reason,
+            TrainingCaseMappings.reasonIds(stageName, reason)
+        );
+    }
+
+    /**
+     * Creates a result with explicit stable identifiers.
+     *
+     * @param stageName the human-readable stage name
+     * @param stageId the stable stage identifier
+     * @param decision the pipeline decision for this stage
+     * @param scoreDelta the score contribution of this stage
+     * @param reason an optional reason code or human-readable note
+     * @param reasonIds the stable reason identifiers derived for this result
+     * @return a new immutable stage result
+     */
+    public static StageResult of(
+        String stageName,
+        String stageId,
+        Stage.Decision decision,
+        int scoreDelta,
+        String reason,
+        List<String> reasonIds
+    ) {
+        return new StageResult(
+            stageName == null ? "" : stageName.trim(),
+            stageId == null || stageId.isBlank() ? TrainingCaseMappings.stageId(stageName) : TrainingCaseMappings.stageId(stageId),
+            decision == null ? Stage.Decision.PASS : decision,
+            scoreDelta,
+            reason,
+            reasonIds == null || reasonIds.isEmpty()
+                ? TrainingCaseMappings.reasonIds(stageId == null || stageId.isBlank() ? stageName : stageId, reason)
+                : reasonIds
+        );
     }
 
     /**
@@ -132,5 +184,14 @@ public final class StageResult {
     public boolean hasReason() {
         // Empty string is our sentinel for "no reason supplied".
         return !reason.isEmpty();
+    }
+
+    /**
+     * Indicates whether the result carries at least one stable reason id.
+     *
+     * @return {@code true} when stable reason ids are present
+     */
+    public boolean hasReasonIds() {
+        return !reasonIds.isEmpty();
     }
 }
