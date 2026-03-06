@@ -10,6 +10,7 @@ import eu.tango.scamscreener.config.data.RuntimeConfig;
 import eu.tango.scamscreener.lists.Blacklist;
 import eu.tango.scamscreener.lists.Whitelist;
 import eu.tango.scamscreener.config.store.BlacklistConfigStore;
+import eu.tango.scamscreener.config.store.LegacyV1ConfigMigration;
 import eu.tango.scamscreener.config.store.ReviewConfigStore;
 import eu.tango.scamscreener.config.store.RulesConfigStore;
 import eu.tango.scamscreener.config.store.RuntimeConfigStore;
@@ -73,6 +74,7 @@ public final class ScamScreenerRuntime {
     private volatile PipelineEngine pipelineEngine;
 
     private ScamScreenerRuntime() {
+        LegacyV1ConfigMigration.runDefaultOnce();
         whitelistConfigStore = new WhitelistConfigStore();
         blacklistConfigStore = new BlacklistConfigStore();
         runtimeConfigStore = new RuntimeConfigStore();

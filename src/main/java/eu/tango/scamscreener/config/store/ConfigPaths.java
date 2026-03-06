@@ -17,6 +17,16 @@ public class ConfigPaths {
     private static final String BLACKLIST_FILE_NAME = "blacklist.json";
     private static final String REVIEW_FILE_NAME = "review.json";
     private static final String TRAINING_CASES_V2_FILE_NAME = "training-cases-v2.jsonl";
+    private static final String V1_MIGRATION_MARKER_FILE_NAME = ".v1-to-v2-migration.done";
+
+    /**
+     * Returns the global Fabric config root directory.
+     *
+     * @return the config root path
+     */
+    public Path configRootDirectory() {
+        return FabricLoader.getInstance().getConfigDir();
+    }
 
     /**
      * Returns the base config directory for ScamScreener.
@@ -24,8 +34,7 @@ public class ConfigPaths {
      * @return the mod-specific config directory
      */
     public Path baseDirectory() {
-        return FabricLoader.getInstance()
-            .getConfigDir()
+        return configRootDirectory()
             .resolve(CONFIG_DIRECTORY_NAME);
     }
 
@@ -81,5 +90,14 @@ public class ConfigPaths {
      */
     public Path trainingCasesV2File() {
         return baseDirectory().resolve(TRAINING_CASES_V2_FILE_NAME);
+    }
+
+    /**
+     * Returns the marker file used to guarantee one-time legacy migration.
+     *
+     * @return the migration marker path
+     */
+    public Path v1MigrationMarkerFile() {
+        return baseDirectory().resolve(V1_MIGRATION_MARKER_FILE_NAME);
     }
 }

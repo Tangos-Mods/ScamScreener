@@ -1,0 +1,93 @@
+name: Java Tests (Per Class)
+
+on:
+  push:
+    paths:
+      - "src/**"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
+      - "stonecutter.gradle.kts"
+      - "gradle.properties"
+      - "versions/**/gradle.properties"
+      - "gradle/**"
+      - "gradlew"
+      - "gradlew.bat"
+      - ".github/workflows/tests-per-class.yml"
+  pull_request:
+    paths:
+      - "src/**"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
+      - "stonecutter.gradle.kts"
+      - "gradle.properties"
+      - "versions/**/gradle.properties"
+      - "gradle/**"
+      - "gradlew"
+      - "gradlew.bat"
+      - ".github/workflows/tests-per-class.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  discover_tests:
+    name: Discover Test Classes
+    runs-on: ubuntu-latest
+    outputs:
+      tests_json: ${{ steps.discover.outputs.tests_json }}
+      test_count: ${{ steps.discover.outputs.test_count }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Discover test classes
+        id: discover
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import pathlib
+
+          root = pathlib.Path("src/test/java")
+          classes = []
+          if root.exists():
+              classes = sorted(
+                  ".".join(path.relative_to(root).with_suffix("").parts)
+                  for path in root.rglob("*Test.java")
+              )
+
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write("tests_json=" + json.dumps(classes, separators=(",", ":")) + "\n")
+              output.write(f"test_count={len(classes)}\n")
+          PY
+
+  run_tests:
+    name: Test ${{ matrix.test_class }}
+    needs: discover_tests
+    if: ${{ needs.discover_tests.outputs.test_count != '0' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        test_class: ${{ fromJson(needs.discover_tests.outputs.tests_json) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Ensure gradlew is executable
+        run: chmod +x ./gradlew
+
+      - name: Run single test class
+        run: ./gradlew test --tests "${{ matrix.test_class }}" --no-daemon --stacktrace

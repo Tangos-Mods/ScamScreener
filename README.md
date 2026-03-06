@@ -1,41 +1,54 @@
 # ScamScreener
-Fabric mod scaffold based on Stonecutter.
 
-## Development
-1. Review the supported Minecraft versions in `settings.gradle.kts`.
-   For new entries, add `versions/.../gradle.properties` with the same keys as other versions.
-2. Review the `LICENSE` file.
-   See the [license decision diagram](https://docs.codeberg.org/getting-started/licensing/#license-decision-diagram) for common options.
-3. Keep `src/main/resources/fabric.mod.json` up to date.
+ScamScreener is a Fabric mod that flags risky chat behavior, helps players review suspicious cases, and exports clean training data for pipeline iteration.
 
-## Usage
-- Use `"Set active project to ..."` Gradle tasks to update the Minecraft version
-  available in `src/` classes.
-- Use `buildAndCollect` Gradle task to store mod releases in `build/libs/`.
-- Publishing to Modrinth/CurseForge is configured via `mod-publish-plugin`.
-  Provide `MODRINTH_TOKEN` and `CURSEFORGE_TOKEN` (for example in `.env`) before running publish tasks.
-- Enable `maven-publish` in `build.gradle.kts` and the corresponding code block
-  to publish releases to a personal maven repository.
+## Release Status
 
-## Case Review and Training
-- Players do case annotation in-game and export reviewed cases.
-- Players upload the exported JSONL file in the Training Hub (`server/`).
-- Model/stage training is triggered by the developer from the Training Hub admin area.
-- Export file is written to `config/scamscreener/`:
-  - `training-cases-v2.jsonl`
+- Current line: `v2` (`mod.version=2.0.0`)
+- Training Hub status: not live yet
+- The `Contribute Training Data` buttons are intentionally disabled until the hub relaunches
+- Export still works via command: `/scamscreener review export`
 
-Detailed docs:
-- [training_case_v2](docs/training_case_v2.md)
-- [case_review_player_guide](docs/case_review_player_guide.md)
-- [training_hub_server](server/README.md)
+## Core Features
 
-Pipeline auto-tuning script:
-- `.\scripts\auto_tune_pipeline.ps1 -TrainingDataDir trainingdata -RulesFile run/config/scamscreener/rules.json -Apply`
+- Real-time scam-signal pipeline with stage-based scoring
+- Manual review queue with context-aware case tooling
+- Canonical training export: `training-cases-v2.jsonl`
+- Cross-version build setup through Stonecutter
+- Public API entrypoint for integrations: `scamscreener-api`
 
-## API
+## Player Workflow
 
-Other mods can access ScamScreener through the Fabric entrypoint key
-`scamscreener-api`.
+1. Review suspicious entries in-game (`/scamscreener review` or GUI).
+2. Mark outcomes and annotate context/signals.
+3. Export reviewed cases with `/scamscreener review export`.
+4. Find the export under `config/scamscreener/training-cases-v2.jsonl`.
+
+## Build and Release
+
+1. Select the active Minecraft target with the Stonecutter task `Set active project to ...`.
+2. Run local checks:
+   - `.\gradlew.bat test`
+   - `.\gradlew.bat build`
+3. Build distributable jars:
+   - `.\gradlew.bat buildAndCollect`
+4. Publish to Modrinth/CurseForge:
+   - set `MODRINTH_TOKEN` and `CURSEFORGE_TOKEN` (for example in `.env`)
+   - update `MODRINTH.md` (this file is used as upload changelog text)
+   - run `.\gradlew.bat publishMods`
+
+Artifacts are collected in `build/libs/<mod.version>/`.
+
+## Developer Docs
+
+- [Training Case v2](docs/training_case_v2.md)
+- [Case Review Player Guide](docs/case_review_player_guide.md)
+- Auto-tuning script:
+  - `.\scripts\auto_tune_pipeline.ps1 -TrainingDataDir trainingdata -RulesFile run/config/scamscreener/rules.json -Apply`
+
+## API Integration
+
+Discover the API via the Fabric entrypoint:
 
 ```java
 import eu.tango.scamscreener.api.ScamScreenerApi;
@@ -51,7 +64,7 @@ if (!apis.isEmpty()) {
 }
 ```
 
-Use the access interfaces to read or mutate the shared player lists.
+Read or mutate shared player lists:
 
 ```java
 import eu.tango.scamscreener.api.BlacklistAccess;
@@ -65,7 +78,7 @@ whitelist.add(playerUuid, "TrustedPlayer");
 blacklist.add(playerUuid, "BlockedPlayer", 50, "manual review", BlacklistSource.API);
 ```
 
-Register events if your mod should react to pipeline decisions or list changes.
+Subscribe to decision and list change events:
 
 ```java
 import eu.tango.scamscreener.api.event.BlacklistEvent;
@@ -87,8 +100,9 @@ BlacklistEvent.EVENT.register((changeType, entry) -> {
 });
 ```
 
-## Useful links
-- [Stonecutter beginner's guide](https://stonecutter.kikugie.dev/wiki/start/): *spoiler: you* ***need*** *to understand how it works!*
-- [Fabric Discord server](https://discord.gg/v6v4pMv): for mod development help.
-- [Stonecutter Discord server](https://discord.kikugie.dev/): for Stonecutter and Gradle help.
-- [How To Ask Questions - the guide](http://www.catb.org/esr/faqs/smart-questions.html): also in [video form](https://www.youtube.com/results?search_query=How+To+Ask+Questions+The+Smart+Way).
+## Useful Links
+
+- [Stonecutter beginner's guide](https://stonecutter.kikugie.dev/wiki/start/)
+- [Fabric Discord server](https://discord.gg/v6v4pMv)
+- [Stonecutter Discord server](https://discord.kikugie.dev/)
+- [How To Ask Questions - the guide](http://www.catb.org/esr/faqs/smart-questions.html)
