@@ -1,4 +1,4 @@
-name: Java Tests (Per Class)
+name: Tests
 
 on:
   push:
