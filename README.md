@@ -1,54 +1,134 @@
 # ScamScreener
 
-ScamScreener is a Fabric mod that flags risky chat behavior, helps players review suspicious cases, and exports clean training data for pipeline iteration.
+ScamScreener is a client-side Fabric mod that analyzes incoming chat, highlights scam-like behavior patterns, and gives you a structured review workflow for safer decisions.
 
-## Release Status
 
-- Current line: `v2` (`mod.version=2.0.0`)
-- Training Hub status: not live yet
-- The `Contribute Training Data` buttons are intentionally disabled until the hub relaunches
-- Export still works via command: `/scamscreener review export`
+## At A Glance
 
-## Core Features
+- Realtime chat risk analysis with a multi-stage detection pipeline
+- In-game review queue with case-level message tagging
+- Whitelist and blacklist tools with command + GUI support
+- Optional auto `/p leave` on blacklist alerts
+- Canonical training export (`training-cases-v2.jsonl`) for later tuning
+- Public API entrypoint for integrations (`scamscreener-api`)
 
-- Real-time scam-signal pipeline with stage-based scoring
-- Manual review queue with context-aware case tooling
-- Canonical training export: `training-cases-v2.jsonl`
-- Cross-version build setup through Stonecutter
-- Public API entrypoint for integrations: `scamscreener-api`
+## Supported Versions And Requirements
 
-## Player Workflow
+- Minecraft: `1.21.10`, `1.21.11`
+- Mod loader: Fabric Loader `>= 0.17`
+- Dependency: Fabric API
+- Environment: client-only
 
-1. Review suspicious entries in-game (`/scamscreener review` or GUI).
-2. Mark outcomes and annotate context/signals.
-3. Export reviewed cases with `/scamscreener review export`.
-4. Find the export under `config/scamscreener/training-cases-v2.jsonl`.
+## Installation
 
-## Build and Release
+1. Install Fabric Loader for your Minecraft version.
+2. Put `ScamScreener` and `Fabric API` into your `mods` folder.
+3. Launch the game.
+4. Open settings with `/scamscreener settings` (or `/ss settings`).
 
-1. Select the active Minecraft target with the Stonecutter task `Set active project to ...`.
-2. Run local checks:
-   - `.\gradlew.bat test`
-   - `.\gradlew.bat build`
-3. Build distributable jars:
-   - `.\gradlew.bat buildAndCollect`
-4. Publish to Modrinth/CurseForge:
-   - set `MODRINTH_TOKEN` and `CURSEFORGE_TOKEN` (for example in `.env`)
-   - update `MODRINTH.md` (this file is used as upload changelog text)
-   - run `.\gradlew.bat publishMods`
+## Quick Start
 
-Artifacts are collected in `build/libs/<mod.version>/`.
+1. Set your risk threshold (`LOW`, `MEDIUM`, `HIGH`, `CRITICAL`). Note that `LOW` might warn you way often when on large public islands!
+2. Play as usual and let ScamScreener monitor inbound chat.
+3. Open review queue (`/scamscreener review`) for flagged cases.
+4. Mark cases as `RISK`, `SAFE`, or `DISMISSED`.
+5. Export reviewed data with `/scamscreener review export` if needed.
 
-## Developer Docs
+## How Detection Works
 
-- [Training Case v2](docs/training_case_v2.md)
-- [Case Review Player Guide](docs/case_review_player_guide.md)
-- Auto-tuning script:
-  - `.\scripts\auto_tune_pipeline.ps1 -TrainingDataDir trainingdata -RulesFile run/config/scamscreener/rules.json -Apply`
+ScamScreener evaluates each inbound message through a staged pipeline:
 
-## API Integration
+- Player list stage (whitelist/blacklist hard matches)
+- Deterministic rule stage (links, urgency, platform redirects, payment/account signals)
+- Similarity stage (fuzzy phrase matching)
+- Behavior stage (sender-local repetition/burst patterns)
+- Trend stage (cross-sender wave detection)
+- Funnel stage (multi-step trust -> redirect -> payment/account patterns)
+- Context stage (signal blend across recent same-sender messages)
+- Mute stage / bypass logic
 
-Discover the API via the Fabric entrypoint:
+Pipeline outcomes can include `IGNORE`, `REVIEW`, `BLOCK`, `WHITELISTED`, `BLACKLISTED`, or `MUTED`.
+
+## In-Game Commands
+
+Root commands:
+
+- `/scamscreener ...`
+- `/ss ...` (alias)
+
+Main command groups:
+
+- `settings`, `rules`, `runtime`, `messages`, `metrics`
+- `whitelist add/remove/clear`
+- `blacklist add/remove/clear`
+- `review`, `review player`, `review manage`, `review info`, `review export`
+- `alertlevel`
+- `autoleave on/off`
+- `mute`, `mute <regex>`, `unmute`, `unmute <regex>`
+- `debug`
+- `version`, `help`
+
+## GUI Overview
+
+Main settings screen includes:
+
+- Alert threshold and auto-capture settings
+- Auto-leave and mute filter toggles
+- Whitelist / blacklist management
+- Review queue and review settings
+- Rules, runtime, metrics, and message settings
+
+## Case Review And Training Export
+
+Review flow:
+
+1. Open queue and pick a case.
+2. Tag each message as `Exclude`, `Context`, or `Signal`.
+3. Save verdict as `Risk`, `Safe`, or `Dismiss`.
+
+Export:
+
+- Command: `/scamscreener review export`
+- Output file: `config/scamscreener/training-cases-v2.jsonl`
+- Format docs: [training_case_v2](docs/training_case_v2.md)
+
+Important status:
+
+- Training Hub is currently not live.
+- `Contribute Training Data` buttons are intentionally disabled in GUI for now.
+- Local export is still available and stable.
+
+## Configuration Files
+
+ScamScreener stores its data in `config/scamscreener/`:
+
+- `runtime.json` (runtime and output behavior)
+- `rules.json` (pipeline rule configuration)
+- `review.json` (review queue state)
+- `whitelist.json` (trusted players)
+- `blacklist.json` (blocked players)
+- `training-cases-v2.jsonl` (manual export artifact)
+
+## Privacy And Data Handling
+
+- ScamScreener runs client-side.
+- No automatic training upload is performed by the mod.
+- Review/training payloads are sanitized and do not persist sender UUID identity.
+- UUID-based persistence is intentionally limited to whitelist/blacklist management.
+
+## v1 To v2 Migration
+
+On first start of v2, ScamScreener performs a one-time migration:
+
+- Migrates legacy whitelist/blacklist files into v2 config files
+- Writes migration marker `.v1-to-v2-migration.done`
+- Cleans up legacy v1 config folder artifacts after migration
+
+Existing v2 target files are never overwritten.
+
+## API For Other Mods
+
+Get the API through the Fabric entrypoint:
 
 ```java
 import eu.tango.scamscreener.api.ScamScreenerApi;
@@ -64,45 +144,52 @@ if (!apis.isEmpty()) {
 }
 ```
 
-Read or mutate shared player lists:
+Then use shared list access and events:
 
 ```java
 import eu.tango.scamscreener.api.BlacklistAccess;
 import eu.tango.scamscreener.api.WhitelistAccess;
-import eu.tango.scamscreener.lists.BlacklistSource;
-
-WhitelistAccess whitelist = api.whitelist();
-BlacklistAccess blacklist = api.blacklist();
-
-whitelist.add(playerUuid, "TrustedPlayer");
-blacklist.add(playerUuid, "BlockedPlayer", 50, "manual review", BlacklistSource.API);
-```
-
-Subscribe to decision and list change events:
-
-```java
 import eu.tango.scamscreener.api.event.BlacklistEvent;
 import eu.tango.scamscreener.api.event.PipelineDecisionEvent;
 import eu.tango.scamscreener.api.event.WhitelistEvent;
 
+WhitelistAccess whitelist = api.whitelist();
+BlacklistAccess blacklist = api.blacklist();
+
 PipelineDecisionEvent.EVENT.register((chatEvent, decision) -> {
-    if (decision.isTerminal()) {
-        // React to the final ScamScreener decision.
-    }
+    // react to pipeline decisions
 });
 
 WhitelistEvent.EVENT.register((changeType, entry) -> {
-    // entry is null when the whitelist was cleared.
+    // entry is null when the list is cleared
 });
 
 BlacklistEvent.EVENT.register((changeType, entry) -> {
-    // entry is null when the blacklist was cleared.
+    // entry is null when the list is cleared
 });
 ```
 
-## Useful Links
+## Build And Release (Maintainers)
 
-- [Stonecutter beginner's guide](https://stonecutter.kikugie.dev/wiki/start/)
-- [Fabric Discord server](https://discord.gg/v6v4pMv)
-- [Stonecutter Discord server](https://discord.kikugie.dev/)
-- [How To Ask Questions - the guide](http://www.catb.org/esr/faqs/smart-questions.html)
+1. Run checks:
+   - `.\gradlew.bat test`
+   - `.\gradlew.bat build`
+2. Build artifacts:
+   - `.\gradlew.bat buildAndCollect`
+3. Prepare upload changelog:
+   - update `MODRINTH.md`
+4. Publish:
+   - set `MODRINTH_TOKEN` and `CURSEFORGE_TOKEN`
+   - run `.\gradlew.bat publishMods`
+
+Publish uploads use `MODRINTH.md` as changelog text.
+
+## Additional Documentation
+
+- [Case Review Guide (players)](docs/case_review_player_guide.md)
+- [Training Case v2 format](docs/training_case_v2.md)
+- [Full engineering changelog](CHANGELOG.md)
+
+## License
+
+This project is licensed under `MIT`.
