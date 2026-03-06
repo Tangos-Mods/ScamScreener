@@ -1,5 +1,9 @@
 # ScamScreener
 
+[![Build](https://github.com/Tangos-Mods/ScamScreener/actions/workflows/build.yml/badge.svg?branch=v2)](https://github.com/Tangos-Mods/ScamScreener/actions/workflows/build.yml)
+[![Tests](https://github.com/Tangos-Mods/ScamScreener/actions/workflows/tests-per-class.yml/badge.svg?branch=v2)](https://github.com/Tangos-Mods/ScamScreener/actions/workflows/tests-per-class.yml)
+[![Modrinth Downloads](https://img.shields.io/modrinth/dt/scamscreener?logo=modrinth&label=Modrinth%20downloads)](https://modrinth.com/mod/scamscreener)
+
 ScamScreener is a client-side Fabric mod that analyzes incoming chat, highlights scam-like behavior patterns, and gives you a structured review workflow for safer decisions.
 
 
