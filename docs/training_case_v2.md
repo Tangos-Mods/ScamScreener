@@ -14,9 +14,9 @@ Training selbst passiert **nicht im Mod** und **nicht beim Spieler**, sondern be
 - Spieler:
   - markiert Cases im Review
   - exportiert eine JSONL-Datei
-  - schickt die Datei an den Dev
+  - laedt die Datei im Training Hub hoch (`server/`)
 - Dev:
-  - importiert die JSONL-Datei im IDE
+  - greift im Training Hub auf Uploads zu
   - trainiert/tuned ContextStage und feste Stage-Gewichte
   - baut neue Mod-Versionen
 
@@ -140,8 +140,8 @@ Legacy-Strings werden beim Laden normalisiert, damit alte Reviews weiter nutzbar
 ## Dev-Workflow im IDE
 
 1. Spieler exportiert Cases (`Export for Dev` oder `/scamscreener review export`).
-2. Spieler schickt die `training-cases-v2.jsonl` an den Dev.
-3. Dev legt die kalibrierten Exporte in `trainingdata/` (rekursiv, beliebige Unterordner).
+2. Spieler meldet sich im Training Hub an und laedt `training-cases-v2.jsonl` hoch.
+3. Dev legt die final geprueften Exporte in `trainingdata/` (rekursiv, beliebige Unterordner).
 4. Dev startet den Autotuner:
    - Dry run:
      - `.\scripts\auto_tune_pipeline.ps1 -TrainingDataDir trainingdata -RulesFile run/config/scamscreener/rules.json`

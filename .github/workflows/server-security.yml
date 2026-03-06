@@ -1,0 +1,57 @@
+name: Server Security
+
+on:
+  push:
+    paths:
+      - "server/**"
+      - ".github/workflows/server-security.yml"
+      - ".github/dependabot.yml"
+  pull_request:
+    paths:
+      - "server/**"
+      - ".github/workflows/server-security.yml"
+      - ".github/dependabot.yml"
+  schedule:
+    - cron: "0 4 * * 1"
+
+jobs:
+  dependency-audit:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pip-audit
+
+      - name: Run pip-audit
+        run: pip-audit -r requirements.txt --strict
+
+  image-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Training Hub Image
+        run: docker build -t scamscreener-training-hub:ci ./server
+
+      - name: Run Trivy Image Scan
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          image-ref: scamscreener-training-hub:ci
+          format: table
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          severity: "HIGH,CRITICAL"
+          exit-code: "1"

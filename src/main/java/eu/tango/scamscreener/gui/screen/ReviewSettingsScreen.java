@@ -15,6 +15,7 @@ public final class ReviewSettingsScreen extends BaseScreen {
     private static final int MIN_REVIEW_CAPACITY = 25;
     private static final int MAX_REVIEW_CAPACITY = 500;
     private static final int REVIEW_CAPACITY_STEP = 25;
+    private static final int SUMMARY_TO_CONTROLS_GAP = 56;
 
     private ButtonWidget captureEnabledButton;
     private ButtonWidget maxEntriesButton;
@@ -38,7 +39,7 @@ public final class ReviewSettingsScreen extends BaseScreen {
         ColumnState column = defaultColumnState();
         int contentWidth = column.buttonWidth();
         int x = column.x();
-        int y = column.y() + 24;
+        int y = column.y() + SUMMARY_TO_CONTROLS_GAP;
 
         captureEnabledButton = addDrawableChild(
             ButtonWidget.builder(Text.empty(), button -> toggleCaptureEnabled())
@@ -106,6 +107,8 @@ public final class ReviewSettingsScreen extends BaseScreen {
         drawLine(context, left, y, "Auto-capture stores REVIEW outcomes as queue cases.");
         y += 12;
         drawLine(context, left, y, "It does not auto-open the case-review screen.");
+        y += 12;
+        drawLine(context, left, y, "Exported JSONL files can be uploaded in the Training Hub.");
         y += 12;
         drawLine(context, left, y, "Current Entries: " + runtime.reviewStore().entries().size() + " / " + runtime.reviewStore().maxEntries());
     }

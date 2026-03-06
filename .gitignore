@@ -59,8 +59,18 @@ replay_*.log
 *.swp
 *.swo
 /.idea
+.idea/
 
 # local tuning/training payloads
 trainingdata/**
 !trainingdata/
 !trainingdata/README.md
+
+# training upload server
+server/.venv/
+server/.env
+server/data/
+server/.pytest_cache/
+
+server/
+server/*

@@ -11,10 +11,12 @@ import eu.tango.scamscreener.review.ReviewActionHandler;
 import eu.tango.scamscreener.review.ReviewEntry;
 import eu.tango.scamscreener.review.ReviewVerdict;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.screen.ConfirmLinkScreen;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.text.Text;
+import net.minecraft.util.Util;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +26,7 @@ import java.util.Optional;
  * Review list screen using the case-oriented review workflow.
  */
 public final class ReviewScreen extends BaseListScreen {
+    private static final String TRAINING_HUB_URL = "https://scamscreener.creepans.net/";
     private static final int LIST_ROW_HEIGHT = 28;
     private static final int FILTER_BUTTON_WIDTH = 120;
     private static final int ACTION_COLUMNS = 4;
@@ -41,6 +44,7 @@ public final class ReviewScreen extends BaseListScreen {
     private ButtonWidget resetVisibleButton;
     private ButtonWidget removeButton;
     private ButtonWidget clearVisibleButton;
+    private ButtonWidget contributeTrainingButton;
 
     /**
      * Creates a review screen backed by the shared runtime review queue.
@@ -129,11 +133,11 @@ public final class ReviewScreen extends BaseListScreen {
 
         int footerButtonWidth = splitWidth(contentWidth, 3, DEFAULT_SPLIT_GAP);
         addFooterButton(contentX, footerButtonWidth, Text.literal("Review Settings"), button -> this.client.setScreen(new ReviewSettingsScreen(this)));
-        addFooterButton(
+        contributeTrainingButton = addFooterButton(
             columnX(contentX, footerButtonWidth, DEFAULT_SPLIT_GAP, 1),
             footerButtonWidth,
-            Text.literal("Export for Dev"),
-            button -> exportTrainingCases()
+            Text.literal("Contribute Training Data"),
+            button -> contributeTrainingData()
         );
         addFooterButton(
             columnX(contentX, footerButtonWidth, DEFAULT_SPLIT_GAP, 2),
@@ -178,7 +182,7 @@ public final class ReviewScreen extends BaseListScreen {
                 + " | Search " + searchSummary()
         );
         drawLine(context, left, CONTENT_TOP + 36, "Select a case or start a New Case, then use Review Case to annotate context and signals.");
-        drawLine(context, left, CONTENT_TOP + 48, "Use Export for Dev to send reviewed cases for IDE-based training.");
+        drawLine(context, left, CONTENT_TOP + 48, "Training Hub contribution will be available soon.");
 
         if (listWidget != null) {
             listWidget.render(context, this.textRenderer, mouseX, mouseY);
@@ -297,13 +301,35 @@ public final class ReviewScreen extends BaseListScreen {
 
     private void exportTrainingCases() {
         try {
-            MessageDispatcher.reply(ClientMessages.trainingCasesExported(
-                ScamScreenerRuntime.getInstance().trainingCaseExportService()
-                    .exportReviewedCases(ScamScreenerRuntime.getInstance().reviewStore().entries())
-            ));
+            var exportResult = ScamScreenerRuntime.getInstance().trainingCaseExportService()
+                .exportReviewedCases(ScamScreenerRuntime.getInstance().reviewStore().entries());
+            MessageDispatcher.reply(ClientMessages.trainingCasesExported(exportResult));
         } catch (IllegalStateException exception) {
             MessageDispatcher.reply(ClientMessages.trainingCasesExportFailed(exception.getMessage()));
         }
+    }
+
+    private void contributeTrainingData() {
+        exportTrainingCases();
+        openTrainingHub();
+    }
+
+    private void openTrainingHub() {
+        if (this.client == null) {
+            MessageDispatcher.reply(ClientMessages.trainingHubOpenFailed("Client unavailable."));
+            return;
+        }
+
+        this.client.setScreen(new ConfirmLinkScreen(open -> {
+            if (open) {
+                try {
+                    Util.getOperatingSystem().open(TRAINING_HUB_URL);
+                } catch (Exception exception) {
+                    MessageDispatcher.reply(ClientMessages.trainingHubOpenFailed(exception.getMessage()));
+                }
+            }
+            this.client.setScreen(this);
+        }, TRAINING_HUB_URL, true));
     }
 
     private void updateActionState() {
@@ -327,6 +353,9 @@ public final class ReviewScreen extends BaseListScreen {
         }
         if (clearVisibleButton != null) {
             clearVisibleButton.active = hasVisibleRows;
+        }
+        if (contributeTrainingButton != null) {
+            contributeTrainingButton.active = false;
         }
     }
 

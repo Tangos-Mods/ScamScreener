@@ -211,13 +211,18 @@ public final class ClientMessages {
         return prefixed()
             .append(Text.literal("Exported ").formatted(Formatting.GRAY))
             .append(Text.literal(String.valueOf(caseCount)).formatted(Formatting.AQUA, Formatting.BOLD))
-            .append(Text.literal(" reviewed cases for IDE training to ").formatted(Formatting.GRAY))
+            .append(Text.literal(" reviewed cases for Training Hub to ").formatted(Formatting.GRAY))
             .append(Text.literal(exportPath).formatted(Formatting.YELLOW))
-            .append(Text.literal(".").formatted(Formatting.GRAY));
+            .append(Text.literal(". ").formatted(Formatting.GRAY))
+            .append(Text.literal("[Open Hub]").formatted(Formatting.YELLOW, Formatting.ITALIC));
     }
 
     public static MutableText trainingCasesExportFailed(String message) {
         return error("Training export failed: " + displayValue(message) + ".");
+    }
+
+    public static MutableText trainingHubOpenFailed(String message) {
+        return error("Could not open Training Hub: " + displayValue(message) + ".");
     }
 
     public static MutableText reviewSelectionRequired() {

@@ -377,8 +377,9 @@ public final class ScamScreenerCommandHandler {
 
     private static int exportTrainingCases(FabricClientCommandSource source) {
         try {
-            var result = ScamScreenerRuntime.getInstance().trainingCaseExportService()
-                .exportReviewedCases(ScamScreenerRuntime.getInstance().reviewStore().entries());
+            ScamScreenerRuntime runtime = ScamScreenerRuntime.getInstance();
+            var result = runtime.trainingCaseExportService()
+                .exportReviewedCases(runtime.reviewStore().entries());
             source.sendFeedback(ClientMessages.trainingCasesExported(result));
             return 1;
         } catch (IllegalStateException exception) {

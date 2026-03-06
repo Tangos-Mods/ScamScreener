@@ -46,7 +46,7 @@ Es wird genau eine Datei geschrieben:
 
 - `training-cases-v2.jsonl`
 
-Diese Datei schickst du an den Dev.
+Diese Datei laedst du im Training Hub hoch (`server/`).
 
 ## Was wird exportiert?
 
@@ -59,6 +59,14 @@ Diese Datei schickst du an den Dev.
 - Sender-UUID wird nicht in Review-/Trainingspayload persistiert.
 - UUID-Persistenz bleibt nur fuer `whitelist.json` und `blacklist.json`.
 - Namen koennen im Nachrichtentext enthalten sein und werden nicht teuer nachtraeglich aufgeloest.
+
+## Training Hub Upload
+
+1. Export im Spiel ausfuehren (`Export for Dev` oder `/scamscreener review export`).
+2. Webseite im Browser oeffnen (`server` Deployment).
+3. Registrieren/Anmelden.
+4. `training-cases-v2.jsonl` im Upload-Fenster hochladen.
+5. Im Dashboard siehst du deine eigenen Beitraege.
 
 ## Typische Fehler
 

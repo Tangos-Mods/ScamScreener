@@ -12,20 +12,22 @@ Fabric mod scaffold based on Stonecutter.
 - Use `"Set active project to ..."` Gradle tasks to update the Minecraft version
   available in `src/` classes.
 - Use `buildAndCollect` Gradle task to store mod releases in `build/libs/`.
-- Enable `mod-publish-plugin` in `stonecutter.gradle.kts` and `build.gradle.kts`
-  and the corresponding code blocks to publish releases to Modrinth and Curseforge.
+- Publishing to Modrinth/CurseForge is configured via `mod-publish-plugin`.
+  Provide `MODRINTH_TOKEN` and `CURSEFORGE_TOKEN` (for example in `.env`) before running publish tasks.
 - Enable `maven-publish` in `build.gradle.kts` and the corresponding code block
   to publish releases to a personal maven repository.
 
 ## Case Review and Training
 - Players do case annotation in-game and export reviewed cases.
-- Model/stage training is done by the developer in the IDE using the exported JSONL file.
+- Players upload the exported JSONL file in the Training Hub (`server/`).
+- Model/stage training is triggered by the developer from the Training Hub admin area.
 - Export file is written to `config/scamscreener/`:
   - `training-cases-v2.jsonl`
 
 Detailed docs:
 - [training_case_v2](docs/training_case_v2.md)
 - [case_review_player_guide](docs/case_review_player_guide.md)
+- [training_hub_server](server/README.md)
 
 Pipeline auto-tuning script:
 - `.\scripts\auto_tune_pipeline.ps1 -TrainingDataDir trainingdata -RulesFile run/config/scamscreener/rules.json -Apply`

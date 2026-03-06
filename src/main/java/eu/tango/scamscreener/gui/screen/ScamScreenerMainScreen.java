@@ -7,18 +7,27 @@ import eu.tango.scamscreener.config.data.RuntimeConfig;
 import eu.tango.scamscreener.gui.base.BaseScreen;
 import eu.tango.scamscreener.message.ClientMessages;
 import eu.tango.scamscreener.message.MessageDispatcher;
+import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.screen.ConfirmLinkScreen;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.text.Text;
+import net.minecraft.util.Util;
 
 /**
  * Root settings hub for ScamScreener.
  */
 public final class ScamScreenerMainScreen extends BaseScreen {
+    private static final String TRAINING_HUB_URL = "https://scamscreener.creepans.net/";
+    private static final Text AUTHOR_TEXT = Text.literal("Made by Pankraz01");
+    private static final Text TRAINING_HUB_SOON_TEXT = Text.literal("Training Hub coming soon.");
+
     private ButtonWidget alertLevelButton;
     private ButtonWidget autoCaptureButton;
     private ButtonWidget autoLeaveButton;
     private ButtonWidget muteFilterButton;
+    private ButtonWidget contributeTrainingButton;
+    private int trainingHubNoteY;
 
     /**
      * Creates the root ScamScreener screen.
@@ -67,8 +76,8 @@ public final class ScamScreenerMainScreen extends BaseScreen {
         );
         y += ROW_HEIGHT;
 
-        int menuWidth = Math.min(500, Math.max(260, this.width - 40));
-        int menuX = centeredX(menuWidth);
+        int menuWidth = buttonWidth;
+        int menuX = x;
         int menuButtonWidth = splitWidth(menuWidth, 3, DEFAULT_SPLIT_GAP);
 
         addDrawableChild(
@@ -118,14 +127,39 @@ public final class ScamScreenerMainScreen extends BaseScreen {
                 .dimensions(x, y, halfWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
-        addDrawableChild(
-            ButtonWidget.builder(Text.literal("Export for Dev"), button -> exportTrainingCases())
+        contributeTrainingButton = addDrawableChild(
+            ButtonWidget.builder(Text.literal("Contribute Training Data"), button -> contributeTrainingData())
                 .dimensions(columnX(x, halfWidth, DEFAULT_SPLIT_GAP, 1), y, halfWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
+        trainingHubNoteY = y + ROW_HEIGHT;
 
         addCloseButton(buttonWidth);
         refreshButtons();
+    }
+
+    @Override
+    public void render(DrawContext context, int mouseX, int mouseY, float deltaTicks) {
+        super.render(context, mouseX, mouseY, deltaTicks);
+
+        context.getMatrices().pushMatrix();
+        context.getMatrices().scale(0.5F, 0.5F);
+        context.drawCenteredTextWithShadow(
+            this.textRenderer,
+            AUTHOR_TEXT,
+            this.width,
+            (TITLE_Y + 12) * 2,
+            opaqueColor(0x8C8C8C)
+        );
+        context.getMatrices().popMatrix();
+
+        context.drawCenteredTextWithShadow(
+            this.textRenderer,
+            TRAINING_HUB_SOON_TEXT,
+            this.width / 2,
+            trainingHubNoteY,
+            opaqueColor(0xB8B8B8)
+        );
     }
 
     private void cycleAlertLevel() {
@@ -160,13 +194,35 @@ public final class ScamScreenerMainScreen extends BaseScreen {
 
     private void exportTrainingCases() {
         try {
-            MessageDispatcher.reply(ClientMessages.trainingCasesExported(
-                ScamScreenerRuntime.getInstance().trainingCaseExportService()
-                    .exportReviewedCases(ScamScreenerRuntime.getInstance().reviewStore().entries())
-            ));
+            var exportResult = ScamScreenerRuntime.getInstance().trainingCaseExportService()
+                .exportReviewedCases(ScamScreenerRuntime.getInstance().reviewStore().entries());
+            MessageDispatcher.reply(ClientMessages.trainingCasesExported(exportResult));
         } catch (IllegalStateException exception) {
             MessageDispatcher.reply(ClientMessages.trainingCasesExportFailed(exception.getMessage()));
         }
+    }
+
+    private void contributeTrainingData() {
+        exportTrainingCases();
+        openTrainingHub();
+    }
+
+    private void openTrainingHub() {
+        if (this.client == null) {
+            MessageDispatcher.reply(ClientMessages.trainingHubOpenFailed("Client unavailable."));
+            return;
+        }
+
+        this.client.setScreen(new ConfirmLinkScreen(open -> {
+            if (open) {
+                try {
+                    Util.getOperatingSystem().open(TRAINING_HUB_URL);
+                } catch (Exception exception) {
+                    MessageDispatcher.reply(ClientMessages.trainingHubOpenFailed(exception.getMessage()));
+                }
+            }
+            this.client.setScreen(this);
+        }, TRAINING_HUB_URL, true));
     }
 
     private void refreshButtons() {
@@ -186,6 +242,9 @@ public final class ScamScreenerMainScreen extends BaseScreen {
         }
         if (muteFilterButton != null) {
             muteFilterButton.setMessage(toggleText("Mute Filter: ", ScamScreenerRuntime.getInstance().mutePatternManager().isEnabled()));
+        }
+        if (contributeTrainingButton != null) {
+            contributeTrainingButton.active = false;
         }
     }
 }

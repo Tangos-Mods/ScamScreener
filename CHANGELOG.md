@@ -9,6 +9,7 @@
 - `ContextStage` integration into the default pipeline and runtime rules.
 - New developer auto-tuning script: `scripts/auto_tune_pipeline.ps1`.
 - Player-facing documentation for case review and training export workflow.
+- Training Hub under `server/` with player accounts, upload dashboard, admin panel and pipeline trigger.
 
 ### Changed
 - Export flow now writes a single canonical file instead of multiple artifacts.
@@ -20,3 +21,4 @@
 ### Removed
 - Legacy review-detail routing in favor of unified alert info flow.
 - Legacy preview export path and obsolete training/legacy UI labels.
+- Training auto-upload flow in the mod (`trainingUpload` config + `/scamscreener review upload`).
