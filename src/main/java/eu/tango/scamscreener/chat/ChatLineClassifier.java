@@ -22,6 +22,8 @@ public final class ChatLineClassifier {
         "[bazaar]",
         "[auction]",
         "[scamscreener]",
+        "[skyblocker]",
+        "[skyhanni]",
         "Profile"
     );
 
@@ -44,8 +46,16 @@ public final class ChatLineClassifier {
             return ChatLineType.SYSTEM;
         }
 
-        return parsePlayerMessage(cleaned).isPresent()
-            ? ChatLineType.PLAYER
+        if (parsePlayerMessage(cleaned).isPresent()) {
+            return ChatLineType.PLAYER;
+        }
+
+        if (looksLikeIgnoredFormat(cleaned)) {
+            return ChatLineType.IGNORED;
+        }
+
+        return looksLikeSystemMessage(cleaned)
+            ? ChatLineType.SYSTEM
             : ChatLineType.UNKNOWN;
     }
 
@@ -87,7 +97,7 @@ public final class ChatLineClassifier {
             return cleaned;
         }
 
-        if (isSystemPrefix(prefixSection) || prefixSection.startsWith("[")) {
+        if (isSystemPrefix(prefixSection) || prefixSection.startsWith("[") || speakerWordCount(prefixSection) > 1) {
             return message;
         }
 
@@ -185,57 +195,82 @@ public final class ChatLineClassifier {
             return "";
         }
 
-        String remaining = senderSection.trim();
-        while (remaining.startsWith("[")) {
-            int closingBracketIndex = remaining.indexOf(']');
-            if (closingBracketIndex < 0) {
-                break;
-            }
-
-            remaining = remaining.substring(closingBracketIndex + 1).trim();
+        String[] tokens = senderSection.trim().split("\\s+");
+        if (tokens.length == 0) {
+            return "";
         }
 
-        if (!isValidPlayerName(remaining)) {
-            remaining = trailingPlayerToken(remaining);
-            if (remaining.isBlank()) {
+        String candidateName = tokens[tokens.length - 1];
+        if (!isValidPlayerName(candidateName)) {
+            return "";
+        }
+
+        for (int index = 0; index < tokens.length - 1; index++) {
+            if (!isAllowedSenderMetadataToken(tokens[index])) {
                 return "";
             }
         }
 
-        return remaining;
+        return candidateName;
     }
 
-    private static String trailingPlayerToken(String value) {
-        if (value == null || value.isBlank()) {
-            return "";
+    private static boolean isAllowedSenderMetadataToken(String token) {
+        if (token == null || token.isBlank()) {
+            return false;
         }
 
-        String[] tokens = value.trim().split("\\s+");
-        for (int index = tokens.length - 1; index >= 0; index--) {
-            String token = trimNonNameEdges(tokens[index]);
-            if (isValidPlayerName(token)) {
-                return token;
+        String trimmed = token.trim();
+        if (isBracketedMetadataToken(trimmed)) {
+            return true;
+        }
+
+        for (int index = 0; index < trimmed.length(); index++) {
+            if (isValidPlayerNameCharacter(trimmed.charAt(index))) {
+                return false;
             }
         }
 
-        return "";
+        return true;
     }
 
-    private static String trimNonNameEdges(String value) {
-        if (value == null || value.isBlank()) {
-            return "";
+    private static boolean isBracketedMetadataToken(String token) {
+        if (token == null || token.length() < 2 || token.charAt(0) != '[' || token.charAt(token.length() - 1) != ']') {
+            return false;
         }
 
-        int start = 0;
-        int end = value.length();
-        while (start < end && !isValidPlayerNameCharacter(value.charAt(start))) {
-            start++;
-        }
-        while (end > start && !isValidPlayerNameCharacter(value.charAt(end - 1))) {
-            end--;
+        String inner = token.substring(1, token.length() - 1).trim();
+        return !inner.isEmpty();
+    }
+
+    private static boolean looksLikeIgnoredFormat(String rawLine) {
+        if (rawLine == null || rawLine.isBlank()) {
+            return false;
         }
 
-        return start >= end ? "" : value.substring(start, end);
+        if (startsWithBracketedTag(rawLine) && !hasPublicLevelPrefix(rawLine) && rawLine.contains(":")) {
+            return true;
+        }
+
+        if (startsWithIgnoreCase(rawLine, "From:")) {
+            return parseSenderAndMessage(rawLine.substring("From:".length()).trim()).isEmpty();
+        }
+        if (startsWithIgnoreCase(rawLine, "Guild >")) {
+            return parseSenderAndMessage(rawLine.substring("Guild >".length()).trim()).isEmpty();
+        }
+        if (startsWithIgnoreCase(rawLine, "Party >")) {
+            return parseSenderAndMessage(rawLine.substring("Party >".length()).trim()).isEmpty();
+        }
+        if (hasPublicLevelPrefix(rawLine)) {
+            return parseSenderAndMessage(rawLine).isEmpty();
+        }
+
+        int separatorIndex = rawLine.indexOf(':');
+        if (separatorIndex <= 0 || separatorIndex >= rawLine.length() - 1) {
+            return false;
+        }
+
+        String speakerSection = rawLine.substring(0, separatorIndex).trim();
+        return speakerSection.contains(">");
     }
 
     private static boolean isValidPlayerName(String value) {
@@ -272,6 +307,45 @@ public final class ChatLineClassifier {
             }
         }
         return false;
+    }
+
+    private static boolean looksLikeSystemMessage(String rawLine) {
+        if (rawLine == null || rawLine.isBlank()) {
+            return false;
+        }
+
+        if (startsWithBracketedTag(rawLine) && !hasPublicLevelPrefix(rawLine)) {
+            return true;
+        }
+
+        int separatorIndex = rawLine.indexOf(':');
+        if (separatorIndex <= 0 || separatorIndex >= rawLine.length() - 1) {
+            return false;
+        }
+
+        String speakerSection = rawLine.substring(0, separatorIndex).trim();
+        if (speakerSection.isBlank()) {
+            return false;
+        }
+
+        return speakerWordCount(speakerSection) > 1;
+    }
+
+    private static boolean startsWithBracketedTag(String rawLine) {
+        if (rawLine == null || rawLine.isBlank() || rawLine.charAt(0) != '[') {
+            return false;
+        }
+
+        int closingBracketIndex = rawLine.indexOf(']');
+        return closingBracketIndex > 1;
+    }
+
+    private static int speakerWordCount(String value) {
+        if (value == null || value.isBlank()) {
+            return 0;
+        }
+
+        return value.trim().split("\\s+").length;
     }
 
     private static boolean startsWithIgnoreCase(String value, String prefix) {
@@ -313,6 +387,10 @@ public final class ChatLineClassifier {
          * A server, NPC, or system-authored line.
          */
         SYSTEM,
+        /**
+         * A malformed or unsupported line that should be ignored before the pipeline.
+         */
+        IGNORED,
         /**
          * A line that could not be classified yet.
          */

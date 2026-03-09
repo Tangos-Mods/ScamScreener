@@ -5,15 +5,25 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="149ec1db-0155-4512-9f54-12439716da78" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/MODRINTH.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/config/store/LegacyV1ConfigMigration.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/eu/tango/scamscreener/config/store/LegacyV1ConfigMigrationTest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/config/store/RulesConfigMigration.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/eu/tango/scamscreener/chat/ManualChatInspectionTest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/eu/tango/scamscreener/config/store/RulesConfigStoreTest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/resources/manual-chat-inspection-input.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/CHANGELOG.md" beforeDir="false" afterPath="$PROJECT_DIR$/CHANGELOG.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MODRINTH.md" beforeDir="false" afterPath="$PROJECT_DIR$/MODRINTH.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/ScamScreenerRuntime.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/ScamScreenerRuntime.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/config/store/ConfigPaths.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/config/store/ConfigPaths.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gradle.properties" beforeDir="false" afterPath="$PROJECT_DIR$/gradle.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/chat/ChatLineClassifier.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/chat/ChatLineClassifier.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/chat/ChatPipelineListener.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/chat/ChatPipelineListener.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/config/data/RulesConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/config/data/RulesConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/config/store/RulesConfigStore.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/config/store/RulesConfigStore.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/stage/LevenshteinStage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/stage/LevenshteinStage.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/stage/MuteStage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/stage/MuteStage.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/stage/RuleStage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/stage/RuleStage.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/eu/tango/scamscreener/chat/ChatLineClassifierTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/eu/tango/scamscreener/chat/ChatLineClassifierTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/eu/tango/scamscreener/chat/ChatPipelineListenerTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/eu/tango/scamscreener/chat/ChatPipelineListenerTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/eu/tango/scamscreener/pipeline/stage/LevenshteinStageTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/eu/tango/scamscreener/pipeline/stage/LevenshteinStageTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/eu/tango/scamscreener/pipeline/stage/RuleStageTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/eu/tango/scamscreener/pipeline/stage/RuleStageTest.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -21,7 +31,7 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="EmbeddingIndexingInfo">
-    <option name="cachedIndexableFilesCount" value="708" />
+    <option name="cachedIndexableFilesCount" value="721" />
   </component>
   <component name="ExternalProjectsData">
     <projectState path="$PROJECT_DIR$">
@@ -73,6 +83,9 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
+    "Gradle.Message Test.executor": "Run",
+    "Gradle.Publish All Versions - CurseForge.executor": "Run",
+    "Gradle.Publish All Versions - Modrinth.executor": "Run",
     "Gradle.ScamScreener [build].executor": "Run",
     "Gradle.ScamScreener: Publish CurseForge (all StoneCutter versions).executor": "Run",
     "Gradle.ScamScreener: Publish Modrinth (all StoneCutter versions).executor": "Run",
@@ -111,7 +124,57 @@
       <recent name="C:\Users\mine6\Documents\GitHub\ScamScreener\server\css" />
     </key>
   </component>
-  <component name="RunManager" selected="Gradle.build all">
+  <component name="RunManager" selected="Gradle.Publish All Versions - CurseForge">
+    <configuration name="Message Test" type="GradleRunConfiguration" factoryName="Gradle" folderName="Testing">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" value="" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value="manualChatInspection" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <ExternalSystemDebugDisabled>false</ExternalSystemDebugDisabled>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>false</RunAsTest>
+      <GradleProfilingDisabled>false</GradleProfilingDisabled>
+      <GradleCoverageDisabled>false</GradleCoverageDisabled>
+      <method v="2" />
+    </configuration>
+    <configuration name="Test All" type="GradleRunConfiguration" factoryName="Gradle" folderName="Testing">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" value="" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value="test" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <ExternalSystemDebugDisabled>false</ExternalSystemDebugDisabled>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>false</RunAsTest>
+      <GradleProfilingDisabled>false</GradleProfilingDisabled>
+      <GradleCoverageDisabled>false</GradleCoverageDisabled>
+      <method v="2" />
+    </configuration>
     <configuration name="build all" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
@@ -155,6 +218,8 @@
       <item itemvalue="Gradle.Switch to 1.21.10" />
       <item itemvalue="Gradle.Switch to 1.21.11" />
       <item itemvalue="Gradle.Switch to 1.21.9" />
+      <item itemvalue="Gradle.Test All" />
+      <item itemvalue="Gradle.Message Test" />
       <item itemvalue="Gradle.build all" />
     </list>
     <recent_temporary>

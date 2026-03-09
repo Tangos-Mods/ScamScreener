@@ -137,10 +137,12 @@ public final class RuleStage extends Stage {
         boolean urgencyAllowlisted = rules.urgencyAllowlist().patternMatches(message);
         boolean tradeContextAllowlisted = rules.tradeContextAllowlist().patternMatches(message);
         boolean urgencyTriggered = false;
-        if (coercionThreatMatch == null
+        if (riskContext
+            && coercionThreatMatch == null
             && urgency.score() >= rules.urgency().threshold()
             && !(urgencyAllowlisted && !riskContext)
             && !(tradeContextAllowlisted && !riskContext)) {
+            // Plain urgency is too noisy on its own. Only count it once some other risk context exists.
             totalScore += rules.urgency().score();
             reasonParts.add(rules.urgency().reason(urgency.match()));
             urgencyTriggered = true;

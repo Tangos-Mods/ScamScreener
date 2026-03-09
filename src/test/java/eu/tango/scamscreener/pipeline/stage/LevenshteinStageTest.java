@@ -62,4 +62,15 @@ class LevenshteinStageTest {
         assertTrue(result.getScoreDelta() >= 8);
         assertTrue(result.getReason().contains("SIM_TOO_GOOD"));
     }
+
+    @Test
+    void ignoresStandaloneUrgencySimilarityMatches() {
+        ChatEvent event = ChatEvent.messageOnly("call r1ght n0w", ChatSourceType.PLAYER);
+
+        StageResult result = new LevenshteinStage().apply(event);
+
+        assertEquals(Stage.Decision.PASS, result.getDecision());
+        assertEquals(0, result.getScoreDelta());
+        assertFalse(result.hasReason());
+    }
 }

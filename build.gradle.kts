@@ -147,6 +147,21 @@ tasks {
         }
     }
 
+    register<Test>("manualChatInspection") {
+        group = "verification"
+        description = "Runs the manual chat inspection harness and shows line classification output."
+        useJUnitPlatform()
+        testClassesDirs = sourceSets.test.get().output.classesDirs
+        classpath = sourceSets.test.get().runtimeClasspath
+        filter {
+            includeTestsMatching("eu.tango.scamscreener.chat.ManualChatInspectionTest")
+        }
+        testLogging {
+            events("passed", "failed", "skipped")
+            showStandardStreams = true
+        }
+    }
+
     processResources {
         inputs.property("id", project.property("mod.id"))
         inputs.property("name", project.property("mod.name"))

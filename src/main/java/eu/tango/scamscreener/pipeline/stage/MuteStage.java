@@ -59,7 +59,7 @@ public final class MuteStage extends Stage {
 
         MuteRules mute = rules.mute();
         if (chatEvent.isSystemSource()) {
-            // System and NPC messages should bypass risk checks, not be treated as hidden chat.
+            // Defensive fallback: the listener should skip system messages before they reach the pipeline.
             return allow(mute.systemBypassReason(), "mute.system_bypass");
         }
 

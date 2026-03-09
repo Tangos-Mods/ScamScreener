@@ -30,14 +30,25 @@ class RuleStageTest {
     }
 
     @Test
-    void scoresPlainUrgencyWhenItIsNotAllowlisted() {
+    void ignoresPlainUrgencyWithoutOtherRiskSignals() {
         ChatEvent event = ChatEvent.messageOnly("I need this right now please", ChatSourceType.PLAYER);
 
         StageResult result = new RuleStage().apply(event);
 
         assertEquals(Stage.Decision.PASS, result.getDecision());
-        assertEquals(10, result.getScoreDelta());
-        assertTrue(result.getReason().contains("Urgency wording"));
+        assertEquals(0, result.getScoreDelta());
+        assertFalse(result.hasReason());
+    }
+
+    @Test
+    void ignoresBareCallAndUrgencyWithoutOtherRiskSignals() {
+        ChatEvent event = ChatEvent.messageOnly("can you call me right now", ChatSourceType.PLAYER);
+
+        StageResult result = new RuleStage().apply(event);
+
+        assertEquals(Stage.Decision.PASS, result.getDecision());
+        assertEquals(0, result.getScoreDelta());
+        assertFalse(result.hasReason());
     }
 
     @Test

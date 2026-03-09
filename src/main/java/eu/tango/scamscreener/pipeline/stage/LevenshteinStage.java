@@ -11,6 +11,7 @@ import eu.tango.scamscreener.pipeline.rule.SimilarityRule;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -86,6 +87,10 @@ public final class LevenshteinStage extends Stage {
         if (bestMatchesByCategory.isEmpty()) {
             return pass();
         }
+        if (containsOnlyUrgencyMatches(bestMatchesByCategory)) {
+            // Fuzzy urgency alone is too noisy and should not open a review path by itself.
+            return pass();
+        }
 
         int totalScore = 0;
         List<String> reasonParts = new ArrayList<>();
@@ -97,6 +102,24 @@ public final class LevenshteinStage extends Stage {
         }
 
         return score(totalScore, reasonIds, String.join("; ", reasonParts));
+    }
+
+    private static boolean containsOnlyUrgencyMatches(Map<String, PhraseMatch> bestMatchesByCategory) {
+        if (bestMatchesByCategory.isEmpty()) {
+            return false;
+        }
+
+        for (PhraseMatch match : bestMatchesByCategory.values()) {
+            if (!isUrgencyCategory(match.entry().category())) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static boolean isUrgencyCategory(String category) {
+        return category != null && category.toLowerCase(Locale.ROOT).contains("urgency");
     }
 
     private static double bestSimilarity(String normalizedMessage, List<String> messageTokens, String phrase, int phraseTokenCount) {

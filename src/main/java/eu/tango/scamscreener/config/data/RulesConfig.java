@@ -18,6 +18,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 public final class RulesConfig {
+    private int version;
     private boolean muteStageEnabled = true;
     private boolean ruleStageEnabled = true;
     private boolean similarityStageEnabled = true;
@@ -125,12 +126,26 @@ public final class RulesConfig {
     }
 
     /**
+     * Returns the normalized config schema version.
+     *
+     * @return the non-negative schema version
+     */
+    public int version() {
+        return Math.max(0, version);
+    }
+
+    /**
      * Deterministic rule configuration for {@code RuleStage}.
      */
     @Getter
     @Setter
     @NoArgsConstructor
     public static final class RuleStageSettings {
+        public static final String LEGACY_EXTERNAL_PLATFORM_PATTERN =
+            "\\b(?:discord|telegram|whatsapp|instagram|snap(?:chat)?|t\\.me|dm me|dm me on discord|direct message me|add me on discord|join my discord|message me on discord|contact me on discord|discord server|server invite|join vc|vc|voice chat|voice channel|call)\\b";
+        public static final String DEFAULT_EXTERNAL_PLATFORM_PATTERN =
+            "\\b(?:discord|telegram|whatsapp|instagram|snap(?:chat)?|t\\.me|dm me|dm me on discord|direct message me|add me on discord|join my discord|message me on discord|contact me on discord|discord server|server invite|join vc|vc|voice chat|voice channel|join call|discord call|voice call)\\b";
+
         private boolean suspiciousLinkEnabled = true;
         private boolean externalPlatformEnabled = true;
         private boolean upfrontPaymentEnabled = true;
@@ -167,8 +182,7 @@ public final class RulesConfig {
 
         private String suspiciousLinkPattern =
             "\\b(?:https?://\\S+|(?:discord\\.gg|dsc\\.gg|discord(?:app)?\\.com/invite|t\\.me|bit\\.ly|tinyurl\\.com|cutt\\.ly|lnk\\.bio|bio\\.link|grabify\\.link)/\\S+)";
-        private String externalPlatformPattern =
-            "\\b(?:discord|telegram|whatsapp|instagram|snap(?:chat)?|t\\.me|dm me|dm me on discord|direct message me|add me on discord|join my discord|message me on discord|contact me on discord|discord server|server invite|join vc|vc|voice chat|voice channel|call)\\b";
+        private String externalPlatformPattern = DEFAULT_EXTERNAL_PLATFORM_PATTERN;
         private String upfrontPaymentPattern =
             "\\b(?:pay first|send first|payment first|upfront payment|pay upfront|vorkasse|send coins first|coins first|before i trade|before we trade)\\b";
         private String accountDataPattern =

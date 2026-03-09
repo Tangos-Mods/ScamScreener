@@ -96,8 +96,18 @@ public final class ChatPipelineListener {
      * @param chatEvent the event to forward into the pipeline
      */
     private static void onChatMessage(ChatEvent chatEvent) {
-        ChatEvent safeEvent = chatEvent == null ? ChatEvent.messageOnly("") : chatEvent;
+        if (chatEvent == null) {
+            return;
+        }
+
+        ChatEvent safeEvent = chatEvent;
         if (MessageDispatcher.consumeLocalEcho(safeEvent.getRawMessage())) {
+            return;
+        }
+        if (!shouldEnterPipeline(safeEvent)) {
+            // Only player-authored chat should enter the detection pipeline.
+            lastChatEvent = safeEvent;
+            lastPipelineDecision = null;
             return;
         }
 
@@ -122,8 +132,12 @@ public final class ChatPipelineListener {
 
     static ChatEvent classifyGameMessage(net.minecraft.text.Text message, int maxChatLength) {
         String rawLine = message == null ? "" : message.asTruncatedString(maxChatLength);
-        ChatLineClassifier.ParsedPlayerLine parsedPlayerLine = ChatLineClassifier.parsePlayerMessage(rawLine).orElse(null);
-        if (parsedPlayerLine != null) {
+        ChatLineClassifier.ChatLineType lineType = ChatLineClassifier.classify(rawLine);
+        if (lineType == ChatLineClassifier.ChatLineType.PLAYER) {
+            ChatLineClassifier.ParsedPlayerLine parsedPlayerLine = ChatLineClassifier.parsePlayerMessage(rawLine).orElse(null);
+            if (parsedPlayerLine == null) {
+                return null;
+            }
             return new ChatEvent(
                 parsedPlayerLine.message(),
                 null,
@@ -133,10 +147,17 @@ public final class ChatPipelineListener {
             );
         }
 
-        if (ChatLineClassifier.classify(rawLine) == ChatLineClassifier.ChatLineType.SYSTEM) {
+        if (lineType == ChatLineClassifier.ChatLineType.SYSTEM) {
             return ChatEvent.fromGameMessage(message, maxChatLength);
+        }
+        if (lineType == ChatLineClassifier.ChatLineType.IGNORED) {
+            return null;
         }
 
         return ChatEvent.messageOnly(rawLine, ChatSourceType.UNKNOWN);
+    }
+
+    static boolean shouldEnterPipeline(ChatEvent chatEvent) {
+        return chatEvent != null && chatEvent.isPlayerSource();
     }
 }

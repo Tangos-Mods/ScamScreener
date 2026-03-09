@@ -1,0 +1,32 @@
+# One visible chat line per line.
+# Empty lines and lines starting with # are ignored.
+# Run:
+#   .\gradlew.bat manualChatInspection
+# Report:
+#   build/reports/manual-chat-inspection/report.txt
+
+# Expected PLAYER
+[241] [MVP+] Pankraz01: hi
+[241] ? [MVP+] Pankraz01: add me on discord
+[15] ✯ Steve123: hello there
+From: [MVP+] Sam: trust me i am legit
+Guild > [VIP] Sam: add me on discord
+Party > Sam: send coins first
+
+# Expected SYSTEM
+[NPC] Kat: Your Ocelot is ready to pick up!
+[Skyblocker] Click here to call Queen Misylia!
+[Bazaar] Cancelled buy order for Decombobulator.
+Auction expires in 5m: use /ah to bid
+
+# Expected IGNORED
+[VIP] Sam: hi
+[123] Auction Bot: deal now
+[241] [MVP+] Auction Bot: hi
+From: Server Team: maintenance
+Co-op > Sam: hi
+
+# Expected UNKNOWN
+You earned 10 SkyBlock XP.
+You Ran out of Time. Add me on Discord for further information.
+plain message
