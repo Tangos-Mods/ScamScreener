@@ -1,5 +1,6 @@
 package eu.tango.scamscreener.config.data;
 
+import eu.tango.scamscreener.config.migration.VersionedConfig;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -17,7 +18,7 @@ import java.util.List;
 @Getter
 @Setter
 @NoArgsConstructor
-public final class RulesConfig {
+public final class RulesConfig implements VersionedConfig {
     private int version;
     private boolean muteStageEnabled = true;
     private boolean ruleStageEnabled = true;

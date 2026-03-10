@@ -112,6 +112,7 @@ dependencies {
     fapi(
         "fabric-command-api-v2",
         "fabric-lifecycle-events-v1",
+        "fabric-networking-api-v1",
         "fabric-resource-loader-v0",
         "fabric-content-registries-v0",
         "fabric-message-api-v1"

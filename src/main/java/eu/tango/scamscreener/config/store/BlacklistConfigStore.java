@@ -1,17 +1,28 @@
 package eu.tango.scamscreener.config.store;
 
 import eu.tango.scamscreener.config.data.BlacklistConfig;
+import eu.tango.scamscreener.config.migration.ConfigSchema;
+import eu.tango.scamscreener.config.migration.SimpleVersionedConfigMigration;
 import eu.tango.scamscreener.lists.Blacklist;
+
+import java.nio.file.Path;
 
 /**
  * JSON-backed store for the persisted blacklist.
  */
-public final class BlacklistConfigStore extends BaseConfig<BlacklistConfig> {
+public final class BlacklistConfigStore extends MigratingConfigStore<BlacklistConfig> {
+    private static final SimpleVersionedConfigMigration<BlacklistConfig> MIGRATION =
+        new SimpleVersionedConfigMigration<>(ConfigSchema.BLACKLIST, BlacklistConfig::new);
+
     /**
      * Creates the blacklist config store bound to {@code blacklist.json}.
      */
     public BlacklistConfigStore() {
-        super(ConfigPaths.blacklistFile(), BlacklistConfig.class);
+        this(ConfigPaths.blacklistFile());
+    }
+
+    BlacklistConfigStore(Path path) {
+        super(path, BlacklistConfig.class, MIGRATION);
     }
 
     /**
@@ -40,7 +51,7 @@ public final class BlacklistConfigStore extends BaseConfig<BlacklistConfig> {
         save(fromBlacklist(blacklist));
     }
 
-    static BlacklistConfig fromBlacklist(Blacklist blacklist) {
+    public static BlacklistConfig fromBlacklist(Blacklist blacklist) {
         BlacklistConfig config = new BlacklistConfig();
         if (blacklist == null) {
             return config;
@@ -50,8 +61,4 @@ public final class BlacklistConfigStore extends BaseConfig<BlacklistConfig> {
         return config;
     }
 
-    @Override
-    protected BlacklistConfig createDefault() {
-        return new BlacklistConfig();
-    }
 }

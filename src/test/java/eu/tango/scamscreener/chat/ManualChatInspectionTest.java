@@ -1,5 +1,6 @@
 package eu.tango.scamscreener.chat;
 
+import eu.tango.scamscreener.ScamScreenerMod;
 import eu.tango.scamscreener.config.data.RulesConfig;
 import eu.tango.scamscreener.lists.Blacklist;
 import eu.tango.scamscreener.lists.Whitelist;
@@ -26,11 +27,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Manual inspection harness for arbitrary chat lines.
  *
- * <p>Edit {@code src/test/resources/manual-chat-inspection-input.txt}, then run:
- * {@code .\gradlew.bat manualChatInspection}
- *
- * <p>The test prints the result for each line to the terminal and also writes
- * the same output to {@code build/reports/manual-chat-inspection/report.txt}.
+     * <p>Edit {@code src/test/resources/manual-chat-inspection-input.txt}, then run:
+     * {@code .\gradlew.bat manualChatInspection}
+     *
+     * <p>The test prints the result for each line to the terminal and also writes
+     * the same output to a version-specific report in {@code build/reports/manual-chat-inspection/}.
  */
 class ManualChatInspectionTest {
     private static final String INPUT_RESOURCE = "/manual-chat-inspection-input.txt";
@@ -151,13 +152,16 @@ class ManualChatInspectionTest {
         Path current = Path.of("").toAbsolutePath();
         while (current != null) {
             if (Files.exists(current.resolve("settings.gradle.kts"))) {
-                return current.resolve("build").resolve("reports").resolve("manual-chat-inspection").resolve("report.txt");
+                return current.resolve("build")
+                    .resolve("reports")
+                    .resolve("manual-chat-inspection")
+                    .resolve("report-" + ScamScreenerMod.MINECRAFT + ".txt");
             }
 
             current = current.getParent();
         }
 
-        return Path.of("build", "reports", "manual-chat-inspection", "report.txt");
+        return Path.of("build", "reports", "manual-chat-inspection", "report-" + ScamScreenerMod.MINECRAFT + ".txt");
     }
 
     private static List<String> loadConfiguredMessages() throws IOException {

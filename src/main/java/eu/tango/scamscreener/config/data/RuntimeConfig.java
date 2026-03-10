@@ -1,5 +1,6 @@
 package eu.tango.scamscreener.config.data;
 
+import eu.tango.scamscreener.config.migration.VersionedConfig;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -14,7 +15,9 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-public final class RuntimeConfig {
+public final class RuntimeConfig implements VersionedConfig {
+    private int version;
+    private boolean enabled = true;
     private PipelineSettings pipeline = new PipelineSettings();
     private AlertSettings alerts = new AlertSettings();
     private OutputSettings output = new OutputSettings();
@@ -101,6 +104,16 @@ public final class RuntimeConfig {
     }
 
     /**
+     * Returns the normalized config schema version.
+     *
+     * @return the non-negative schema version
+     */
+    @Override
+    public int version() {
+        return Math.max(0, version);
+    }
+
+    /**
      * Top-level pipeline settings.
      */
     @Getter
@@ -126,8 +139,8 @@ public final class RuntimeConfig {
     @Setter
     @NoArgsConstructor
     public static final class AlertSettings {
-        private AlertRiskLevel minimumRiskLevel = AlertRiskLevel.LOW;
-        private AutoCaptureAlertLevel autoCaptureLevel = AutoCaptureAlertLevel.LOW;
+        private AlertRiskLevel minimumRiskLevel = AlertRiskLevel.MEDIUM;
+        private AutoCaptureAlertLevel autoCaptureLevel = AutoCaptureAlertLevel.MEDIUM;
 
         /**
          * Returns the normalized minimum visible alert threshold.
@@ -135,7 +148,7 @@ public final class RuntimeConfig {
          * @return the minimum visible alert threshold
          */
         public AlertRiskLevel minimumRiskLevel() {
-            return minimumRiskLevel == null ? AlertRiskLevel.LOW : minimumRiskLevel;
+            return minimumRiskLevel == null ? AlertRiskLevel.MEDIUM : minimumRiskLevel;
         }
 
         /**
@@ -144,7 +157,7 @@ public final class RuntimeConfig {
          * @return the auto-capture level
          */
         public AutoCaptureAlertLevel autoCaptureLevel() {
-            return autoCaptureLevel == null ? AutoCaptureAlertLevel.LOW : autoCaptureLevel;
+            return autoCaptureLevel == null ? AutoCaptureAlertLevel.MEDIUM : autoCaptureLevel;
         }
     }
 

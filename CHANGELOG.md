@@ -2,6 +2,37 @@
 
 All notable changes to this project are documented in this file.
 
+## 2.0.2 - 2026-03-10
+
+### Added
+- `/ss enable` and `/ss disable` commands to toggle ScamScreener without removing the mod.
+- Join-time disabled notice with a clickable re-enable action.
+- Join-time Modrinth update notification with clickable link and changelog hover preview.
+- Manual chat inspection harness for quickly checking how pasted chat lines are classified.
+- Central config schema registry and migration documentation under `config.migration`.
+
+### Fixed
+- Only validated player messages enter the scam pipeline; system, unknown, and ignored lines are skipped.
+- Mod/system-prefixed lines such as `[Skyblocker] ...` no longer trigger risk checks.
+- Invalid player-like formats such as `[VIP] Sam: hi` or `From: Server Team: ...` are ignored instead of analyzed.
+- Public player chat parsing now accepts an optional emblem token between level/rank metadata and the player name.
+- Reduced false positives from bare `call` and standalone urgency signals in the rule/similarity stack.
+
+### Changed
+- Default visible alert threshold is now `MEDIUM` instead of `LOW`.
+- Config schema versions are now managed centrally via `ConfigSchema`.
+- Older or unversioned v2 config files are replaced with the current default config on load.
+
+### Migration Notes
+- Legacy v1 whitelist/blacklist import still runs once before normal config loading.
+- Imported v1 whitelist/blacklist data is written as current-version v2 config, so it survives the strict version gate.
+- Existing old or unversioned v2 files do not merge forward; they are replaced by current defaults.
+
+## 2.0.1 - 2026-03-09
+
+### Fixed
+- Hardened chat classification so system-style messages are ignored correctly and no longer produce false alerts.
+
 ## 2.0.0 - 2026-03-06
 
 Full transition from `legacy-v1` to `v2`.

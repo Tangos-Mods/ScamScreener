@@ -1,4 +1,4 @@
-package eu.tango.scamscreener.config.store;
+package eu.tango.scamscreener.config.migration;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -10,6 +10,9 @@ import com.google.gson.JsonParser;
 import eu.tango.scamscreener.ScamScreenerMod;
 import eu.tango.scamscreener.config.data.BlacklistConfig;
 import eu.tango.scamscreener.config.data.WhitelistConfig;
+import eu.tango.scamscreener.config.store.BlacklistConfigStore;
+import eu.tango.scamscreener.config.store.ConfigPaths;
+import eu.tango.scamscreener.config.store.WhitelistConfigStore;
 import eu.tango.scamscreener.lists.Blacklist;
 import eu.tango.scamscreener.lists.BlacklistEntry;
 import eu.tango.scamscreener.lists.BlacklistSource;
@@ -77,7 +80,7 @@ public final class LegacyV1ConfigMigration {
         ).runOnce();
     }
 
-    LegacyV1ConfigMigration(
+    public LegacyV1ConfigMigration(
         Path configRootDirectory,
         Path v2BaseDirectory,
         Path whitelistTargetFile,
@@ -91,7 +94,7 @@ public final class LegacyV1ConfigMigration {
         this.migrationMarkerFile = normalize(migrationMarkerFile);
     }
 
-    void runOnce() {
+    public void runOnce() {
         if (Files.exists(migrationMarkerFile)) {
             return;
         }
@@ -131,7 +134,9 @@ public final class LegacyV1ConfigMigration {
             whitelist.add(null, playerName);
         }
 
-        WhitelistConfig migratedConfig = WhitelistConfigStore.fromWhitelist(whitelist);
+        WhitelistConfig migratedConfig = new SimpleVersionedConfigMigration<>(ConfigSchema.WHITELIST, WhitelistConfig::new)
+            .prepareForSave(WhitelistConfigStore.fromWhitelist(whitelist))
+            .config();
         writeJson(whitelistTargetFile, migratedConfig);
         int totalEntries = migratedConfig.playerUuids().size() + migratedConfig.playerNames().size();
         ScamScreenerMod.LOGGER.info("Migrated {} whitelist entries from legacy v1 config files.", totalEntries);
@@ -159,7 +164,9 @@ public final class LegacyV1ConfigMigration {
             return;
         }
 
-        BlacklistConfig migratedConfig = BlacklistConfigStore.fromBlacklist(blacklist);
+        BlacklistConfig migratedConfig = new SimpleVersionedConfigMigration<>(ConfigSchema.BLACKLIST, BlacklistConfig::new)
+            .prepareForSave(BlacklistConfigStore.fromBlacklist(blacklist))
+            .config();
         writeJson(blacklistTargetFile, migratedConfig);
         ScamScreenerMod.LOGGER.info("Migrated {} blacklist entries from legacy v1 config files.", migratedConfig.entries().size());
     }

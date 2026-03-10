@@ -19,6 +19,7 @@ Party > Sam: send coins first
 [Bazaar] Cancelled buy order for Decombobulator.
 Auction expires in 5m: use /ah to bid
 
+
 # Expected IGNORED
 [VIP] Sam: hi
 [123] Auction Bot: deal now
@@ -30,3 +31,4 @@ Co-op > Sam: hi
 You earned 10 SkyBlock XP.
 You Ran out of Time. Add me on Discord for further information.
 plain message
+There are not any Pests on your Garden right now! Keep farming!

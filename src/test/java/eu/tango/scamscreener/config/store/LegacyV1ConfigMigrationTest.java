@@ -4,6 +4,8 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import eu.tango.scamscreener.config.data.BlacklistConfig;
 import eu.tango.scamscreener.config.data.WhitelistConfig;
+import eu.tango.scamscreener.config.migration.ConfigSchema;
+import eu.tango.scamscreener.config.migration.LegacyV1ConfigMigration;
 import eu.tango.scamscreener.lists.BlacklistEntry;
 import eu.tango.scamscreener.lists.BlacklistSource;
 import org.junit.jupiter.api.Test;
@@ -80,10 +82,12 @@ class LegacyV1ConfigMigrationTest {
         assertFalse(Files.exists(legacyDirectory));
 
         WhitelistConfig migratedWhitelist = readJson(whitelistTarget, WhitelistConfig.class);
+        assertEquals(ConfigSchema.WHITELIST.currentVersion(), migratedWhitelist.version());
         assertTrue(migratedWhitelist.playerUuids().contains(whitelistUuid.toString()));
         assertTrue(migratedWhitelist.playerNames().contains("alpha"));
 
         BlacklistConfig migratedBlacklist = readJson(blacklistTarget, BlacklistConfig.class);
+        assertEquals(ConfigSchema.BLACKLIST.currentVersion(), migratedBlacklist.version());
         assertEquals(1, migratedBlacklist.entries().size());
         BlacklistEntry entry = migratedBlacklist.entries().get(0);
         assertEquals(blacklistUuid, entry.playerUuid());
@@ -103,6 +107,7 @@ class LegacyV1ConfigMigrationTest {
 
         UUID existingUuid = UUID.fromString("323e4567-e89b-12d3-a456-426614174000");
         WhitelistConfig existingWhitelist = new WhitelistConfig();
+        existingWhitelist.setVersion(ConfigSchema.WHITELIST.currentVersion());
         existingWhitelist.getPlayerUuids().add(existingUuid.toString());
         existingWhitelist.getPlayerNames().add("existing");
         writeJson(whitelistTarget, existingWhitelist);
@@ -123,8 +128,9 @@ class LegacyV1ConfigMigrationTest {
 
         new LegacyV1ConfigMigration(configRoot, v2Directory, whitelistTarget, blacklistTarget, markerFile).runOnce();
 
-        WhitelistConfig migratedWhitelist = readJson(whitelistTarget, WhitelistConfig.class);
+        WhitelistConfig migratedWhitelist = new WhitelistConfigStore(whitelistTarget).loadOrCreate();
         assertNotNull(migratedWhitelist);
+        assertEquals(ConfigSchema.WHITELIST.currentVersion(), migratedWhitelist.version());
         assertEquals(1, migratedWhitelist.playerUuids().size());
         assertTrue(migratedWhitelist.playerUuids().contains(existingUuid.toString()));
     }

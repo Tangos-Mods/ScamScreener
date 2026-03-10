@@ -72,6 +72,8 @@ public final class ScamScreenerCommandHandler {
         return literal(literalName)
             .executes(context -> openRoot(context.getSource()))
             .then(literal("open").executes(context -> openRoot(context.getSource())))
+            .then(literal("enable").executes(context -> setScamScreenerEnabled(context.getSource(), true)))
+            .then(literal("disable").executes(context -> setScamScreenerEnabled(context.getSource(), false)))
             .then(buildWhitelistCommand())
             .then(buildBlacklistCommand())
             .then(buildReviewCommand())
@@ -267,6 +269,12 @@ public final class ScamScreenerCommandHandler {
 
     private static int showHelp(FabricClientCommandSource source) {
         source.sendFeedback(ClientMessages.commandHelp());
+        return 1;
+    }
+
+    private static int setScamScreenerEnabled(FabricClientCommandSource source, boolean enabled) {
+        ScamScreenerRuntime.getInstance().setEnabled(enabled);
+        source.sendFeedback(enabled ? ClientMessages.scamScreenerEnabled() : ClientMessages.scamScreenerDisabled());
         return 1;
     }
 

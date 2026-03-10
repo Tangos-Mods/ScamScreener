@@ -22,10 +22,18 @@ public final class ChatMuteFilter {
 
         initialized = true;
         ClientReceiveMessageEvents.ALLOW_GAME.register((message, overlay) ->
-            !ScamScreenerRuntime.getInstance().mutePatternManager().shouldBlock(message == null ? "" : message.getString())
+            allowMessage(message == null ? "" : message.getString())
         );
         ClientReceiveMessageEvents.ALLOW_CHAT.register((message, signedMessage, sender, params, timestamp) ->
-            !ScamScreenerRuntime.getInstance().mutePatternManager().shouldBlock(message == null ? "" : message.getString())
+            allowMessage(message == null ? "" : message.getString())
         );
+    }
+
+    private static boolean allowMessage(String rawMessage) {
+        if (!ScamScreenerRuntime.getInstance().isEnabled()) {
+            return true;
+        }
+
+        return !ScamScreenerRuntime.getInstance().mutePatternManager().shouldBlock(rawMessage);
     }
 }

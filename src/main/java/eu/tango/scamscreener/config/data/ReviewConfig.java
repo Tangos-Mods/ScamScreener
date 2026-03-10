@@ -1,5 +1,6 @@
 package eu.tango.scamscreener.config.data;
 
+import eu.tango.scamscreener.config.migration.VersionedConfig;
 import eu.tango.scamscreener.pipeline.core.Stage;
 import eu.tango.scamscreener.review.ReviewCaseRole;
 import eu.tango.scamscreener.review.ReviewVerdict;
@@ -16,8 +17,14 @@ import java.util.List;
 @Getter
 @Setter
 @NoArgsConstructor
-public final class ReviewConfig {
+public final class ReviewConfig implements VersionedConfig {
+    private int version;
     private List<ReviewConfigEntry> entries = new ArrayList<>();
+
+    @Override
+    public int version() {
+        return Math.max(0, version);
+    }
 
     /**
      * Returns the normalized persisted review entries.

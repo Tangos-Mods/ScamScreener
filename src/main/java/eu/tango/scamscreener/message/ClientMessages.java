@@ -4,10 +4,14 @@ import eu.tango.scamscreener.ScamScreenerMod;
 import eu.tango.scamscreener.config.data.AlertRiskLevel;
 import eu.tango.scamscreener.review.ReviewVerdict;
 import eu.tango.scamscreener.training.TrainingCaseExportService;
+import net.minecraft.text.ClickEvent;
+import net.minecraft.text.HoverEvent;
 import net.minecraft.text.MutableText;
+import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 
+import java.net.URI;
 import java.util.Map;
 
 /**
@@ -84,14 +88,14 @@ public final class ClientMessages {
     public static MutableText currentAlertLevel(AlertRiskLevel level) {
         return prefixed()
             .append(Text.literal("Current alert threshold: ").formatted(Formatting.GRAY))
-            .append(Text.literal((level == null ? AlertRiskLevel.LOW : level).name()).formatted(Formatting.GOLD, Formatting.BOLD))
+            .append(Text.literal((level == null ? AlertRiskLevel.MEDIUM : level).name()).formatted(Formatting.GOLD, Formatting.BOLD))
             .append(Text.literal(".").formatted(Formatting.GRAY));
     }
 
     public static MutableText updatedAlertLevel(AlertRiskLevel level) {
         return prefixed()
             .append(Text.literal("Alert threshold set to ").formatted(Formatting.GRAY))
-            .append(Text.literal((level == null ? AlertRiskLevel.LOW : level).name()).formatted(Formatting.GOLD, Formatting.BOLD))
+            .append(Text.literal((level == null ? AlertRiskLevel.MEDIUM : level).name()).formatted(Formatting.GOLD, Formatting.BOLD))
             .append(Text.literal(".").formatted(Formatting.GRAY));
     }
 
@@ -112,6 +116,32 @@ public final class ClientMessages {
 
     public static MutableText autoLeaveDisabled() {
         return prefixed().append(Text.literal("Auto /p leave on blacklist disabled.").formatted(Formatting.GRAY));
+    }
+
+    public static MutableText scamScreenerEnabled() {
+        return prefixed().append(Text.literal("ScamScreener enabled.").formatted(Formatting.GRAY));
+    }
+
+    public static MutableText scamScreenerDisabled() {
+        return prefixed().append(Text.literal("ScamScreener disabled.").formatted(Formatting.GRAY));
+    }
+
+    public static MutableText scamScreenerDisabledJoinNotice() {
+        return prefixed()
+            .append(Text.literal("ScamScreener is disabled. ").formatted(Formatting.GRAY))
+            .append(actionTag("Click", Formatting.GREEN, "Enable ScamScreener.", "/ss enable"))
+            .append(Text.literal(" to enable it again.").formatted(Formatting.GRAY));
+    }
+
+    public static MutableText updateAvailable(String currentVersion, String latestVersion, String modrinthUrl, String changelog) {
+        return prefixed()
+            .append(Text.literal("Update Available ").formatted(Formatting.GRAY))
+            .append(Text.literal(displayValue(currentVersion)).formatted(Formatting.YELLOW))
+            .append(Text.literal(" -> ").formatted(Formatting.DARK_GRAY))
+            .append(Text.literal(displayValue(latestVersion)).formatted(Formatting.GREEN, Formatting.BOLD))
+            .append(Text.literal(". ").formatted(Formatting.GRAY))
+            .append(urlActionTag("click", Formatting.YELLOW, changelogHoverText(changelog), modrinthUrl))
+            .append(Text.literal(" to open on Modrinth").formatted(Formatting.GRAY));
     }
 
     public static MutableText autoLeaveExecuted(String playerName) {
@@ -198,7 +228,7 @@ public final class ClientMessages {
 
     public static MutableText commandHelp() {
         return prefixed().append(Text.literal(
-            "Commands: whitelist, blacklist, review, review export, alertlevel, autoleave, mute, unmute, debug, metrics, rules, runtime, messages, settings."
+            "Commands: enable, disable, whitelist, blacklist, review, review export, alertlevel, autoleave, mute, unmute, debug, metrics, rules, runtime, messages, settings."
         ).formatted(Formatting.GRAY));
     }
 
@@ -263,6 +293,66 @@ public final class ClientMessages {
 
     private static MutableText prefixed() {
         return Text.literal(PREFIX).formatted(Formatting.DARK_RED);
+    }
+
+    private static MutableText actionTag(String label, Formatting color, String hover, String command) {
+        return actionTag(
+            label,
+            color,
+            hover == null || hover.isBlank() ? null : Text.literal(hover),
+            command == null || command.isBlank() ? null : new ClickEvent.RunCommand(command)
+        );
+    }
+
+    private static MutableText urlActionTag(String label, Formatting color, Text hover, String url) {
+        return actionTag(
+            label,
+            color,
+            hover,
+            url == null || url.isBlank() ? null : new ClickEvent.OpenUrl(URI.create(url))
+        );
+    }
+
+    static MutableText changelogHoverText(String changelog) {
+        String normalized = changelog == null ? "" : changelog.replace("\r\n", "\n").replace('\r', '\n');
+        String[] rawLines = normalized.split("\n", -1);
+        int lineCount = rawLines.length;
+        while (lineCount > 0 && rawLines[lineCount - 1].isBlank()) {
+            lineCount--;
+        }
+
+        if (lineCount == 0) {
+            return Text.literal("No changelog available.").formatted(Formatting.DARK_GRAY, Formatting.ITALIC);
+        }
+
+        MutableText hover = Text.literal("");
+        int previewLines = Math.min(10, lineCount);
+        for (int index = 0; index < previewLines; index++) {
+            if (index > 0) {
+                hover.append(Text.literal("\n"));
+            }
+            hover.append(Text.literal(rawLines[index]).formatted(Formatting.GRAY));
+        }
+        if (lineCount > previewLines) {
+            hover.append(Text.literal("\n"));
+            hover.append(Text.literal("and many more...").formatted(Formatting.DARK_GRAY, Formatting.ITALIC));
+        }
+
+        return hover;
+    }
+
+    private static MutableText actionTag(String label, Formatting color, Text hover, ClickEvent clickEvent) {
+        Style style = Style.EMPTY.withColor(color);
+        if (hover != null) {
+            style = style.withHoverEvent(new HoverEvent.ShowText(hover));
+        }
+        if (clickEvent != null) {
+            style = style.withClickEvent(clickEvent);
+        } else {
+            style = style.withStrikethrough(true);
+        }
+
+        return Text.literal("[" + label + "]").setStyle(style);
     }
 
     private static String displayValue(String value) {

@@ -10,7 +10,7 @@ import eu.tango.scamscreener.config.data.RuntimeConfig;
 import eu.tango.scamscreener.lists.Blacklist;
 import eu.tango.scamscreener.lists.Whitelist;
 import eu.tango.scamscreener.config.store.BlacklistConfigStore;
-import eu.tango.scamscreener.config.store.LegacyV1ConfigMigration;
+import eu.tango.scamscreener.config.migration.LegacyV1ConfigMigration;
 import eu.tango.scamscreener.config.store.ReviewConfigStore;
 import eu.tango.scamscreener.config.store.RulesConfigStore;
 import eu.tango.scamscreener.config.store.RuntimeConfigStore;
@@ -125,6 +125,28 @@ public final class ScamScreenerRuntime {
      */
     public RuntimeConfig config() {
         return runtimeConfig;
+    }
+
+    /**
+     * Indicates whether ScamScreener processing is currently enabled.
+     *
+     * @return {@code true} when ScamScreener should process inbound chat
+     */
+    public boolean isEnabled() {
+        return runtimeConfig != null && runtimeConfig.isEnabled();
+    }
+
+    /**
+     * Updates the global ScamScreener enabled state and reapplies derived runtime state.
+     *
+     * @param enabled the new enabled flag
+     */
+    public synchronized void setEnabled(boolean enabled) {
+        runtimeConfig.setEnabled(enabled);
+        runtimeConfigStore.save(runtimeConfig);
+        reviewStore.setMaxEntries(runtimeConfig.review().maxEntries());
+        resetDetectionState();
+        rebuildPipelineEngine();
     }
 
     /**

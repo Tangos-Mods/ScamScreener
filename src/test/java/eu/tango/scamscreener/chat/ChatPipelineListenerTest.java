@@ -77,4 +77,12 @@ class ChatPipelineListenerTest {
         ));
         assertEquals(false, ChatPipelineListener.shouldEnterPipeline(null));
     }
+
+    @Test
+    void disabledRuntimeSkipsPipelineProcessing() {
+        assertEquals(false, ChatPipelineListener.shouldProcessChatEvent(
+            ChatEvent.messageOnly("hello", ChatSourceType.PLAYER),
+            false
+        ));
+    }
 }

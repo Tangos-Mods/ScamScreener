@@ -104,7 +104,7 @@ public final class ChatPipelineListener {
         if (MessageDispatcher.consumeLocalEcho(safeEvent.getRawMessage())) {
             return;
         }
-        if (!shouldEnterPipeline(safeEvent)) {
+        if (!shouldProcessChatEvent(safeEvent)) {
             // Only player-authored chat should enter the detection pipeline.
             lastChatEvent = safeEvent;
             lastPipelineDecision = null;
@@ -159,5 +159,13 @@ public final class ChatPipelineListener {
 
     static boolean shouldEnterPipeline(ChatEvent chatEvent) {
         return chatEvent != null && chatEvent.isPlayerSource();
+    }
+
+    static boolean shouldProcessChatEvent(ChatEvent chatEvent) {
+        return shouldProcessChatEvent(chatEvent, ScamScreenerRuntime.getInstance().isEnabled());
+    }
+
+    static boolean shouldProcessChatEvent(ChatEvent chatEvent, boolean scamScreenerEnabled) {
+        return scamScreenerEnabled && shouldEnterPipeline(chatEvent);
     }
 }

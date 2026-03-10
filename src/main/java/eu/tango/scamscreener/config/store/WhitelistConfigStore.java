@@ -1,22 +1,32 @@
 package eu.tango.scamscreener.config.store;
 
 import eu.tango.scamscreener.config.data.WhitelistConfig;
+import eu.tango.scamscreener.config.migration.ConfigSchema;
+import eu.tango.scamscreener.config.migration.SimpleVersionedConfigMigration;
 import eu.tango.scamscreener.lists.Whitelist;
 
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.nio.file.Path;
 import java.util.Set;
 import java.util.UUID;
 
 /**
  * JSON-backed store for the persisted whitelist.
  */
-public final class WhitelistConfigStore extends BaseConfig<WhitelistConfig> {
+public final class WhitelistConfigStore extends MigratingConfigStore<WhitelistConfig> {
+    private static final SimpleVersionedConfigMigration<WhitelistConfig> MIGRATION =
+        new SimpleVersionedConfigMigration<>(ConfigSchema.WHITELIST, WhitelistConfig::new);
+
     /**
      * Creates the whitelist config store bound to {@code whitelist.json}.
      */
     public WhitelistConfigStore() {
-        super(ConfigPaths.whitelistFile(), WhitelistConfig.class);
+        this(ConfigPaths.whitelistFile());
+    }
+
+    WhitelistConfigStore(Path path) {
+        super(path, WhitelistConfig.class, MIGRATION);
     }
 
     /**
@@ -58,7 +68,7 @@ public final class WhitelistConfigStore extends BaseConfig<WhitelistConfig> {
         save(fromWhitelist(whitelist));
     }
 
-    static WhitelistConfig fromWhitelist(Whitelist whitelist) {
+    public static WhitelistConfig fromWhitelist(Whitelist whitelist) {
         WhitelistConfig config = new WhitelistConfig();
         if (whitelist == null) {
             return config;
@@ -69,8 +79,4 @@ public final class WhitelistConfigStore extends BaseConfig<WhitelistConfig> {
         return config;
     }
 
-    @Override
-    protected WhitelistConfig createDefault() {
-        return new WhitelistConfig();
-    }
 }

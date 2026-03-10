@@ -3,7 +3,9 @@ package eu.tango.scamscreener;
 import eu.tango.scamscreener.chat.ChatPipelineListener;
 import eu.tango.scamscreener.chat.mute.ChatMuteFilter;
 import eu.tango.scamscreener.command.ScamScreenerCommandHandler;
+import eu.tango.scamscreener.message.DisabledJoinNotifier;
 import eu.tango.scamscreener.message.DecisionMessageHandler;
+import eu.tango.scamscreener.message.UpdateJoinNotifier;
 import eu.tango.scamscreener.review.ReviewCaptureHandler;
 import net.fabricmc.api.ClientModInitializer;
 import net.minecraft.util.Identifier;
@@ -30,6 +32,8 @@ public class ScamScreenerMod implements ClientModInitializer {
         ReviewCaptureHandler.initialize();
         DecisionMessageHandler.initialize();
         ChatPipelineListener.initialize();
+        DisabledJoinNotifier.initialize();
+        UpdateJoinNotifier.initialize();
 
         //? if !release
         LOGGER.warn("Running a non-release ScamScreener build.");
