@@ -43,26 +43,22 @@ final class StateStoreSupport {
     }
 
     /**
+     * Returns the precomputed message fingerprint or an empty string.
+     *
+     * @param chatEvent the event to inspect
+     * @return the fingerprint fallback
+     */
+    static String messageFingerprint(ChatEvent chatEvent) {
+        return chatEvent == null || chatEvent.getMessageFingerprint() == null ? "" : chatEvent.getMessageFingerprint();
+    }
+
+    /**
      * Returns a stable sender key for non-system player messages.
      *
      * @param chatEvent the event to inspect
      * @return the sender key, or an empty string when none is available
      */
     static String senderKey(ChatEvent chatEvent) {
-        if (chatEvent == null || chatEvent.isSystemSource()) {
-            return "";
-        }
-
-        UUID senderUuid = chatEvent.getSenderUuid();
-        if (senderUuid != null) {
-            return senderUuid.toString();
-        }
-
-        String senderName = chatEvent.getSenderName();
-        if (senderName == null || senderName.isBlank()) {
-            return "";
-        }
-
-        return senderName.trim().toLowerCase(Locale.ROOT);
+        return chatEvent == null || chatEvent.getSenderKey() == null ? "" : chatEvent.getSenderKey();
     }
 }

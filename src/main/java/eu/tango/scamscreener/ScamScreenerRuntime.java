@@ -143,7 +143,7 @@ public final class ScamScreenerRuntime {
      */
     public synchronized void setEnabled(boolean enabled) {
         runtimeConfig.setEnabled(enabled);
-        runtimeConfigStore.save(runtimeConfig);
+        runtimeConfigStore.saveAsync(runtimeConfig);
         reviewStore.setMaxEntries(runtimeConfig.review().maxEntries());
         resetDetectionState();
         rebuildPipelineEngine();
@@ -186,7 +186,7 @@ public final class ScamScreenerRuntime {
      * Saves the current in-memory runtime config and reapplies derived runtime state.
      */
     public synchronized void saveConfig() {
-        runtimeConfigStore.save(runtimeConfig);
+        runtimeConfigStore.saveAsync(runtimeConfig);
         reviewStore.setMaxEntries(runtimeConfig.review().maxEntries());
         rebuildPipelineEngine();
     }
@@ -195,7 +195,7 @@ public final class ScamScreenerRuntime {
      * Saves the current in-memory rules config and reapplies the pipeline.
      */
     public synchronized void saveRules() {
-        rulesConfigStore.save(rulesConfig);
+        rulesConfigStore.saveAsync(rulesConfig);
         applyRuleStoreSettings();
         resetDetectionState();
         rebuildPipelineEngine();
@@ -212,15 +212,15 @@ public final class ScamScreenerRuntime {
     }
 
     private void saveWhitelist() {
-        whitelistConfigStore.saveFrom(whitelist);
+        whitelistConfigStore.saveFromAsync(whitelist);
     }
 
     private void saveBlacklist() {
-        blacklistConfigStore.saveFrom(blacklist);
+        blacklistConfigStore.saveFromAsync(blacklist);
     }
 
     private void saveReviewStore() {
-        reviewConfigStore.saveFrom(reviewStore);
+        reviewConfigStore.saveFromAsync(reviewStore);
     }
 
     private void applyRuleStoreSettings() {

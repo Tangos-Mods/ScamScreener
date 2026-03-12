@@ -68,6 +68,23 @@ public final class ReviewConfigStore extends MigratingConfigStore<ReviewConfig> 
         save(config);
     }
 
+    /**
+     * Saves the provided review store to disk on the async config worker.
+     *
+     * @param reviewStore the runtime review store to persist
+     */
+    public void saveFromAsync(ReviewStore reviewStore) {
+        ReviewConfig config = new ReviewConfig();
+        for (ReviewEntry entry : reviewStore.entries()) {
+            ReviewConfig.ReviewConfigEntry storedEntry = toStoredEntry(entry);
+            if (storedEntry != null) {
+                config.getEntries().add(storedEntry);
+            }
+        }
+
+        saveAsync(config);
+    }
+
     static ReviewEntry toRuntimeEntry(ReviewConfig.ReviewConfigEntry storedEntry) {
         if (storedEntry == null || storedEntry.getId() == null || storedEntry.getId().isBlank()) {
             return null;

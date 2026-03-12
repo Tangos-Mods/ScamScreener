@@ -23,6 +23,7 @@ public final class RuntimeConfig implements VersionedConfig {
     private OutputSettings output = new OutputSettings();
     private ReviewSettings review = new ReviewSettings();
     private SafetySettings safety = new SafetySettings();
+    private ProfilerSettings profiler = new ProfilerSettings();
     private DebugSettings debug = new DebugSettings();
 
     /**
@@ -88,6 +89,19 @@ public final class RuntimeConfig implements VersionedConfig {
         }
 
         return safety;
+    }
+
+    /**
+     * Returns the normalized profiler settings.
+     *
+     * @return non-null profiler settings
+     */
+    public ProfilerSettings profiler() {
+        if (profiler == null) {
+            profiler = new ProfilerSettings();
+        }
+
+        return profiler;
     }
 
     /**
@@ -219,6 +233,16 @@ public final class RuntimeConfig implements VersionedConfig {
 
             return mutePatterns;
         }
+    }
+
+    /**
+     * Runtime profiler settings.
+     */
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    public static final class ProfilerSettings {
+        private boolean hudEnabled = false;
     }
 
     /**

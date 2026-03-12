@@ -29,6 +29,7 @@
     "fabric-message-api-v1": "*"
   },
   "suggests": {
-    "modmenu": "*"
+    "modmenu": "*",
+    "tango_webapi": "*"
   }
 }

@@ -8,7 +8,6 @@ import lombok.NonNull;
 
 import java.io.IOException;
 import java.io.Reader;
-import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -27,7 +26,6 @@ public abstract class BaseConfig<T> {
         .disableHtmlEscaping()
         .setPrettyPrinting()
         .create();
-
     private final Path path;
     private final Class<T> valueType;
     private T cachedValue;
@@ -73,7 +71,17 @@ public abstract class BaseConfig<T> {
      * @param value the config value to save
      */
     public synchronized void save(@NonNull T value) {
-        writeValue(value);
+        writeSerializedValueSync(serializeValue(value));
+        cachedValue = value;
+    }
+
+    /**
+     * Persists the provided config value on the async config worker and updates the cache immediately.
+     *
+     * @param value the config value to save
+     */
+    public synchronized void saveAsync(@NonNull T value) {
+        writeSerializedValueAsync(serializeValue(value));
         cachedValue = value;
     }
 
@@ -94,9 +102,10 @@ public abstract class BaseConfig<T> {
     protected abstract T createDefault();
 
     private T readOrCreate() {
+        AsyncFileWorkQueue.flush(path);
         if (Files.notExists(path)) {
             T defaultValue = createDefault();
-            writeValue(defaultValue);
+            writeSerializedValueSync(serializeValue(defaultValue));
             return defaultValue;
         }
 
@@ -110,18 +119,19 @@ public abstract class BaseConfig<T> {
         }
 
         T defaultValue = createDefault();
-        writeValue(defaultValue);
+        writeSerializedValueSync(serializeValue(defaultValue));
         return defaultValue;
     }
 
-    private void writeValue(T value) {
-        try {
-            Files.createDirectories(path.getParent());
-            try (Writer writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)) {
-                GSON.toJson(value, writer);
-            }
-        } catch (IOException exception) {
-            ScamScreenerMod.LOGGER.error("Failed to write config to {}.", path, exception);
-        }
+    private String serializeValue(T value) {
+        return GSON.toJson(value);
+    }
+
+    private void writeSerializedValueSync(String serializedValue) {
+        AsyncFileWorkQueue.submitAndWait(path, serializedValue);
+    }
+
+    private void writeSerializedValueAsync(String serializedValue) {
+        AsyncFileWorkQueue.submit(path, serializedValue);
     }
 }

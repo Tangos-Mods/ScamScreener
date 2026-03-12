@@ -51,6 +51,15 @@ public final class BlacklistConfigStore extends MigratingConfigStore<BlacklistCo
         save(fromBlacklist(blacklist));
     }
 
+    /**
+     * Saves the provided blacklist to disk on the async config worker.
+     *
+     * @param blacklist the runtime blacklist to persist
+     */
+    public void saveFromAsync(Blacklist blacklist) {
+        saveAsync(fromBlacklist(blacklist));
+    }
+
     public static BlacklistConfig fromBlacklist(Blacklist blacklist) {
         BlacklistConfig config = new BlacklistConfig();
         if (blacklist == null) {

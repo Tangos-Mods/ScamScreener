@@ -2,7 +2,10 @@ package eu.tango.scamscreener.training;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import eu.tango.scamscreener.config.store.AsyncFileWorkQueue;
 import eu.tango.scamscreener.config.store.ConfigPaths;
+import eu.tango.scamscreener.pipeline.data.StageResult;
+import eu.tango.scamscreener.review.ReviewCaseMessage;
 import eu.tango.scamscreener.review.ReviewEntry;
 import eu.tango.scamscreener.review.ReviewVerdict;
 
@@ -14,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Exports reviewed cases into one canonical training file.
@@ -44,6 +48,38 @@ public final class TrainingCaseExportService {
         Iterable<ReviewEntry> entries,
         Path trainingCasesFile
     ) {
+        return exportReviewedCasesSnapshot(snapshotEntries(entries), trainingCasesFile);
+    }
+
+    /**
+     * Exports the provided review entries into the default training export file on the shared async file worker.
+     *
+     * @param entries the review entries to export
+     * @return a future completed with the export result summary
+     */
+    public CompletableFuture<TrainingCaseExportResult> exportReviewedCasesAsync(Iterable<ReviewEntry> entries) {
+        return exportReviewedCasesAsync(entries, ConfigPaths.trainingCasesV2File());
+    }
+
+    /**
+     * Exports the provided review entries into explicit target files on the shared async file worker.
+     *
+     * @param entries the review entries to export
+     * @param trainingCasesFile the canonical training-case output path
+     * @return a future completed with the export result summary
+     */
+    public CompletableFuture<TrainingCaseExportResult> exportReviewedCasesAsync(
+        Iterable<ReviewEntry> entries,
+        Path trainingCasesFile
+    ) {
+        List<ReviewEntry> entrySnapshots = snapshotEntries(entries);
+        return AsyncFileWorkQueue.submitTask(() -> exportReviewedCasesSnapshot(entrySnapshots, trainingCasesFile));
+    }
+
+    private TrainingCaseExportResult exportReviewedCasesSnapshot(
+        List<ReviewEntry> entries,
+        Path trainingCasesFile
+    ) {
         List<ReviewEntry> exportableEntries = exportableEntries(entries);
         List<TrainingCaseV2> trainingCases = new ArrayList<>(exportableEntries.size());
 
@@ -60,6 +96,22 @@ public final class TrainingCaseExportService {
 
         writeJsonLines(trainingCasesFile, trainingCases);
         return new TrainingCaseExportResult(trainingCases.size(), trainingCasesFile);
+    }
+
+    private static List<ReviewEntry> snapshotEntries(Iterable<ReviewEntry> entries) {
+        List<ReviewEntry> snapshots = new ArrayList<>();
+        if (entries == null) {
+            return snapshots;
+        }
+
+        for (ReviewEntry entry : entries) {
+            ReviewEntry snapshot = snapshotEntry(entry);
+            if (snapshot != null) {
+                snapshots.add(snapshot);
+            }
+        }
+
+        return snapshots;
     }
 
     private static List<ReviewEntry> exportableEntries(Iterable<ReviewEntry> entries) {
@@ -84,6 +136,54 @@ public final class TrainingCaseExportService {
             .comparingLong(ReviewEntry::getCapturedAtMs)
             .thenComparing(ReviewEntry::getId));
         return exportableEntries;
+    }
+
+    private static ReviewEntry snapshotEntry(ReviewEntry entry) {
+        if (entry == null || entry.getId() == null || entry.getId().isBlank()) {
+            return null;
+        }
+
+        List<StageResult> stageResults = new ArrayList<>();
+        for (StageResult stageResult : entry.getStageResults()) {
+            if (stageResult != null) {
+                stageResults.add(stageResult);
+            }
+        }
+
+        List<ReviewCaseMessage> caseMessages = new ArrayList<>();
+        for (ReviewCaseMessage caseMessage : entry.getCaseMessages()) {
+            if (caseMessage == null) {
+                continue;
+            }
+
+            ReviewCaseMessage snapshotCaseMessage = new ReviewCaseMessage(
+                caseMessage.getMessageIndex(),
+                caseMessage.getSpeakerRole(),
+                caseMessage.getMessageSourceType(),
+                caseMessage.getCleanText(),
+                caseMessage.isTriggerMessage(),
+                caseMessage.getCaseRole(),
+                caseMessage.getSignalTagIds(),
+                caseMessage.getAdvancedRuleSelections()
+            );
+            snapshotCaseMessage.setCaseRole(caseMessage.getCaseRole());
+            caseMessages.add(snapshotCaseMessage);
+        }
+
+        ReviewEntry snapshot = new ReviewEntry(
+            entry.getId(),
+            entry.getSenderUuid(),
+            entry.getSenderName(),
+            entry.getMessage(),
+            entry.getScore(),
+            entry.getDecidedByStage(),
+            entry.getCapturedAtMs(),
+            entry.getReasons(),
+            stageResults,
+            caseMessages
+        );
+        snapshot.setVerdict(entry.getVerdict());
+        return snapshot;
     }
 
     private static void writeJsonLines(Path path, List<?> rows) {

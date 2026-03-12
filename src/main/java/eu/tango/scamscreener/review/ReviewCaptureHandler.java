@@ -7,6 +7,7 @@ import eu.tango.scamscreener.message.AlertSeverity;
 import eu.tango.scamscreener.pipeline.data.ChatSourceType;
 import eu.tango.scamscreener.pipeline.data.ChatEvent;
 import eu.tango.scamscreener.pipeline.data.PipelineDecision;
+import eu.tango.scamscreener.profiler.ScamScreenerProfiler;
 
 /**
  * Captures review-worthy pipeline outcomes into the shared review store.
@@ -30,19 +31,21 @@ public final class ReviewCaptureHandler {
     }
 
     private static void onPipelineDecision(ChatEvent chatEvent, PipelineDecision decision) {
-        ScamScreenerRuntime runtime = ScamScreenerRuntime.getInstance();
-        if (!runtime.config().review().isCaptureEnabled()) {
-            return;
-        }
-        AutoCaptureAlertLevel autoCaptureLevel = runtime.config().alerts().autoCaptureLevel();
-        if (!autoCaptureLevel.captures(AlertSeverity.fromDecision(decision).riskLevel())) {
-            return;
-        }
+        try (ScamScreenerProfiler.Scope ignored = ScamScreenerProfiler.getInstance().scope("decision.review_capture", "  Review Capture")) {
+            ScamScreenerRuntime runtime = ScamScreenerRuntime.getInstance();
+            if (!runtime.config().review().isCaptureEnabled()) {
+                return;
+            }
+            AutoCaptureAlertLevel autoCaptureLevel = runtime.config().alerts().autoCaptureLevel();
+            if (!autoCaptureLevel.captures(AlertSeverity.fromDecision(decision).riskLevel())) {
+                return;
+            }
 
-        runtime.reviewStore().capture(chatEvent, decision, ReviewCaseMessage.fromCapturedMessages(
-            runtime.behaviorStore().snapshotFor(chatEvent).recentMessages(),
-            chatEvent == null ? "" : chatEvent.getRawMessage(),
-            chatEvent == null ? ChatSourceType.UNKNOWN : chatEvent.getSourceType()
-        ));
+            runtime.reviewStore().capture(chatEvent, decision, ReviewCaseMessage.fromCapturedMessages(
+                runtime.behaviorStore().snapshotFor(chatEvent).recentMessages(),
+                chatEvent == null ? "" : chatEvent.getRawMessage(),
+                chatEvent == null ? ChatSourceType.UNKNOWN : chatEvent.getSourceType()
+            ));
+        }
     }
 }

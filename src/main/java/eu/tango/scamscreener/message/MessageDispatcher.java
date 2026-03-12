@@ -1,5 +1,6 @@
 package eu.tango.scamscreener.message;
 
+import eu.tango.scamscreener.profiler.ScamScreenerProfiler;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Text;
 
@@ -35,8 +36,10 @@ public final class MessageDispatcher {
         }
 
         client.execute(() -> {
-            if (client.player != null) {
-                client.player.sendMessage(text, false);
+            try (ScamScreenerProfiler.Scope ignored = ScamScreenerProfiler.getInstance().scope("message.reply", "  Client Message Reply")) {
+                if (client.player != null) {
+                    client.player.sendMessage(text, false);
+                }
             }
         });
     }
@@ -57,8 +60,10 @@ public final class MessageDispatcher {
         }
 
         client.execute(() -> {
-            if (client.getNetworkHandler() != null) {
-                client.getNetworkHandler().sendChatCommand(command.trim());
+            try (ScamScreenerProfiler.Scope ignored = ScamScreenerProfiler.getInstance().scope("message.send_command", "  Client Command Send")) {
+                if (client.getNetworkHandler() != null) {
+                    client.getNetworkHandler().sendChatCommand(command.trim());
+                }
             }
         });
     }

@@ -4,8 +4,10 @@ import lombok.Getter;
 import lombok.experimental.Accessors;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -28,6 +30,7 @@ public final class Rule {
     private final String reasonTemplate;
     private final Pattern pattern;
     private final List<String> keywords;
+    private final Set<String> keywordSet;
     private final List<String> phrases;
 
     private Rule(
@@ -45,6 +48,7 @@ public final class Rule {
         this.reasonTemplate = reasonTemplate == null ? "" : reasonTemplate.trim();
         this.pattern = pattern;
         this.keywords = List.copyOf(keywords);
+        this.keywordSet = Set.copyOf(new LinkedHashSet<>(keywords));
         this.phrases = List.copyOf(phrases);
     }
 
@@ -221,7 +225,7 @@ public final class Rule {
     private int countKeywordHits(List<String> tokens) {
         int hits = 0;
         for (String token : tokens) {
-            if (keywords.contains(token)) {
+            if (keywordSet.contains(token)) {
                 hits++;
             }
         }
@@ -252,7 +256,7 @@ public final class Rule {
 
     private String firstKeywordMatch(List<String> tokens) {
         for (String token : tokens) {
-            if (keywords.contains(token)) {
+            if (keywordSet.contains(token)) {
                 return token;
             }
         }

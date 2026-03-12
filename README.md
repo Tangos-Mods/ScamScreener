@@ -6,13 +6,14 @@
 
 ScamScreener is a client-side Fabric mod that analyzes incoming chat, highlights scam-like behavior patterns, and gives you a structured review workflow for safer decisions.
 
-
 ## At A Glance
 
 - Realtime chat risk analysis with a multi-stage detection pipeline
 - In-game review queue with case-level message tagging
 - Whitelist and blacklist tools with command + GUI support
 - Optional auto `/p leave` on blacklist alerts
+- Built-in live profiler HUD for tick cost and phase timing
+- Optional web profiler via Tango Web API with `.sspp` export for debugging
 - Canonical training export (`training-cases-v2.jsonl`) for later tuning
 - Public API entrypoint for integrations (`scamscreener-api`)
 
@@ -21,14 +22,16 @@ ScamScreener is a client-side Fabric mod that analyzes incoming chat, highlights
 - Minecraft: `1.21.10`, `1.21.11`
 - Mod loader: Fabric Loader `>= 0.17`
 - Dependency: Fabric API
+- Optional dependency: Tango Web API for `/ss profiler open`
 - Environment: client-only
 
 ## Installation
 
 1. Install Fabric Loader for your Minecraft version.
 2. Put `ScamScreener` and `Fabric API` into your `mods` folder.
-3. Launch the game.
-4. Open settings with `/scamscreener settings` (or `/ss settings`).
+3. Optional: add `Tango Web API` if you want the browser profiler.
+4. Launch the game.
+5. Open settings with `/scamscreener settings` (or `/ss settings`).
 
 ## Quick Start
 
@@ -36,7 +39,9 @@ ScamScreener is a client-side Fabric mod that analyzes incoming chat, highlights
 2. Play as usual and let ScamScreener monitor inbound chat.
 3. Open review queue (`/scamscreener review`) for flagged cases.
 4. Mark cases as `RISK`, `SAFE`, or `DISMISSED`.
-5. Export reviewed data with `/scamscreener review export` if needed.
+5. Use `/ss profiler on` when you want live timing data for lag hunting.
+6. Open `/ss profiler open` if Tango Web API is installed.
+7. Export reviewed data with `/scamscreener review export` if needed.
 
 ## How Detection Works
 
@@ -62,6 +67,7 @@ Root commands:
 
 Main command groups:
 
+- `open`, `enable`, `disable`
 - `settings`, `rules`, `runtime`, `messages`, `metrics`
 - `whitelist add/remove/clear`
 - `blacklist add/remove/clear`
@@ -69,8 +75,29 @@ Main command groups:
 - `alertlevel`
 - `autoleave on/off`
 - `mute`, `mute <regex>`, `unmute`, `unmute <regex>`
+- `profiler`, `profiler on/off/open`
 - `debug`
 - `version`, `help`
+
+## Profiler And Performance Workflow
+
+Profiler commands:
+
+- `/ss profiler` shows whether the profiler is currently enabled
+- `/ss profiler on` enables the live in-game profiler HUD
+- `/ss profiler off` disables the profiler and clears retained samples
+- `/ss profiler open` opens the browser profiler when Tango Web API is installed
+
+Profiler surfaces:
+
+- HUD overlay for live mod tick cost and hot phases
+- Browser dashboard for rolling metrics, lifetime averages, phase breakdown, and recent event log
+- `.sspp` export from the web profiler so developers can inspect one captured profile offline
+
+Notes:
+
+- The profiler is fully off when disabled and does not keep recording in the background.
+- If Tango Web API is missing, `/ss profiler open` shows a clickable download message instead of failing silently.
 
 ## GUI Overview
 
@@ -94,6 +121,7 @@ Export:
 
 - Command: `/scamscreener review export`
 - Output file: `config/scamscreener/training-cases-v2.jsonl`
+- Runs in the background and reports completion back in chat
 - Format docs: [training_case_v2](docs/training_case_v2.md)
 
 Important status:
@@ -182,6 +210,7 @@ BlacklistEvent.EVENT.register((changeType, entry) -> {
    - `.\gradlew.bat buildAndCollect`
 3. Prepare upload changelog:
    - update `MODRINTH.md`
+   - update `CHANGELOG.md`
 4. Publish:
    - set `MODRINTH_TOKEN` and `CURSEFORGE_TOKEN`
    - run `.\gradlew.bat publishMods`

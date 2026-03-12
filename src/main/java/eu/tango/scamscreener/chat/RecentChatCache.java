@@ -6,8 +6,10 @@ import eu.tango.scamscreener.pipeline.data.ChatSourceType;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * Small in-memory cache of recent inbound chat lines for case review.
@@ -17,6 +19,7 @@ public final class RecentChatCache {
 
     private final int maxEntries;
     private final Deque<CachedChatMessage> entries = new ArrayDeque<>();
+    private final Map<String, Deque<CachedChatMessage>> playerEntriesBySender = new LinkedHashMap<>();
     private long version;
 
     public RecentChatCache() {
@@ -34,21 +37,23 @@ public final class RecentChatCache {
      */
     public synchronized void record(ChatEvent chatEvent) {
         ChatEvent safeEvent = chatEvent == null ? ChatEvent.messageOnly("") : chatEvent;
-        String cleanText = normalizeText(safeEvent.getRawMessage());
+        String cleanText = normalizeText(safeEvent);
         if (cleanText.isBlank()) {
             return;
         }
 
         ChatSourceType sourceType = safeEvent.getSourceType() == null ? ChatSourceType.UNKNOWN : safeEvent.getSourceType();
-        entries.addFirst(new CachedChatMessage(
+        CachedChatMessage cachedChatMessage = new CachedChatMessage(
             safeEvent.getTimestampMs() <= 0L ? System.currentTimeMillis() : safeEvent.getTimestampMs(),
             safeEvent.getSenderName(),
             displaySender(safeEvent.getSenderName(), sourceType),
             cleanText,
             sourceType
-        ));
+        );
+        entries.addFirst(cachedChatMessage);
+        indexBySender(cachedChatMessage);
         while (entries.size() > maxEntries) {
-            entries.removeLast();
+            removeFromSenderIndex(entries.removeLast());
         }
         version++;
     }
@@ -60,6 +65,37 @@ public final class RecentChatCache {
      */
     public synchronized List<CachedChatMessage> entries() {
         return List.copyOf(new ArrayList<>(entries));
+    }
+
+    /**
+     * Returns the cached player messages for one sender, newest first.
+     *
+     * @param senderName the sender to look up
+     * @param maxSenderEntries the maximum number of entries to return
+     * @return the cached sender-local messages
+     */
+    public synchronized List<CachedChatMessage> entriesForSender(String senderName, int maxSenderEntries) {
+        String senderKey = normalize(senderName);
+        if (senderKey.isBlank()) {
+            return List.of();
+        }
+
+        Deque<CachedChatMessage> senderEntries = playerEntriesBySender.get(senderKey);
+        if (senderEntries == null || senderEntries.isEmpty()) {
+            return List.of();
+        }
+
+        int boundedLimit = Math.max(1, maxSenderEntries);
+        List<CachedChatMessage> result = new ArrayList<>(Math.min(boundedLimit, senderEntries.size()));
+        int count = 0;
+        for (CachedChatMessage entry : senderEntries) {
+            if (count++ >= boundedLimit) {
+                break;
+            }
+            result.add(entry);
+        }
+
+        return List.copyOf(result);
     }
 
     /**
@@ -80,15 +116,24 @@ public final class RecentChatCache {
         }
 
         entries.clear();
+        playerEntriesBySender.clear();
         version++;
     }
 
-    private static String normalizeText(String rawText) {
-        if (rawText == null || rawText.isBlank()) {
+    private static String normalizeText(ChatEvent chatEvent) {
+        if (chatEvent == null || chatEvent.getRawMessage() == null || chatEvent.getRawMessage().isBlank()) {
             return "";
         }
 
-        return ChatLineClassifier.displayMessageOnly(rawText.replace('\n', ' ').replace('\r', ' ').trim());
+        String rawText = chatEvent.getRawMessage().replace('\n', ' ').replace('\r', ' ').trim();
+        if (rawText.isBlank()) {
+            return "";
+        }
+        if (chatEvent.isPlayerSource()) {
+            return rawText;
+        }
+
+        return ChatLineClassifier.displayMessageOnly(rawText);
     }
 
     private static String displaySender(String senderName, ChatSourceType sourceType) {
@@ -102,6 +147,51 @@ public final class RecentChatCache {
             case PLAYER -> "Unknown Player";
             case UNKNOWN -> "Unknown";
         };
+    }
+
+    private void indexBySender(CachedChatMessage entry) {
+        if (entry == null || entry.sourceType() != ChatSourceType.PLAYER) {
+            return;
+        }
+
+        String senderKey = normalize(entry.senderName());
+        if (senderKey.isBlank()) {
+            return;
+        }
+
+        playerEntriesBySender.computeIfAbsent(senderKey, ignored -> new ArrayDeque<>()).addFirst(entry);
+    }
+
+    private void removeFromSenderIndex(CachedChatMessage entry) {
+        if (entry == null || entry.sourceType() != ChatSourceType.PLAYER) {
+            return;
+        }
+
+        String senderKey = normalize(entry.senderName());
+        if (senderKey.isBlank()) {
+            return;
+        }
+
+        Deque<CachedChatMessage> senderEntries = playerEntriesBySender.get(senderKey);
+        if (senderEntries == null || senderEntries.isEmpty()) {
+            return;
+        }
+        if (entry.equals(senderEntries.peekLast())) {
+            senderEntries.removeLast();
+        } else {
+            senderEntries.remove(entry);
+        }
+        if (senderEntries.isEmpty()) {
+            playerEntriesBySender.remove(senderKey);
+        }
+    }
+
+    private static String normalize(String value) {
+        if (value == null || value.isBlank()) {
+            return "";
+        }
+
+        return value.trim().toLowerCase(Locale.ROOT);
     }
 
     /**
@@ -166,7 +256,7 @@ public final class RecentChatCache {
                 return "";
             }
 
-            return value.trim().toLowerCase(Locale.ROOT);
+            return RecentChatCache.normalize(value);
         }
     }
 }

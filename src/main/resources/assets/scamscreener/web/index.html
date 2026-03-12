@@ -1,0 +1,1074 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ScamScreener Profiler</title>
+    <style>
+      :root {
+        --bg: #08111a;
+        --bg-2: #122234;
+        --panel: rgba(9, 18, 29, 0.86);
+        --line: rgba(124, 185, 255, 0.18);
+        --text: #eef6ff;
+        --muted: #9eb0c4;
+        --accent: #78d0ff;
+        --accent-2: #f6c177;
+        --ok: #7ce2a9;
+        --warn: #ffd479;
+        --bad: #ff8f84;
+        --shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--text);
+        font-family: "Bahnschrift", "Trebuchet MS", "Segoe UI", sans-serif;
+        background:
+          radial-gradient(900px 420px at 15% 0%, rgba(120, 208, 255, 0.18), transparent 60%),
+          radial-gradient(700px 420px at 100% 10%, rgba(246, 193, 119, 0.14), transparent 60%),
+          linear-gradient(180deg, var(--bg-2), var(--bg));
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background-image:
+          linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+        background-size: 26px 26px;
+        mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.7), transparent);
+      }
+
+      main {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 28px 18px 40px;
+      }
+
+      .hero {
+        display: grid;
+        gap: 18px;
+        grid-template-columns: 1.4fr 0.9fr;
+        align-items: end;
+        margin-bottom: 18px;
+      }
+
+      .hero-copy,
+      .hero-status,
+      .metric,
+      .lifetime-card,
+      .summary,
+      .phase-card,
+      .log-card {
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        background: linear-gradient(180deg, rgba(16, 31, 48, 0.9), var(--panel));
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(10px);
+      }
+
+      .hero-copy {
+        padding: 26px 24px 24px;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 10px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(120, 208, 255, 0.12);
+        color: var(--accent);
+        font-size: 12px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(30px, 5vw, 58px);
+        line-height: 0.94;
+        letter-spacing: -0.04em;
+      }
+
+      .subline {
+        margin-top: 12px;
+        max-width: 58ch;
+        color: var(--muted);
+        font-size: 15px;
+        line-height: 1.55;
+      }
+
+      .hero-status {
+        padding: 22px;
+        display: grid;
+        gap: 14px;
+      }
+
+      .status-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: center;
+      }
+
+      .status-row-head {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .status-actions {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .status-row strong,
+      .section-head h2 {
+        font-size: 13px;
+        color: var(--muted);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.06);
+        font-weight: 700;
+      }
+
+      .status-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 999px;
+        background: var(--warn);
+        box-shadow: 0 0 16px currentColor;
+      }
+
+      .status-pill.online .status-dot {
+        color: var(--ok);
+        background: var(--ok);
+      }
+
+      .status-pill.warn .status-dot {
+        color: var(--warn);
+        background: var(--warn);
+      }
+
+      .status-pill.off .status-dot {
+        color: var(--bad);
+        background: var(--bad);
+      }
+
+      .action-button {
+        appearance: none;
+        border: 1px solid rgba(120, 208, 255, 0.2);
+        border-radius: 999px;
+        background: rgba(120, 208, 255, 0.08);
+        color: var(--text);
+        padding: 7px 12px;
+        font: inherit;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: background 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+      }
+
+      .action-button:hover {
+        background: rgba(120, 208, 255, 0.14);
+        border-color: rgba(120, 208, 255, 0.34);
+      }
+
+      .action-button:disabled {
+        cursor: wait;
+        opacity: 0.6;
+      }
+
+      .metrics {
+        display: grid;
+        gap: 14px;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        margin-bottom: 14px;
+      }
+
+      .metric {
+        padding: 18px 18px 16px;
+      }
+
+      .metric-label {
+        color: var(--muted);
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .metric-value {
+        margin-top: 10px;
+        font-size: clamp(22px, 2.7vw, 34px);
+        letter-spacing: -0.04em;
+      }
+
+      .metric-note {
+        margin-top: 8px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      .lifetime-card {
+        margin-bottom: 14px;
+        padding: 18px 20px;
+      }
+
+      .lifetime-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: baseline;
+        margin-bottom: 12px;
+      }
+
+      .lifetime-head h2 {
+        margin: 0;
+        font-size: 16px;
+        color: var(--muted);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .lifetime-head span {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .lifetime-grid {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .lifetime-item {
+        padding: 14px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+      }
+
+      .lifetime-label {
+        color: var(--muted);
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .lifetime-value {
+        margin-top: 8px;
+        font-size: clamp(20px, 2.4vw, 30px);
+        letter-spacing: -0.04em;
+      }
+
+      .content {
+        display: grid;
+        gap: 14px;
+        grid-template-columns: 0.92fr 1.08fr;
+        margin-bottom: 14px;
+      }
+
+      .summary,
+      .phase-card,
+      .log-card {
+        padding: 20px;
+      }
+
+      .summary,
+      .phase-card {
+        display: flex;
+        flex-direction: column;
+        min-height: 380px;
+        max-height: 380px;
+      }
+
+      .section-head,
+      .phases-head,
+      .log-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+
+      .section-head h2,
+      .phases-head h2,
+      .log-head h2 {
+        margin: 0;
+        font-size: 16px;
+      }
+
+      .section-head span,
+      .phases-head span,
+      .log-head span,
+      .summary-copy {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .summary-scroll,
+      .phase-scroll {
+        flex: 1;
+        overflow: auto;
+        padding-right: 4px;
+        scrollbar-width: thin;
+      }
+
+      .summary-copy {
+        min-height: 0;
+        padding: 14px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        line-height: 1.5;
+      }
+
+      .summary-grid {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        margin-top: 10px;
+      }
+
+      .summary-chip {
+        padding: 12px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+      }
+
+      .summary-chip strong {
+        display: block;
+        margin-bottom: 6px;
+        color: var(--muted);
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .phase-list {
+        display: grid;
+        gap: 8px;
+      }
+
+      .phase-row {
+        padding: 10px 12px 9px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.035);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+      }
+
+      .phase-row.phase-row-new {
+        animation: rise 0.35s ease;
+      }
+
+      .phase-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: baseline;
+        margin-bottom: 4px;
+      }
+
+      .phase-name {
+        font-size: 14px;
+        font-weight: 700;
+      }
+
+      .phase-last {
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .phase-meta {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .phase-bar {
+        margin-top: 7px;
+        height: 6px;
+        border-radius: 999px;
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.06);
+      }
+
+      .phase-bar > span {
+        display: block;
+        height: 100%;
+        width: 0%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, var(--accent), var(--accent-2));
+        transition: width 0.35s ease;
+      }
+
+      .log-wrap {
+        overflow-x: auto;
+        scrollbar-width: thin;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 930px;
+      }
+
+      th,
+      td {
+        padding: 12px 10px;
+        text-align: left;
+        vertical-align: top;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      th {
+        color: var(--muted);
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        border-top: 0;
+      }
+
+      td {
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      tbody tr:hover {
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      .log-message {
+        min-width: 250px;
+      }
+
+      .log-summary {
+        display: block;
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .outcome-pill,
+      .phase-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 9px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+
+      .outcome-pill {
+        background: rgba(255, 255, 255, 0.07);
+      }
+
+      .outcome-pill.review {
+        color: var(--warn);
+      }
+
+      .outcome-pill.blacklisted,
+      .outcome-pill.block,
+      .outcome-pill.blocked,
+      .outcome-pill.muted {
+        color: var(--bad);
+      }
+
+      .outcome-pill.whitelisted,
+      .outcome-pill.allow {
+        color: var(--ok);
+      }
+
+      .phase-pill {
+        margin: 0 6px 6px 0;
+        background: rgba(120, 208, 255, 0.12);
+        color: var(--accent);
+      }
+
+      .empty-state {
+        padding: 18px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px dashed rgba(255, 255, 255, 0.12);
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      @keyframes rise {
+        from {
+          transform: translateY(10px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      @media (max-width: 1120px) {
+        .metrics {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .lifetime-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 960px) {
+        .hero,
+        .content {
+          grid-template-columns: 1fr;
+        }
+
+        .summary,
+        .phase-card {
+          min-height: 0;
+          max-height: none;
+        }
+
+        .summary-scroll,
+        .phase-scroll {
+          overflow: visible;
+          padding-right: 0;
+        }
+      }
+
+      @media (max-width: 640px) {
+        main {
+          padding: 18px 12px 28px;
+        }
+
+        .metrics,
+        .summary-grid,
+        .lifetime-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .hero-copy,
+        .hero-status,
+        .metric,
+        .lifetime-card,
+        .summary,
+        .phase-card,
+        .log-card {
+          border-radius: 20px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="hero">
+        <div class="hero-copy">
+          <div class="eyebrow">ScamScreener Tick Lens</div>
+          <h1>Live tick pressure, phase by phase.</h1>
+          <div class="subline">
+            Live and lifetime stats for how ScamScreener spends time on the client thread.
+          </div>
+        </div>
+        <div class="hero-status">
+          <div class="status-row">
+            <div class="status-row-head">
+              <strong>Connection</strong>
+              <div class="status-actions">
+                <button id="exportButton" class="action-button" type="button">Export .sspp</button>
+                <button id="resetButton" class="action-button" type="button">Reset</button>
+              </div>
+            </div>
+            <div id="connectionPill" class="status-pill warn">
+              <span class="status-dot"></span>
+              <span id="connectionLabel">Not Running</span>
+            </div>
+          </div>
+          <div class="status-row">
+            <strong>Captured</strong>
+            <span id="capturedAt">-</span>
+          </div>
+          <div class="status-row">
+            <strong>Recording</strong>
+            <span id="recordingState">-</span>
+          </div>
+          <div class="status-row">
+            <strong>HUD</strong>
+            <span id="hudState">-</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="metrics">
+        <article class="metric">
+          <div class="metric-label">Mod Last</div>
+          <div class="metric-value" id="lastTick">0.00 ms</div>
+          <div class="metric-note">Measured ScamScreener time on the visible tick.</div>
+        </article>
+        <article class="metric">
+          <div class="metric-label">Mod Average</div>
+          <div class="metric-value" id="avgTick">0.00 ms</div>
+          <div class="metric-note">Rolling mean across active profiler samples.</div>
+        </article>
+        <article class="metric">
+          <div class="metric-label">Mod Peak</div>
+          <div class="metric-value" id="maxTick">0.00 ms</div>
+          <div class="metric-note">Highest retained ScamScreener cost.</div>
+        </article>
+        <article class="metric">
+          <div class="metric-label">MSPT</div>
+          <div class="metric-value" id="msptValue">0.00 / 50.00</div>
+          <div class="metric-note">Current client tick time against the 50 ms budget.</div>
+        </article>
+        <article class="metric">
+          <div class="metric-label">TPS</div>
+          <div class="metric-value" id="tpsValue">20.00 / 20.00</div>
+          <div class="metric-note">Current tick rate against the 20 TPS baseline.</div>
+        </article>
+        <article class="metric">
+          <div class="metric-label">Active Ticks</div>
+          <div class="metric-value" id="activeTicks">0</div>
+          <div class="metric-note">Number of ticks represented in the retained history.</div>
+        </article>
+      </section>
+
+      <section class="lifetime-card">
+        <div class="lifetime-head">
+          <h2>Average Since Profiler Is Running</h2>
+          <span>Lifetime average across all recorded active profiler ticks.</span>
+        </div>
+        <div class="lifetime-grid">
+          <div class="lifetime-item">
+            <div class="lifetime-label">Mod Average</div>
+            <div class="lifetime-value" id="lifetimeModAvg">0.00 ms</div>
+          </div>
+          <div class="lifetime-item">
+            <div class="lifetime-label">MSPT</div>
+            <div class="lifetime-value" id="lifetimeMspt">0.00 ms / 50.00 ms</div>
+          </div>
+          <div class="lifetime-item">
+            <div class="lifetime-label">TPS</div>
+            <div class="lifetime-value" id="lifetimeTps">20.00 / 20.00</div>
+          </div>
+          <div class="lifetime-item">
+            <div class="lifetime-label">Samples</div>
+            <div class="lifetime-value" id="lifetimeSamples">0</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="content">
+        <article class="summary">
+          <div class="section-head">
+            <h2>Recent Event</h2>
+            <span id="dataState">No samples yet</span>
+          </div>
+          <div class="summary-scroll">
+            <div id="summaryCopy" class="summary-copy">
+              Open chat activity or wait for ScamScreener to process messages. The profiler will start filling in as soon
+              as measured phases are captured.
+            </div>
+            <div class="summary-grid">
+              <div class="summary-chip">
+                <strong>Hot Phase</strong>
+                <div id="hotPhase">-</div>
+              </div>
+              <div class="summary-chip">
+                <strong>Last Share</strong>
+                <div id="hotShare">-</div>
+              </div>
+              <div class="summary-chip">
+                <strong>Phase Count</strong>
+                <div id="phaseCount">0</div>
+              </div>
+              <div class="summary-chip">
+                <strong>Refresh</strong>
+                <div id="refreshRate">1000 ms polling</div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="phase-card">
+          <div class="phases-head">
+            <h2>Phase Breakdown</h2>
+            <span>Lifetime average since the profiler started. Rows update in place.</span>
+          </div>
+          <div class="phase-scroll">
+            <div id="phaseList" class="phase-list"></div>
+          </div>
+        </article>
+      </section>
+
+      <section class="log-card">
+        <div class="log-head">
+          <h2>Event Log</h2>
+          <span>Recent messages with their measured mod cost and top contributing phases.</span>
+        </div>
+        <div class="log-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Sender</th>
+                <th>Message</th>
+                <th>Mod</th>
+                <th>MSPT</th>
+                <th>TPS</th>
+                <th>Outcome</th>
+                <th>Top Phases</th>
+              </tr>
+            </thead>
+            <tbody id="eventLogBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const POLL_INTERVAL = 1000;
+      const SNAPSHOT_URL = "/scamscreener/api/profiler";
+      const RESET_URL = "/scamscreener/api/profiler/reset";
+      const EXPORT_URL = "/scamscreener/api/profiler/export";
+      const phaseNodes = new Map();
+
+      const connectionPill = document.getElementById("connectionPill");
+      const connectionLabel = document.getElementById("connectionLabel");
+      const exportButton = document.getElementById("exportButton");
+      const resetButton = document.getElementById("resetButton");
+      const capturedAt = document.getElementById("capturedAt");
+      const recordingState = document.getElementById("recordingState");
+      const hudState = document.getElementById("hudState");
+      const lastTick = document.getElementById("lastTick");
+      const avgTick = document.getElementById("avgTick");
+      const maxTick = document.getElementById("maxTick");
+      const msptValue = document.getElementById("msptValue");
+      const tpsValue = document.getElementById("tpsValue");
+      const activeTicks = document.getElementById("activeTicks");
+      const lifetimeModAvg = document.getElementById("lifetimeModAvg");
+      const lifetimeMspt = document.getElementById("lifetimeMspt");
+      const lifetimeTps = document.getElementById("lifetimeTps");
+      const lifetimeSamples = document.getElementById("lifetimeSamples");
+      const dataState = document.getElementById("dataState");
+      const summaryCopy = document.getElementById("summaryCopy");
+      const hotPhase = document.getElementById("hotPhase");
+      const hotShare = document.getElementById("hotShare");
+      const phaseCount = document.getElementById("phaseCount");
+      const refreshRate = document.getElementById("refreshRate");
+      const phaseList = document.getElementById("phaseList");
+      const eventLogBody = document.getElementById("eventLogBody");
+
+      refreshRate.textContent = `${POLL_INTERVAL} ms polling`;
+
+      function formatMillis(value) {
+        const number = Number(value || 0);
+        return `${number.toFixed(2)} ms`;
+      }
+
+      function formatRate(value) {
+        const number = Number(value || 0);
+        return number.toFixed(2);
+      }
+
+      function formatPair(current, normal, suffix = "") {
+        return `${formatRate(current)}${suffix} / ${formatRate(normal)}${suffix}`;
+      }
+
+      function formatShare(value) {
+        const normalized = Math.max(0, Math.min(1, Number(value || 0)));
+        return `${Math.round(normalized * 100)}%`;
+      }
+
+      function setConnection(mode, label) {
+        connectionPill.className = `status-pill ${mode}`;
+        connectionLabel.textContent = label;
+      }
+
+      function buildExportFileName() {
+        const now = new Date();
+        const pad = value => String(value).padStart(2, "0");
+        const stamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
+        return `scamscreener-profiler-${stamp}.sspp`;
+      }
+
+      function pickHotPhase(phases) {
+        if (!Array.isArray(phases) || phases.length === 0) {
+          return null;
+        }
+
+        return phases.reduce((best, current) => {
+          if (!best) {
+            return current;
+          }
+          return (current.lastMillis || 0) > (best.lastMillis || 0) ? current : best;
+        }, null);
+      }
+
+      function clearPhaseNodes() {
+        phaseNodes.clear();
+      }
+
+      function renderPhaseEmpty(message) {
+        clearPhaseNodes();
+        phaseList.innerHTML = `<div class="empty-state">${escapeHtml(message)}</div>`;
+      }
+
+      function createPhaseRow(key) {
+        const row = document.createElement("div");
+        row.className = "phase-row phase-row-new";
+        row.dataset.key = key;
+        row.innerHTML = `
+          <div class="phase-top">
+            <div class="phase-name"></div>
+            <div class="phase-last"></div>
+          </div>
+          <div class="phase-meta">
+            <span data-role="avg"></span>
+            <span data-role="max"></span>
+            <span data-role="samples"></span>
+            <span data-role="share"></span>
+          </div>
+          <div class="phase-bar"><span></span></div>
+        `;
+        row.addEventListener("animationend", () => row.classList.remove("phase-row-new"), { once: true });
+        phaseNodes.set(key, row);
+        return row;
+      }
+
+      function updatePhaseRow(row, phase) {
+        row.querySelector(".phase-name").textContent = phase.label || phase.key || "Unknown";
+        row.querySelector(".phase-last").textContent = `avg ${formatMillis(phase.lifetimeAverageMillis)}`;
+        row.querySelector('[data-role="avg"]').textContent = `last ${formatMillis(phase.lastMillis)}`;
+        row.querySelector('[data-role="max"]').textContent = `max ${formatMillis(phase.lifetimeMaxMillis)}`;
+        row.querySelector('[data-role="samples"]').textContent = `${phase.lifetimeSamples || 0} lifetime samples`;
+        row.querySelector('[data-role="share"]').textContent = `${formatShare(phase.shareOfLifetimeAverageTick)} of lifetime avg`;
+        const bar = row.querySelector(".phase-bar > span");
+        const sharePercent = phase.lifetimeAverageMillis > 0
+          ? Math.max(4, Math.round((phase.shareOfLifetimeAverageTick || 0) * 100))
+          : 0;
+        bar.style.width = `${sharePercent}%`;
+      }
+
+      function renderPhases(phases) {
+        if (!Array.isArray(phases) || phases.length === 0) {
+          renderPhaseEmpty("No measured phases yet. Keep this page open and trigger ScamScreener activity.");
+          return;
+        }
+
+        if (phaseList.querySelector(".empty-state")) {
+          phaseList.innerHTML = "";
+        }
+
+        const nextKeys = new Set();
+        phases.forEach((phase, index) => {
+          const key = phase.key || `phase-${index}`;
+          nextKeys.add(key);
+
+          let row = phaseNodes.get(key);
+          if (!row) {
+            row = createPhaseRow(key);
+          }
+
+          updatePhaseRow(row, phase);
+          phaseList.appendChild(row);
+        });
+
+        for (const [key, row] of phaseNodes.entries()) {
+          if (nextKeys.has(key)) {
+            continue;
+          }
+
+          row.remove();
+          phaseNodes.delete(key);
+        }
+      }
+
+      function renderEventLog(events) {
+        if (!Array.isArray(events) || events.length === 0) {
+          eventLogBody.innerHTML = `
+            <tr>
+              <td colspan="8">
+                <div class="empty-state">No message samples yet. Once ScamScreener processes chat, rows will appear here.</div>
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        eventLogBody.innerHTML = events.map(event => {
+          const outcomeClass = String(event.outcome || "").toLowerCase();
+          const phaseHtml = Array.isArray(event.phases) && event.phases.length > 0
+            ? event.phases.map(phase =>
+                `<span class="phase-pill">${escapeHtml(phase.label || phase.key || "Unknown")} ${formatMillis(phase.millis)}</span>`
+              ).join("")
+            : `<span class="log-summary">No phase delta recorded</span>`;
+
+          return `
+            <tr>
+              <td>${escapeHtml(new Date(event.capturedAtMillis || Date.now()).toLocaleTimeString())}</td>
+              <td>${escapeHtml(event.sender || "-")}</td>
+              <td class="log-message">
+                ${escapeHtml(event.message || "-")}
+                <span class="log-summary">${escapeHtml(event.summary || "")}</span>
+              </td>
+              <td>${formatMillis(event.measuredMillis)}</td>
+              <td>${formatPair(event.tickMillis, 50, " ms")}</td>
+              <td>${formatPair(event.tps, 20)}</td>
+              <td>
+                <span class="outcome-pill ${outcomeClass}">${escapeHtml(event.outcome || "UNKNOWN")}</span>
+                ${event.decidedBy ? `<span class="log-summary">via ${escapeHtml(event.decidedBy)}</span>` : ""}
+              </td>
+              <td>${phaseHtml}</td>
+            </tr>
+          `;
+        }).join("");
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll("\"", "&quot;")
+          .replaceAll("'", "&#39;");
+      }
+
+      async function loadSnapshot() {
+        try {
+          const response = await fetch(SNAPSHOT_URL, { cache: "no-store" });
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+
+          const data = await response.json();
+          applySnapshot(data);
+        } catch (error) {
+          setConnection("off", "Offline");
+          capturedAt.textContent = "-";
+          recordingState.textContent = "-";
+          hudState.textContent = "-";
+          lastTick.textContent = "0.00 ms";
+          avgTick.textContent = "0.00 ms";
+          maxTick.textContent = "0.00 ms";
+          msptValue.textContent = "0.00 ms / 50.00 ms";
+          tpsValue.textContent = "0.00 / 20.00";
+          activeTicks.textContent = "0";
+          lifetimeModAvg.textContent = "0.00 ms";
+          lifetimeMspt.textContent = "0.00 ms / 50.00 ms";
+          lifetimeTps.textContent = "0.00 / 20.00";
+          lifetimeSamples.textContent = "0";
+          dataState.textContent = "Endpoint unavailable";
+          summaryCopy.textContent = "The web endpoint is not responding. Make sure TangoWebAPI is installed and the game is still running.";
+          hotPhase.textContent = "-";
+          hotShare.textContent = "-";
+          phaseCount.textContent = "0";
+          renderPhaseEmpty("Could not reach /scamscreener/api/profiler.");
+          renderEventLog([]);
+        }
+      }
+
+      function applySnapshot(data) {
+        const isRunning = !!data.recordingEnabled;
+        setConnection(isRunning ? "online" : "warn", isRunning ? "Live" : "Not Running");
+        capturedAt.textContent = new Date(data.capturedAtMillis || Date.now()).toLocaleTimeString();
+        recordingState.textContent = isRunning ? "Running" : "Stopped";
+        hudState.textContent = data.hudEnabled ? "Visible" : "Off";
+        lastTick.textContent = formatMillis(data.lastTickMillis);
+        avgTick.textContent = formatMillis(data.averageTickMillis);
+        maxTick.textContent = formatMillis(data.maxTickMillis);
+        msptValue.textContent = formatPair(data.lastTickDurationMillis, data.normalMspt, " ms");
+        tpsValue.textContent = formatPair(data.currentTps, data.normalTps);
+        activeTicks.textContent = String(data.activeTickCount || 0);
+        lifetimeModAvg.textContent = formatMillis(data.lifetimeAverageTickMillis);
+        lifetimeMspt.textContent = formatPair(data.lifetimeAverageTickDurationMillis, data.normalMspt, " ms");
+        lifetimeTps.textContent = formatPair(data.lifetimeAverageTps, data.normalTps);
+        lifetimeSamples.textContent = String(data.lifetimeActiveTickCount || 0);
+        dataState.textContent = data.hasData ? "Samples live" : (isRunning ? "Waiting for first sample" : "Profiler not running");
+        summaryCopy.textContent = data.eventSummary
+          || (isRunning
+            ? "No event summary recorded yet for the visible tick."
+            : "Enable the profiler to start collecting live ScamScreener timing data.");
+        phaseCount.textContent = String((data.phases || []).length);
+
+        const phase = pickHotPhase(data.phases || []);
+        hotPhase.textContent = phase ? phase.label || phase.key || "-" : "-";
+        hotShare.textContent = phase ? formatShare(phase.shareOfLastTick) : "-";
+
+        renderPhases(data.phases || []);
+        renderEventLog(data.events || []);
+      }
+
+      async function resetProfiler() {
+        resetButton.disabled = true;
+        try {
+          const response = await fetch(RESET_URL, { cache: "no-store" });
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+
+          const data = await response.json();
+          applySnapshot(data);
+        } catch (error) {
+          setConnection("off", "Offline");
+          dataState.textContent = "Reset failed";
+        } finally {
+          resetButton.disabled = false;
+        }
+      }
+
+      async function exportProfiler() {
+        exportButton.disabled = true;
+        try {
+          const response = await fetch(EXPORT_URL, { cache: "no-store" });
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+
+          const blob = await response.blob();
+          const blobUrl = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = blobUrl;
+          link.download = buildExportFileName();
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          URL.revokeObjectURL(blobUrl);
+        } catch (error) {
+          dataState.textContent = "Export failed";
+        } finally {
+          exportButton.disabled = false;
+        }
+      }
+
+      exportButton.addEventListener("click", exportProfiler);
+      resetButton.addEventListener("click", resetProfiler);
+      loadSnapshot();
+      setInterval(loadSnapshot, POLL_INTERVAL);
+    </script>
+  </body>
+</html>

@@ -14,6 +14,8 @@ import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.text.Text;
 import net.minecraft.util.Util;
 
+import java.util.concurrent.CompletionException;
+
 /**
  * Root settings hub for ScamScreener.
  */
@@ -193,13 +195,17 @@ public final class ScamScreenerMainScreen extends BaseScreen {
     }
 
     private void exportTrainingCases() {
-        try {
-            var exportResult = ScamScreenerRuntime.getInstance().trainingCaseExportService()
-                .exportReviewedCases(ScamScreenerRuntime.getInstance().reviewStore().entries());
-            MessageDispatcher.reply(ClientMessages.trainingCasesExported(exportResult));
-        } catch (IllegalStateException exception) {
-            MessageDispatcher.reply(ClientMessages.trainingCasesExportFailed(exception.getMessage()));
-        }
+        MessageDispatcher.reply(ClientMessages.trainingCasesExportStarted());
+        ScamScreenerRuntime.getInstance().trainingCaseExportService()
+            .exportReviewedCasesAsync(ScamScreenerRuntime.getInstance().reviewStore().entries())
+            .whenComplete((exportResult, throwable) -> {
+                if (throwable != null) {
+                    MessageDispatcher.reply(ClientMessages.trainingCasesExportFailed(rootCauseMessage(throwable)));
+                    return;
+                }
+
+                MessageDispatcher.reply(ClientMessages.trainingCasesExported(exportResult));
+            });
     }
 
     private void contributeTrainingData() {
@@ -246,5 +252,15 @@ public final class ScamScreenerMainScreen extends BaseScreen {
         if (contributeTrainingButton != null) {
             contributeTrainingButton.active = false;
         }
+    }
+
+    private static String rootCauseMessage(Throwable throwable) {
+        Throwable rootCause = throwable;
+        while (rootCause instanceof CompletionException && rootCause.getCause() != null) {
+            rootCause = rootCause.getCause();
+        }
+
+        String message = rootCause == null ? null : rootCause.getMessage();
+        return message == null || message.isBlank() ? "unknown error" : message;
     }
 }

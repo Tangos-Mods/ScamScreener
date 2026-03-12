@@ -1,5 +1,6 @@
 package eu.tango.scamscreener.message;
 
+import eu.tango.scamscreener.profiler.ScamScreenerProfiler;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.sound.SoundEvents;
 
@@ -29,11 +30,13 @@ public final class NotificationService {
             long delayMs = index * WARNING_TONE_DELAY_MS;
             CompletableFuture.delayedExecutor(delayMs, TimeUnit.MILLISECONDS).execute(() ->
                 client.execute(() -> {
-                    if (client.player == null) {
-                        return;
-                    }
+                    try (ScamScreenerProfiler.Scope ignored = ScamScreenerProfiler.getInstance().scope("notification.warning_tone", "  Warning Tone")) {
+                        if (client.player == null) {
+                            return;
+                        }
 
-                    client.player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_PLING.value(), 0.8F, 1.2F);
+                        client.player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_PLING.value(), 0.8F, 1.2F);
+                    }
                 })
             );
         }

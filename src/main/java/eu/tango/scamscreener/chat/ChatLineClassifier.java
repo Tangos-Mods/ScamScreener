@@ -37,26 +37,7 @@ public final class ChatLineClassifier {
      * @return the detected chat line type
      */
     public static ChatLineType classify(String rawLine) {
-        if (rawLine == null || rawLine.isBlank()) {
-            return ChatLineType.UNKNOWN;
-        }
-
-        String cleaned = stripFormatting(rawLine).trim();
-        if (isSystemPrefix(cleaned)) {
-            return ChatLineType.SYSTEM;
-        }
-
-        if (parsePlayerMessage(cleaned).isPresent()) {
-            return ChatLineType.PLAYER;
-        }
-
-        if (looksLikeIgnoredFormat(cleaned)) {
-            return ChatLineType.IGNORED;
-        }
-
-        return looksLikeSystemMessage(cleaned)
-            ? ChatLineType.SYSTEM
-            : ChatLineType.UNKNOWN;
+        return analyze(rawLine).type();
     }
 
     /**
@@ -76,12 +57,13 @@ public final class ChatLineClassifier {
      * @return the simplified message body for UI display
      */
     public static String displayMessageOnly(String rawLine) {
-        if (rawLine == null || rawLine.isBlank()) {
+        Analysis analysis = analyze(rawLine);
+        if (analysis.cleanedLine().isBlank()) {
             return "";
         }
 
-        String cleaned = stripFormatting(rawLine).trim();
-        ParsedPlayerLine parsedPlayerLine = parsePlayerMessage(cleaned).orElse(null);
+        String cleaned = analysis.cleanedLine();
+        ParsedPlayerLine parsedPlayerLine = analysis.parsedPlayerLine();
         if (parsedPlayerLine != null) {
             return parsedPlayerLine.message();
         }
@@ -111,15 +93,46 @@ public final class ChatLineClassifier {
      * @return the parsed sender/message pair, when the line matches player chat
      */
     public static Optional<ParsedPlayerLine> parsePlayerMessage(String rawLine) {
+        return Optional.ofNullable(analyze(rawLine).parsedPlayerLine());
+    }
+
+    /**
+     * Performs one single-pass analysis of a visible line for the hot GAME callback path.
+     *
+     * @param rawLine the visible raw line
+     * @return the combined analysis result
+     */
+    public static Analysis analyze(String rawLine) {
         if (rawLine == null || rawLine.isBlank()) {
-            return Optional.empty();
+            return Analysis.unknown("");
         }
 
         String cleaned = stripFormatting(rawLine).trim();
+        if (cleaned.isBlank()) {
+            return Analysis.unknown("");
+        }
         if (isSystemPrefix(cleaned)) {
-            return Optional.empty();
+            return Analysis.system(cleaned);
         }
 
+        ParsedPlayerLine parsedPlayerLine = null;
+        if (mayBePlayerMessage(cleaned)) {
+            parsedPlayerLine = parseCleanedPlayerMessage(cleaned).orElse(null);
+            if (parsedPlayerLine != null) {
+                return Analysis.player(cleaned, parsedPlayerLine);
+            }
+        }
+
+        if (looksLikeIgnoredFormat(cleaned)) {
+            return Analysis.ignored(cleaned);
+        }
+
+        return looksLikeSystemMessage(cleaned)
+            ? Analysis.system(cleaned)
+            : Analysis.unknown(cleaned);
+    }
+
+    private static Optional<ParsedPlayerLine> parseCleanedPlayerMessage(String cleaned) {
         Optional<ParsedPlayerLine> directMessage = parsePrefixedPlayerMessage(cleaned, "From:");
         if (directMessage.isPresent()) {
             return directMessage;
@@ -153,6 +166,20 @@ public final class ChatLineClassifier {
         }
 
         return parseSenderAndMessage(remainder);
+    }
+
+    private static boolean mayBePlayerMessage(String rawLine) {
+        if (rawLine == null || rawLine.isBlank()) {
+            return false;
+        }
+        if (rawLine.indexOf(':') <= 0) {
+            return false;
+        }
+
+        return startsWithIgnoreCase(rawLine, "From:")
+            || startsWithIgnoreCase(rawLine, "Guild >")
+            || startsWithIgnoreCase(rawLine, "Party >")
+            || hasPublicLevelPrefix(rawLine);
     }
 
     private static Optional<ParsedPlayerLine> parseSenderAndMessage(String rawLine) {
@@ -195,20 +222,34 @@ public final class ChatLineClassifier {
             return "";
         }
 
-        String[] tokens = senderSection.trim().split("\\s+");
-        if (tokens.length == 0) {
+        String trimmedSection = senderSection.trim();
+        int candidateStart = lastTokenStart(trimmedSection);
+        if (candidateStart < 0 || candidateStart >= trimmedSection.length()) {
             return "";
         }
 
-        String candidateName = tokens[tokens.length - 1];
+        String candidateName = trimmedSection.substring(candidateStart);
         if (!isValidPlayerName(candidateName)) {
             return "";
         }
 
-        for (int index = 0; index < tokens.length - 1; index++) {
-            if (!isAllowedSenderMetadataToken(tokens[index])) {
+        int index = 0;
+        while (index < candidateStart) {
+            while (index < candidateStart && Character.isWhitespace(trimmedSection.charAt(index))) {
+                index++;
+            }
+            if (index >= candidateStart) {
+                break;
+            }
+
+            int tokenEnd = index;
+            while (tokenEnd < candidateStart && !Character.isWhitespace(trimmedSection.charAt(tokenEnd))) {
+                tokenEnd++;
+            }
+            if (!isAllowedSenderMetadataToken(trimmedSection.substring(index, tokenEnd))) {
                 return "";
             }
+            index = tokenEnd;
         }
 
         return candidateName;
@@ -345,7 +386,40 @@ public final class ChatLineClassifier {
             return 0;
         }
 
-        return value.trim().split("\\s+").length;
+        int count = 0;
+        boolean inWord = false;
+        for (int index = 0; index < value.length(); index++) {
+            char character = value.charAt(index);
+            if (Character.isWhitespace(character)) {
+                inWord = false;
+                continue;
+            }
+            if (!inWord) {
+                count++;
+                inWord = true;
+            }
+        }
+
+        return count;
+    }
+
+    private static int lastTokenStart(String value) {
+        if (value == null || value.isBlank()) {
+            return -1;
+        }
+
+        int index = value.length() - 1;
+        while (index >= 0 && Character.isWhitespace(value.charAt(index))) {
+            index--;
+        }
+        if (index < 0) {
+            return -1;
+        }
+        while (index >= 0 && !Character.isWhitespace(value.charAt(index))) {
+            index--;
+        }
+
+        return index + 1;
     }
 
     private static boolean startsWithIgnoreCase(String value, String prefix) {
@@ -407,6 +481,31 @@ public final class ChatLineClassifier {
         public ParsedPlayerLine {
             senderName = senderName == null ? "" : senderName.trim();
             message = message == null ? "" : message.trim();
+        }
+    }
+
+    /**
+     * Single-pass classifier output for one visible line.
+     *
+     * @param type the detected line type
+     * @param cleanedLine the formatting-stripped visible line
+     * @param parsedPlayerLine the parsed player payload when the line is player chat
+     */
+    public record Analysis(ChatLineType type, String cleanedLine, ParsedPlayerLine parsedPlayerLine) {
+        private static Analysis player(String cleanedLine, ParsedPlayerLine parsedPlayerLine) {
+            return new Analysis(ChatLineType.PLAYER, cleanedLine, parsedPlayerLine);
+        }
+
+        private static Analysis system(String cleanedLine) {
+            return new Analysis(ChatLineType.SYSTEM, cleanedLine, null);
+        }
+
+        private static Analysis ignored(String cleanedLine) {
+            return new Analysis(ChatLineType.IGNORED, cleanedLine, null);
+        }
+
+        private static Analysis unknown(String cleanedLine) {
+            return new Analysis(ChatLineType.UNKNOWN, cleanedLine, null);
         }
     }
 }

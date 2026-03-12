@@ -21,6 +21,7 @@ import net.minecraft.util.Util;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletionException;
 
 /**
  * Review list screen using the case-oriented review workflow.
@@ -300,13 +301,17 @@ public final class ReviewScreen extends BaseListScreen {
     }
 
     private void exportTrainingCases() {
-        try {
-            var exportResult = ScamScreenerRuntime.getInstance().trainingCaseExportService()
-                .exportReviewedCases(ScamScreenerRuntime.getInstance().reviewStore().entries());
-            MessageDispatcher.reply(ClientMessages.trainingCasesExported(exportResult));
-        } catch (IllegalStateException exception) {
-            MessageDispatcher.reply(ClientMessages.trainingCasesExportFailed(exception.getMessage()));
-        }
+        MessageDispatcher.reply(ClientMessages.trainingCasesExportStarted());
+        ScamScreenerRuntime.getInstance().trainingCaseExportService()
+            .exportReviewedCasesAsync(ScamScreenerRuntime.getInstance().reviewStore().entries())
+            .whenComplete((exportResult, throwable) -> {
+                if (throwable != null) {
+                    MessageDispatcher.reply(ClientMessages.trainingCasesExportFailed(rootCauseMessage(throwable)));
+                    return;
+                }
+
+                MessageDispatcher.reply(ClientMessages.trainingCasesExported(exportResult));
+            });
     }
 
     private void contributeTrainingData() {
@@ -492,6 +497,16 @@ public final class ReviewScreen extends BaseListScreen {
         }
 
         return currentSearch;
+    }
+
+    private static String rootCauseMessage(Throwable throwable) {
+        Throwable rootCause = throwable;
+        while (rootCause instanceof CompletionException && rootCause.getCause() != null) {
+            rootCause = rootCause.getCause();
+        }
+
+        String message = rootCause == null ? null : rootCause.getMessage();
+        return message == null || message.isBlank() ? "unknown error" : message;
     }
 
     private enum ReviewFilter {

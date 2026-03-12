@@ -1,13 +1,14 @@
 package eu.tango.scamscreener.pipeline.state;
 
-import eu.tango.scamscreener.chat.TextNormalization;
 import eu.tango.scamscreener.pipeline.data.ChatEvent;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -20,6 +21,7 @@ public final class TrendStore implements PipelineStateStore<TrendStore.TrendSnap
     private long windowMs;
     private int maxHistory;
     private final Deque<TrendRecord> recentMessages = new ArrayDeque<>();
+    private final Map<String, Deque<TrendRecord>> recordsByFingerprint = new LinkedHashMap<>();
 
     /**
      * Creates a trend store with default history bounds.
@@ -60,7 +62,7 @@ public final class TrendStore implements PipelineStateStore<TrendStore.TrendSnap
     public synchronized TrendSnapshot snapshotFor(ChatEvent chatEvent) {
         String senderKey = StateStoreSupport.senderKey(chatEvent);
         String normalizedMessage = StateStoreSupport.normalizedMessage(chatEvent);
-        String fingerprint = TextNormalization.fingerprint(StateStoreSupport.rawMessage(chatEvent));
+        String fingerprint = StateStoreSupport.messageFingerprint(chatEvent);
         if (senderKey.isBlank() || normalizedMessage.isBlank() || fingerprint.isBlank()) {
             return TrendSnapshot.empty();
         }
@@ -70,7 +72,12 @@ public final class TrendStore implements PipelineStateStore<TrendStore.TrendSnap
 
         int matchingMessageCount = 0;
         Set<String> matchingSenderKeys = new LinkedHashSet<>();
-        for (TrendRecord record : recentMessages) {
+        Deque<TrendRecord> matchingRecords = recordsByFingerprint.get(fingerprint);
+        if (matchingRecords == null || matchingRecords.isEmpty()) {
+            return TrendSnapshot.empty();
+        }
+
+        for (TrendRecord record : matchingRecords) {
             if (!fingerprint.equals(record.fingerprint())) {
                 continue;
             }
@@ -99,17 +106,17 @@ public final class TrendStore implements PipelineStateStore<TrendStore.TrendSnap
     public synchronized void record(ChatEvent chatEvent) {
         String senderKey = StateStoreSupport.senderKey(chatEvent);
         String normalizedMessage = StateStoreSupport.normalizedMessage(chatEvent);
-        String fingerprint = TextNormalization.fingerprint(StateStoreSupport.rawMessage(chatEvent));
+        String fingerprint = StateStoreSupport.messageFingerprint(chatEvent);
         if (senderKey.isBlank() || normalizedMessage.isBlank() || fingerprint.isBlank()) {
             return;
         }
 
         long nowMs = StateStoreSupport.timestamp(chatEvent);
         prune(nowMs);
-        recentMessages.addLast(new TrendRecord(nowMs, senderKey, normalizedMessage, fingerprint));
-        while (recentMessages.size() > maxHistory) {
-            recentMessages.removeFirst();
-        }
+        TrendRecord record = new TrendRecord(nowMs, senderKey, normalizedMessage, fingerprint);
+        recentMessages.addLast(record);
+        recordsByFingerprint.computeIfAbsent(fingerprint, ignored -> new ArrayDeque<>()).addLast(record);
+        trimHistory();
     }
 
     /**
@@ -118,6 +125,7 @@ public final class TrendStore implements PipelineStateStore<TrendStore.TrendSnap
     @Override
     public synchronized void reset() {
         recentMessages.clear();
+        recordsByFingerprint.clear();
     }
 
     /**
@@ -131,7 +139,7 @@ public final class TrendStore implements PipelineStateStore<TrendStore.TrendSnap
 
     private void prune(long nowMs) {
         while (!recentMessages.isEmpty() && nowMs - recentMessages.peekFirst().timestampMs() > windowMs) {
-            recentMessages.removeFirst();
+            removeOldestRecord();
         }
 
         trimHistory();
@@ -139,7 +147,27 @@ public final class TrendStore implements PipelineStateStore<TrendStore.TrendSnap
 
     private void trimHistory() {
         while (recentMessages.size() > maxHistory) {
-            recentMessages.removeFirst();
+            removeOldestRecord();
+        }
+    }
+
+    private void removeOldestRecord() {
+        TrendRecord oldestRecord = recentMessages.pollFirst();
+        if (oldestRecord == null) {
+            return;
+        }
+
+        Deque<TrendRecord> fingerprintRecords = recordsByFingerprint.get(oldestRecord.fingerprint());
+        if (fingerprintRecords == null || fingerprintRecords.isEmpty()) {
+            return;
+        }
+        if (oldestRecord.equals(fingerprintRecords.peekFirst())) {
+            fingerprintRecords.removeFirst();
+        } else {
+            fingerprintRecords.remove(oldestRecord);
+        }
+        if (fingerprintRecords.isEmpty()) {
+            recordsByFingerprint.remove(oldestRecord.fingerprint());
         }
     }
 

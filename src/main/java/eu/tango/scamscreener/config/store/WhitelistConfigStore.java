@@ -68,6 +68,15 @@ public final class WhitelistConfigStore extends MigratingConfigStore<WhitelistCo
         save(fromWhitelist(whitelist));
     }
 
+    /**
+     * Saves the provided whitelist to disk on the async config worker.
+     *
+     * @param whitelist the runtime whitelist to persist
+     */
+    public void saveFromAsync(Whitelist whitelist) {
+        saveAsync(fromWhitelist(whitelist));
+    }
+
     public static WhitelistConfig fromWhitelist(Whitelist whitelist) {
         WhitelistConfig config = new WhitelistConfig();
         if (whitelist == null) {

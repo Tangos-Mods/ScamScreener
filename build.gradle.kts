@@ -108,11 +108,13 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.11.4")
     modImplementation("maven.modrinth:modmenu:${property("deps.modmenu_version")}")
+    modCompileOnly("maven.modrinth:tango-webapi:NU0SuChL")
 
     fapi(
         "fabric-command-api-v2",
         "fabric-lifecycle-events-v1",
         "fabric-networking-api-v1",
+        "fabric-rendering-v1",
         "fabric-resource-loader-v0",
         "fabric-content-registries-v0",
         "fabric-message-api-v1"
@@ -210,6 +212,8 @@ publishMods {
         requires {
             slug = "fabric-api"
         }
+        optional("modmenu")
+        optional("tango-webapi")
     }
 
     curseforge {
@@ -219,6 +223,7 @@ publishMods {
         requires {
             slug = "fabric-api"
         }
+        optional("modmenu")
     }
 }
 

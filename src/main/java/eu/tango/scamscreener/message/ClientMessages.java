@@ -185,6 +185,53 @@ public final class ClientMessages {
         return error("No mute pattern found for " + displayValue(pattern) + ".");
     }
 
+    public static MutableText profilerStatus(boolean enabled) {
+        return prefixed()
+            .append(Text.literal("Profiler HUD: ").formatted(Formatting.GRAY))
+            .append(Text.literal(enabled ? "ON" : "OFF").formatted(enabled ? Formatting.GREEN : Formatting.RED, Formatting.BOLD))
+            .append(Text.literal(".").formatted(Formatting.GRAY));
+    }
+
+    public static MutableText profilerEnabled() {
+        return prefixed().append(Text.literal("Profiler HUD enabled.").formatted(Formatting.GRAY));
+    }
+
+    public static MutableText profilerDisabled() {
+        return prefixed().append(Text.literal("Profiler HUD disabled.").formatted(Formatting.GRAY));
+    }
+
+    public static MutableText profilerWebOpened(String url) {
+        return prefixed()
+            .append(Text.literal("Profiler web view opened. ").formatted(Formatting.GRAY))
+            .append(urlActionTag(
+                "click",
+                Formatting.YELLOW,
+                Text.literal(displayValue(url)).formatted(Formatting.GRAY),
+                url
+            ))
+            .append(Text.literal(" to open it again manually.").formatted(Formatting.GRAY));
+    }
+
+    public static MutableText profilerWebMissingDependency(String url) {
+        return prefixed()
+            .append(Text.literal("Tango Web API is missing. ").formatted(Formatting.RED))
+            .append(urlActionTag(
+                "click",
+                Formatting.YELLOW,
+                Text.literal("Download Tango Web API from Modrinth.").formatted(Formatting.GRAY),
+                url
+            ))
+            .append(Text.literal(" to download it from Modrinth.").formatted(Formatting.RED));
+    }
+
+    public static MutableText profilerWebUnavailable(String message) {
+        return error("Web profiler unavailable: " + displayValue(message) + ".");
+    }
+
+    public static MutableText profilerWebOpenFailed(String message) {
+        return error("Could not open the profiler web view: " + displayValue(message) + ".");
+    }
+
     public static MutableText debugStatus(Map<String, Boolean> states) {
         StringBuilder summary = new StringBuilder();
         if (states != null) {
@@ -228,7 +275,7 @@ public final class ClientMessages {
 
     public static MutableText commandHelp() {
         return prefixed().append(Text.literal(
-            "Commands: enable, disable, whitelist, blacklist, review, review export, alertlevel, autoleave, mute, unmute, debug, metrics, rules, runtime, messages, settings."
+            "Commands: enable, disable, whitelist, blacklist, review, review export, alertlevel, autoleave, mute, unmute, debug, metrics, profiler, rules, runtime, messages, settings."
         ).formatted(Formatting.GRAY));
     }
 
@@ -245,6 +292,10 @@ public final class ClientMessages {
             .append(Text.literal(exportPath).formatted(Formatting.YELLOW))
             .append(Text.literal(". ").formatted(Formatting.GRAY))
             .append(Text.literal("[Open Hub]").formatted(Formatting.YELLOW, Formatting.ITALIC));
+    }
+
+    public static MutableText trainingCasesExportStarted() {
+        return prefixed().append(Text.literal("Training export started in the background.").formatted(Formatting.GRAY));
     }
 
     public static MutableText trainingCasesExportFailed(String message) {

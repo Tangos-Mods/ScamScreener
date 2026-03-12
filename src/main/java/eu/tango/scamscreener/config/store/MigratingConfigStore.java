@@ -43,6 +43,11 @@ public abstract class MigratingConfigStore<T extends VersionedConfig> extends Ba
         super.save(migration.prepareForSave(value).config());
     }
 
+    @Override
+    public synchronized void saveAsync(@NonNull T value) {
+        super.saveAsync(migration.prepareForSave(value).config());
+    }
+
     private T migrateLoaded(T loadedConfig) {
         BaseVersionedConfigMigration.MigrationResult<T> migrationResult = migration.migrateLoaded(loadedConfig);
         if (migrationResult.changed()) {

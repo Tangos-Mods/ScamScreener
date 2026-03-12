@@ -7,6 +7,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import eu.tango.scamscreener.ScamScreenerMod;
 import eu.tango.scamscreener.ScamScreenerRuntime;
 import eu.tango.scamscreener.api.BlacklistAccess;
 import eu.tango.scamscreener.api.WhitelistAccess;
@@ -27,15 +28,20 @@ import eu.tango.scamscreener.lists.WhitelistEntry;
 import eu.tango.scamscreener.message.AlertContextRegistry;
 import eu.tango.scamscreener.message.ClientMessages;
 import eu.tango.scamscreener.debug.DebugKeys;
+import eu.tango.scamscreener.profiler.ScamScreenerProfiler;
+import eu.tango.scamscreener.profiler.web.ProfilerWebOpenResult;
+import eu.tango.scamscreener.profiler.web.ProfilerWebService;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.util.Util;
 
 import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument;
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal;
@@ -83,6 +89,7 @@ public final class ScamScreenerCommandHandler {
             .then(buildUnmuteCommand())
             .then(buildDebugCommand())
             .then(literal("metrics").executes(context -> openMetrics(context.getSource())))
+            .then(buildProfilerCommand())
             .then(literal("version").executes(context -> showVersion(context.getSource())))
             .then(literal("rules").executes(context -> openRules(context.getSource())))
             .then(literal("runtime").executes(context -> openRuntime(context.getSource())))
@@ -152,6 +159,14 @@ public final class ScamScreenerCommandHandler {
                         StringArgumentType.getString(context, "debug"),
                         BoolArgumentType.getBool(context, "enabled")
                     ))));
+    }
+
+    private static LiteralArgumentBuilder<FabricClientCommandSource> buildProfilerCommand() {
+        return literal("profiler")
+            .executes(context -> showProfilerStatus(context.getSource()))
+            .then(literal("on").executes(context -> setProfilerHud(context.getSource(), true)))
+            .then(literal("off").executes(context -> setProfilerHud(context.getSource(), false)))
+            .then(literal("open").executes(context -> openProfilerWeb(context.getSource())));
     }
 
     private static LiteralArgumentBuilder<FabricClientCommandSource> buildWhitelistCommand() {
@@ -351,6 +366,42 @@ public final class ScamScreenerCommandHandler {
         return 1;
     }
 
+    private static int showProfilerStatus(FabricClientCommandSource source) {
+        source.sendFeedback(ClientMessages.profilerStatus(ScamScreenerRuntime.getInstance().config().profiler().isHudEnabled()));
+        return 1;
+    }
+
+    private static int setProfilerHud(FabricClientCommandSource source, boolean enabled) {
+        ScamScreenerRuntime runtime = ScamScreenerRuntime.getInstance();
+        runtime.config().profiler().setHudEnabled(enabled);
+        runtime.saveConfig();
+        ScamScreenerProfiler.getInstance().onEnabledStateChanged(enabled);
+        source.sendFeedback(enabled ? ClientMessages.profilerEnabled() : ClientMessages.profilerDisabled());
+        return 1;
+    }
+
+    private static int openProfilerWeb(FabricClientCommandSource source) {
+        ProfilerWebOpenResult result = ProfilerWebService.getInstance().open();
+        if (result.isMissingDependency()) {
+            source.sendError(ClientMessages.profilerWebMissingDependency(ProfilerWebService.DOWNLOAD_URL));
+            return 0;
+        }
+        if (!result.isSuccess()) {
+            source.sendError(ClientMessages.profilerWebUnavailable(result.detail()));
+            return 0;
+        }
+
+        try {
+            Util.getOperatingSystem().open(result.uri().toString());
+            source.sendFeedback(ClientMessages.profilerWebOpened(result.uri().toString()));
+            return 1;
+        } catch (Exception exception) {
+            ScamScreenerMod.LOGGER.warn("Could not open profiler web view.", exception);
+            source.sendError(ClientMessages.profilerWebOpenFailed(exception.getMessage()));
+            return 0;
+        }
+    }
+
     private static int setAllDebug(FabricClientCommandSource source, boolean enabled) {
         ScamScreenerRuntime runtime = ScamScreenerRuntime.getInstance();
         runtime.config().debug().flags().clear();
@@ -384,16 +435,25 @@ public final class ScamScreenerCommandHandler {
     }
 
     private static int exportTrainingCases(FabricClientCommandSource source) {
-        try {
-            ScamScreenerRuntime runtime = ScamScreenerRuntime.getInstance();
-            var result = runtime.trainingCaseExportService()
-                .exportReviewedCases(runtime.reviewStore().entries());
-            source.sendFeedback(ClientMessages.trainingCasesExported(result));
-            return 1;
-        } catch (IllegalStateException exception) {
-            source.sendError(ClientMessages.trainingCasesExportFailed(exception.getMessage()));
+        MinecraftClient client = source.getClient();
+        if (client == null) {
+            source.sendError(ClientMessages.uiUnavailable());
             return 0;
         }
+
+        ScamScreenerRuntime runtime = ScamScreenerRuntime.getInstance();
+        source.sendFeedback(ClientMessages.trainingCasesExportStarted());
+        runtime.trainingCaseExportService()
+            .exportReviewedCasesAsync(runtime.reviewStore().entries())
+            .whenComplete((result, throwable) -> client.execute(() -> {
+                if (throwable != null) {
+                    source.sendError(ClientMessages.trainingCasesExportFailed(rootCauseMessage(throwable)));
+                    return;
+                }
+
+                source.sendFeedback(ClientMessages.trainingCasesExported(result));
+            }));
+        return 1;
     }
 
     private static int queueScreen(FabricClientCommandSource source, Runnable action) {
@@ -419,7 +479,9 @@ public final class ScamScreenerCommandHandler {
         }
 
         if (actionToRun != null) {
-            actionToRun.run();
+            try (ScamScreenerProfiler.Scope ignored = ScamScreenerProfiler.getInstance().scope("command.pending_ui", "Pending UI Action")) {
+                actionToRun.run();
+            }
         }
     }
 
@@ -634,6 +696,16 @@ public final class ScamScreenerCommandHandler {
         }
 
         return true;
+    }
+
+    private static String rootCauseMessage(Throwable throwable) {
+        Throwable rootCause = throwable;
+        while (rootCause instanceof CompletionException && rootCause.getCause() != null) {
+            rootCause = rootCause.getCause();
+        }
+
+        String message = rootCause == null ? null : rootCause.getMessage();
+        return message == null || message.isBlank() ? "unknown error" : message;
     }
 
     private record PlayerTarget(UUID playerUuid, String playerName) {

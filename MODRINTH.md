@@ -1,8 +1,9 @@
-# ScamScreener 2.0.2
+# ScamScreener 2.1.0
 
-- only validated player messages reach the detection pipeline
-- system and invalid pseudo-player messages are skipped instead of producing false alerts
-- added `/ss enable` and `/ss disable` with a clickable re-enable notice on join
-- added a join-time Modrinth update notification with changelog hover preview
-- default alert threshold is now `MEDIUM`
-- config schema versioning is centralized and old or unversioned v2 configs are replaced with current defaults
+- added a live in-game profiler HUD with `/ss profiler on` and `/ss profiler off`
+- added an optional browser profiler through Tango Web API with `/ss profiler open`
+- web profiler now shows live MSPT/TPS, lifetime averages, phase breakdown, recent event log, reset, and `.sspp` export
+- profiler no longer records while disabled and can be shared with developers via exported profile files
+- moved config writes and training export work onto a background file worker to reduce client-thread stalls
+- reduced message-related micro-lag with a lighter chat ingress path and cached normalization/fingerprint work
+- senderless mod chat is classified before pipeline entry, and a local-echo reentry crash in warning handling is fixed

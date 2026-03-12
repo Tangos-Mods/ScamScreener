@@ -2,6 +2,32 @@
 
 All notable changes to this project are documented in this file.
 
+## 2.1.0 - 2026-03-13
+
+### Added
+- Live client-thread profiler HUD with `/ss profiler`, `/ss profiler on`, and `/ss profiler off`.
+- Optional Tango Web API integration for `/ss profiler open`.
+- Clickable missing-dependency message that points users to Tango Web API on Modrinth when the web profiler is requested without the mod installed.
+- Browser profiler page with rolling metrics, lifetime averages, phase breakdown, recent event log, reset action, and connection-state indicators.
+- `.sspp` (`scamscreener performance profile`) export from the web profiler for developer analysis.
+- Profiler instrumentation around inbound chat callbacks, message classification, pipeline stages, decision dispatch, review capture, client messages, sounds, mute filtering, and queued UI work.
+- Metrics screen toggle for the profiler HUD.
+
+### Changed
+- The web profiler phase breakdown now uses lifetime averages since profiler start instead of rebuilding rows from a short-lived rolling window.
+- Web profiler refresh interval is now `1000 ms`, and the `Recent Event` / `Phase Breakdown` panels use fixed-height scroll regions.
+- Profiler disable now hard-stops recording and clears retained samples and recent profiler events.
+- Config persistence now runs through a shared single-threaded async file worker.
+- Training export now starts immediately and finishes in the background.
+- Client-thread message processing does less duplicate work through earlier ingress filtering, single-pass visible-line classification, cached normalized/similarity/fingerprint fields on `ChatEvent`, sender-indexed recent-chat lookups, and fingerprint-indexed trend lookup.
+
+### Fixed
+- Senderless `CHAT` messages from other mods are classified before pipeline entry instead of being treated as player chat.
+- Local ScamScreener warning echoes no longer re-enter the chat listener and null out the current pipeline decision.
+- Metrics/profiler screen layout overlap around the profiler controls.
+- Web profiler connection state and lifetime summary behavior when the profiler is disabled.
+- Additional false processing and small lag spikes from system-style or mod-generated chat lines, especially on noisier SkyBlock screens.
+
 ## 2.0.2 - 2026-03-10
 
 ### Added

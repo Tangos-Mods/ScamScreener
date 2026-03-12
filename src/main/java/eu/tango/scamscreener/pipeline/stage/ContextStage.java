@@ -104,14 +104,7 @@ public final class ContextStage extends Stage {
     private List<String> recentMessagesForSender(String normalizedSenderName, int maxContextMessages) {
         int boundedMaxContextMessages = Math.max(1, maxContextMessages);
         List<String> messages = new ArrayList<>(boundedMaxContextMessages);
-        for (RecentChatCache.CachedChatMessage entry : recentChatCache.entries()) {
-            if (entry == null || entry.sourceType() != ChatSourceType.PLAYER) {
-                continue;
-            }
-            if (!normalizedSenderName.equals(normalizeSenderName(entry.senderName()))) {
-                continue;
-            }
-
+        for (RecentChatCache.CachedChatMessage entry : recentChatCache.entriesForSender(normalizedSenderName, boundedMaxContextMessages)) {
             messages.add(entry.cleanText().toLowerCase(Locale.ROOT));
             if (messages.size() >= boundedMaxContextMessages) {
                 break;

@@ -7,8 +7,10 @@ import eu.tango.scamscreener.message.MessageDispatcher;
 import eu.tango.scamscreener.pipeline.data.ChatEvent;
 import eu.tango.scamscreener.pipeline.data.ChatSourceType;
 import eu.tango.scamscreener.pipeline.data.PipelineDecision;
+import eu.tango.scamscreener.profiler.ScamScreenerProfiler;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 
+import java.time.Instant;
 import java.util.Optional;
 
 /**
@@ -33,19 +35,49 @@ public final class ChatPipelineListener {
         }
 
         initialized = true;
-        ClientReceiveMessageEvents.CHAT.register((message, signedMessage, sender, params, receptionTimestamp) ->
-            onChatMessage(ChatEvent.fromInboundChat(
-                message,
-                sender,
-                params,
-                receptionTimestamp,
-                MAX_CHAT_LENGTH,
-                ChatSourceType.PLAYER
-            ))
-        );
+        ClientReceiveMessageEvents.CHAT.register((message, signedMessage, sender, params, receptionTimestamp) -> {
+            try (ScamScreenerProfiler.Scope ignored = ScamScreenerProfiler.getInstance().scope("chat.player.total", "Chat Message")) {
+                ChatEvent classifiedEvent = classifyChatMessage(
+                    message,
+                    sender,
+                    params,
+                    receptionTimestamp,
+                    MAX_CHAT_LENGTH
+                );
+                if (classifiedEvent == null) {
+                    return;
+                }
+                if (!classifiedEvent.isPlayerSource()) {
+                    if (consumeLocalEcho(classifiedEvent)) {
+                        return;
+                    }
+                    lastChatEvent = classifiedEvent;
+                    lastPipelineDecision = null;
+                    return;
+                }
+                onChatMessage(classifiedEvent);
+            }
+        });
         ClientReceiveMessageEvents.GAME.register((message, overlay) -> {
             if (!overlay) {
-                onChatMessage(classifyGameMessage(message, MAX_CHAT_LENGTH));
+                try (ScamScreenerProfiler.Scope ignored = ScamScreenerProfiler.getInstance().scope("chat.game.total", "Game Message")) {
+                    ChatEvent classifiedEvent;
+                    try (ScamScreenerProfiler.Scope nested = ScamScreenerProfiler.getInstance().scope("chat.game.classify", "  Game Message Classify")) {
+                        classifiedEvent = classifyGameMessage(message, MAX_CHAT_LENGTH);
+                    }
+                    if (classifiedEvent == null) {
+                        return;
+                    }
+                    if (!classifiedEvent.isPlayerSource()) {
+                        if (consumeLocalEcho(classifiedEvent)) {
+                            return;
+                        }
+                        lastChatEvent = classifiedEvent;
+                        lastPipelineDecision = null;
+                        return;
+                    }
+                    onChatMessage(classifiedEvent);
+                }
             }
         });
         ScamScreenerMod.LOGGER.info("ChatPipelineListener is listening for inbound chat messages.");
@@ -101,7 +133,7 @@ public final class ChatPipelineListener {
         }
 
         ChatEvent safeEvent = chatEvent;
-        if (MessageDispatcher.consumeLocalEcho(safeEvent.getRawMessage())) {
+        if (consumeLocalEcho(safeEvent)) {
             return;
         }
         if (!shouldProcessChatEvent(safeEvent)) {
@@ -111,10 +143,21 @@ public final class ChatPipelineListener {
             return;
         }
 
-        ScamScreenerRuntime.getInstance().recentChatCache().record(safeEvent);
+        try (ScamScreenerProfiler.Scope ignored = ScamScreenerProfiler.getInstance().scope("chat.cache_record", "  Recent Chat Cache")) {
+            ScamScreenerRuntime.getInstance().recentChatCache().record(safeEvent);
+        }
         lastChatEvent = safeEvent;
-        lastPipelineDecision = ScamScreenerRuntime.getInstance().pipelineEngine().evaluate(safeEvent);
-        PipelineDecisionEvent.EVENT.invoker().onPipelineDecision(safeEvent, lastPipelineDecision);
+        PipelineDecision pipelineDecision = ScamScreenerRuntime.getInstance().pipelineEngine().evaluate(safeEvent);
+        if (pipelineDecision == null) {
+            lastPipelineDecision = null;
+            ScamScreenerMod.LOGGER.warn("Pipeline returned null for chat message: {}", safeEvent.getRawMessage());
+            return;
+        }
+        lastPipelineDecision = pipelineDecision;
+        try (ScamScreenerProfiler.Scope ignored = ScamScreenerProfiler.getInstance().scope("decision.dispatch", "Decision Dispatch")) {
+            PipelineDecisionEvent.EVENT.invoker().onPipelineDecision(safeEvent, pipelineDecision);
+        }
+        ScamScreenerProfiler.getInstance().recordDecision(safeEvent, pipelineDecision);
         ScamScreenerMod.LOGGER.debug(
             "Captured {} chat message from {} ({}): {}",
             safeEvent.getSourceType(),
@@ -124,37 +167,66 @@ public final class ChatPipelineListener {
         );
         ScamScreenerMod.LOGGER.debug(
             "Pipeline outcome={} score={} decidedBy={}",
-            lastPipelineDecision.getOutcome(),
-            lastPipelineDecision.getTotalScore(),
-            lastPipelineDecision.getDecidedByStage()
+            pipelineDecision.getOutcome(),
+            pipelineDecision.getTotalScore(),
+            pipelineDecision.getDecidedByStage()
         );
     }
 
     static ChatEvent classifyGameMessage(net.minecraft.text.Text message, int maxChatLength) {
         String rawLine = message == null ? "" : message.asTruncatedString(maxChatLength);
-        ChatLineClassifier.ChatLineType lineType = ChatLineClassifier.classify(rawLine);
-        if (lineType == ChatLineClassifier.ChatLineType.PLAYER) {
-            ChatLineClassifier.ParsedPlayerLine parsedPlayerLine = ChatLineClassifier.parsePlayerMessage(rawLine).orElse(null);
-            if (parsedPlayerLine == null) {
-                return null;
-            }
+        return classifyVisibleLine(rawLine, System.currentTimeMillis());
+    }
+
+    static ChatEvent classifyChatMessage(
+        net.minecraft.text.Text message,
+        com.mojang.authlib.GameProfile sender,
+        Object params,
+        Instant receptionTimestamp,
+        int maxChatLength
+    ) {
+        ChatEvent inboundEvent = ChatEvent.fromInboundChat(
+            message,
+            sender,
+            params,
+            receptionTimestamp,
+            maxChatLength,
+            ChatSourceType.UNKNOWN
+        );
+        if (inboundEvent.hasSender()) {
             return new ChatEvent(
-                parsedPlayerLine.message(),
-                null,
-                parsedPlayerLine.senderName(),
-                System.currentTimeMillis(),
+                inboundEvent.getRawMessage(),
+                inboundEvent.getSenderUuid(),
+                inboundEvent.getSenderName(),
+                inboundEvent.getTimestampMs(),
                 ChatSourceType.PLAYER
             );
         }
 
-        if (lineType == ChatLineClassifier.ChatLineType.SYSTEM) {
-            return ChatEvent.fromGameMessage(message, maxChatLength);
+        return classifyVisibleLine(inboundEvent.getRawMessage(), inboundEvent.getTimestampMs());
+    }
+
+    private static ChatEvent classifyVisibleLine(String rawLine, long timestampMs) {
+        ChatLineClassifier.Analysis analysis = ChatLineClassifier.analyze(rawLine);
+        if (analysis.type() == ChatLineClassifier.ChatLineType.PLAYER) {
+            ChatLineClassifier.ParsedPlayerLine parsedPlayerLine = analysis.parsedPlayerLine();
+            return new ChatEvent(
+                parsedPlayerLine.message(),
+                null,
+                parsedPlayerLine.senderName(),
+                timestampMs,
+                ChatSourceType.PLAYER
+            );
         }
-        if (lineType == ChatLineClassifier.ChatLineType.IGNORED) {
+
+        if (analysis.type() == ChatLineClassifier.ChatLineType.SYSTEM) {
+            return new ChatEvent(analysis.cleanedLine(), null, "", timestampMs, ChatSourceType.SYSTEM);
+        }
+        if (analysis.type() == ChatLineClassifier.ChatLineType.IGNORED) {
             return null;
         }
 
-        return ChatEvent.messageOnly(rawLine, ChatSourceType.UNKNOWN);
+        return new ChatEvent(analysis.cleanedLine(), null, "", timestampMs, ChatSourceType.UNKNOWN);
     }
 
     static boolean shouldEnterPipeline(ChatEvent chatEvent) {
@@ -167,5 +239,15 @@ public final class ChatPipelineListener {
 
     static boolean shouldProcessChatEvent(ChatEvent chatEvent, boolean scamScreenerEnabled) {
         return scamScreenerEnabled && shouldEnterPipeline(chatEvent);
+    }
+
+    private static boolean consumeLocalEcho(ChatEvent chatEvent) {
+        if (chatEvent == null || chatEvent.getRawMessage().isBlank()) {
+            return false;
+        }
+
+        try (ScamScreenerProfiler.Scope ignored = ScamScreenerProfiler.getInstance().scope("chat.local_echo", "  Local Echo Check")) {
+            return MessageDispatcher.consumeLocalEcho(chatEvent.getRawMessage());
+        }
     }
 }

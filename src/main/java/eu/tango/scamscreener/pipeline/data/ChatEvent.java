@@ -1,6 +1,7 @@
 package eu.tango.scamscreener.pipeline.data;
 
 import com.mojang.authlib.GameProfile;
+import eu.tango.scamscreener.chat.TextNormalization;
 import lombok.Getter;
 import net.minecraft.text.Text;
 
@@ -18,8 +19,11 @@ import java.util.UUID;
 public final class ChatEvent {
     private final String rawMessage;
     private final String normalizedMessage;
+    private final String similarityMessage;
+    private final String messageFingerprint;
     private final UUID senderUuid;
     private final String senderName;
+    private final String senderKey;
     private final long timestampMs;
     private final ChatSourceType sourceType;
 
@@ -48,10 +52,13 @@ public final class ChatEvent {
         // Normalize null input early so downstream stages can stay simple.
         this.rawMessage = rawMessage == null ? "" : rawMessage;
         this.normalizedMessage = normalizeMessage(this.rawMessage);
+        this.similarityMessage = TextNormalization.normalizeForSimilarity(this.rawMessage);
+        this.messageFingerprint = similarityMessage;
         this.senderUuid = senderUuid;
         this.senderName = senderName == null ? "" : senderName.trim();
         this.timestampMs = timestampMs;
         this.sourceType = sourceType == null ? ChatSourceType.UNKNOWN : sourceType;
+        this.senderKey = buildSenderKey(this.senderUuid, this.senderName, this.sourceType);
     }
 
     /**
@@ -198,6 +205,20 @@ public final class ChatEvent {
      */
     public boolean isSystemSource() {
         return sourceType == ChatSourceType.SYSTEM;
+    }
+
+    private static String buildSenderKey(UUID senderUuid, String senderName, ChatSourceType sourceType) {
+        if (sourceType == ChatSourceType.SYSTEM) {
+            return "";
+        }
+        if (senderUuid != null) {
+            return senderUuid.toString();
+        }
+        if (senderName == null || senderName.isBlank()) {
+            return "";
+        }
+
+        return senderName.trim().toLowerCase(Locale.ROOT);
     }
 
     private static String extractSenderNameFromParams(Object params, int maxChatLength) {

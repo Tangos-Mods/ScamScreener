@@ -1,9 +1,13 @@
 package eu.tango.scamscreener.chat;
 
+import com.mojang.authlib.GameProfile;
 import eu.tango.scamscreener.pipeline.data.ChatEvent;
 import eu.tango.scamscreener.pipeline.data.ChatSourceType;
 import net.minecraft.text.Text;
 import org.junit.jupiter.api.Test;
+
+import java.time.Instant;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -84,5 +88,44 @@ class ChatPipelineListenerTest {
             ChatEvent.messageOnly("hello", ChatSourceType.PLAYER),
             false
         ));
+    }
+
+    @Test
+    void senderlessChatMessagesAreClassifiedBeforePipelineEntry() {
+        ChatEvent modEvent = ChatPipelineListener.classifyChatMessage(
+            Text.literal("[SkyHanni] Visitor reward ready"),
+            null,
+            null,
+            Instant.ofEpochMilli(1_000L),
+            32767
+        );
+        assertEquals(ChatSourceType.SYSTEM, modEvent.getSourceType());
+        assertEquals("", modEvent.getSenderName());
+        assertEquals("[SkyHanni] Visitor reward ready", modEvent.getRawMessage());
+
+        ChatEvent plainUnknownEvent = ChatPipelineListener.classifyChatMessage(
+            Text.literal("Coins: +42"),
+            null,
+            null,
+            Instant.ofEpochMilli(2_000L),
+            32767
+        );
+        assertEquals(ChatSourceType.UNKNOWN, plainUnknownEvent.getSourceType());
+        assertEquals(false, ChatPipelineListener.shouldEnterPipeline(plainUnknownEvent));
+    }
+
+    @Test
+    void senderBackedChatMessagesStillEnterAsPlayerMessages() {
+        ChatEvent playerEvent = ChatPipelineListener.classifyChatMessage(
+            Text.literal("add me on discord"),
+            new GameProfile(UUID.fromString("123e4567-e89b-12d3-a456-426614174000"), "Pankraz01"),
+            null,
+            Instant.ofEpochMilli(3_000L),
+            32767
+        );
+
+        assertEquals(ChatSourceType.PLAYER, playerEvent.getSourceType());
+        assertEquals("Pankraz01", playerEvent.getSenderName());
+        assertEquals("add me on discord", playerEvent.getRawMessage());
     }
 }
