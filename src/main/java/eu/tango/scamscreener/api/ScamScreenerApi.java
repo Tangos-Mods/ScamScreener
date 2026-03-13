@@ -17,6 +17,20 @@ public interface ScamScreenerApi {
     ScamScreenerPipelineApi pipeline();
 
     /**
+     * Returns the stable runtime-settings API exposed to other mods.
+     *
+     * @return the stable settings access contract
+     */
+    ScamScreenerSettingsApi settings();
+
+    /**
+     * Returns the current schema versions used by ScamScreener config files.
+     *
+     * @return the stable config-schema contract
+     */
+    ScamScreenerSchemaApi schemas();
+
+    /**
      * Returns the shared whitelist used by the runtime pipeline.
      *
      * @return the shared whitelist access contract

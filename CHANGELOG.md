@@ -12,6 +12,9 @@ All notable changes to this project are documented in this file.
 - `.sspp` (`scamscreener performance profile`) export from the web profiler for developer analysis.
 - Profiler instrumentation around inbound chat callbacks, message classification, pipeline stages, decision dispatch, review capture, client messages, sounds, mute filtering, and queued UI work.
 - Metrics screen toggle for the profiler HUD.
+- Public runtime settings API for other mods covering `pingOnRiskWarning`, `pingOnBlacklistWarning`, and `alertMinimumRiskLevel`.
+- Public config schema API for exposing the current runtime/rules/whitelist/blacklist/review config versions to companion mods.
+- Dedicated developer API guide in `API.md` with integration examples for Fabric mods.
 
 ### Changed
 - The web profiler phase breakdown now uses lifetime averages since profiler start instead of rebuilding rows from a short-lived rolling window.

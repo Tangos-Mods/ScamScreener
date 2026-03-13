@@ -179,6 +179,7 @@ if (!apis.isEmpty()) {
 Then use shared list access and events:
 
 ```java
+import eu.tango.scamscreener.api.ScamScreenerAlertLevel;
 import eu.tango.scamscreener.api.BlacklistAccess;
 import eu.tango.scamscreener.api.WhitelistAccess;
 import eu.tango.scamscreener.api.event.BlacklistEvent;
@@ -201,6 +202,18 @@ BlacklistEvent.EVENT.register((changeType, entry) -> {
 });
 ```
 
+Stable settings and config schema versions are also exposed:
+
+```java
+boolean pingOnRiskWarning = api.settings().pingOnRiskWarning();
+int runtimeConfigVersion = api.schemas().runtimeConfigVersion();
+
+api.settings().setPingOnBlacklistWarning(false);
+api.settings().setAlertMinimumRiskLevel(ScamScreenerAlertLevel.HIGH);
+```
+
+Settings updates are saved back to `runtime.json` by ScamScreener.
+
 ## Build And Release (Maintainers)
 
 1. Run checks:
@@ -219,6 +232,7 @@ Publish uploads use `MODRINTH.md` as changelog text.
 
 ## Additional Documentation
 
+- [Developer API guide](API.md)
 - [Case Review Guide (players)](docs/case_review_player_guide.md)
 - [Training Case v2 format](docs/training_case_v2.md)
 - [Full engineering changelog](CHANGELOG.md)

@@ -21,6 +21,11 @@ public final class ScamScreenerApiEntrypoint implements ScamScreenerApi {
         StageSlot.FUNNEL,
         StageSlot.MODEL
     );
+    private static final ScamScreenerSettingsApi SETTINGS_API = new RuntimeConfigSettingsApi(
+        () -> ScamScreenerRuntime.getInstance().config(),
+        () -> ScamScreenerRuntime.getInstance().saveConfig()
+    );
+    private static final ScamScreenerSchemaApi SCHEMA_API = new StaticSchemaApi();
 
     /**
      * Returns the current public pipeline contract.
@@ -31,6 +36,26 @@ public final class ScamScreenerApiEntrypoint implements ScamScreenerApi {
     public ScamScreenerPipelineApi pipeline() {
         // Keep the runtime view immutable until the real engine is wired in.
         return PIPELINE_API;
+    }
+
+    /**
+     * Returns the stable public settings contract.
+     *
+     * @return the runtime-backed settings API
+     */
+    @Override
+    public ScamScreenerSettingsApi settings() {
+        return SETTINGS_API;
+    }
+
+    /**
+     * Returns the current config schema versions exposed publicly.
+     *
+     * @return the config-schema API
+     */
+    @Override
+    public ScamScreenerSchemaApi schemas() {
+        return SCHEMA_API;
     }
 
     /**
