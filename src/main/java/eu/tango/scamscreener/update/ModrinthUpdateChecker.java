@@ -108,7 +108,7 @@ public final class ModrinthUpdateChecker {
         String loaders = URLEncoder.encode("[\"fabric\"]", StandardCharsets.UTF_8);
         String gameVersions = URLEncoder.encode("[\"" + ScamScreenerMod.MINECRAFT + "\"]", StandardCharsets.UTF_8);
         return URI.create(
-            "https://api.modrinth.com/project/" + MODRINTH_PROJECT_ID
+            "https://api.modrinth.com/v2/project/" + MODRINTH_PROJECT_ID
                 + "/version?loaders=" + loaders
                 + "&game_versions=" + gameVersions
                 + "&include_changelog=true"

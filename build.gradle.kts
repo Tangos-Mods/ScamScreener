@@ -168,13 +168,13 @@ tasks {
     processResources {
         inputs.property("id", project.property("mod.id"))
         inputs.property("name", project.property("mod.name"))
-        inputs.property("version", project.property("mod.version"))
+        inputs.property("version", project.version.toString())
         inputs.property("minecraft", project.property("mod.mc_dep"))
 
         val props = mapOf(
             "id" to project.property("mod.id"),
             "name" to project.property("mod.name"),
-            "version" to project.property("mod.version"),
+            "version" to project.version.toString(),
             "minecraft" to project.property("mod.mc_dep")
         )
 
@@ -198,7 +198,7 @@ publishMods {
     file = tasks.remapJar.map { it.archiveFile.get() }
     additionalFiles.from(tasks.remapSourcesJar.map { it.archiveFile.get() })
     displayName = "${property("mod.name")} ${property("mod.version")} for ${property("mod.mc_title")}"
-    version = property("mod.version") as String
+    version = project.version.toString()
     changelog = rootProject.file("MODRINTH.md").readText()
     type = STABLE
     modLoaders.add("fabric")

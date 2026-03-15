@@ -5,20 +5,17 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="149ec1db-0155-4512-9f54-12439716da78" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/API.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/api/RuntimeConfigSettingsApi.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/api/ScamScreenerAlertLevel.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/api/ScamScreenerSchemaApi.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/api/ScamScreenerSettingsApi.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/api/StaticSchemaApi.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/eu/tango/scamscreener/api/RuntimeConfigSettingsApiTest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/eu/tango/scamscreener/api/StaticSchemaApiTest.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LICENSE" beforeDir="false" afterPath="$PROJECT_DIR$/LICENSE" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/MODRINTH.md" beforeDir="false" afterPath="$PROJECT_DIR$/MODRINTH.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle.kts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/gradle.properties" beforeDir="false" afterPath="$PROJECT_DIR$/gradle.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/api/ScamScreenerApi.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/api/ScamScreenerApi.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/api/ScamScreenerApiEntrypoint.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/api/ScamScreenerApiEntrypoint.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/message/ClientMessages.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/message/ClientMessages.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/update/ModrinthUpdateChecker.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/update/ModrinthUpdateChecker.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/fabric.mod.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/fabric.mod.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/eu/tango/scamscreener/message/ClientMessagesTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/eu/tango/scamscreener/message/ClientMessagesTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/stonecutter.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/stonecutter.gradle.kts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -26,7 +23,7 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="EmbeddingIndexingInfo">
-    <option name="cachedIndexableFilesCount" value="827" />
+    <option name="cachedIndexableFilesCount" value="844" />
   </component>
   <component name="ExternalProjectsData">
     <projectState path="$PROJECT_DIR$">
@@ -119,7 +116,7 @@
       <recent name="C:\Users\mine6\Documents\GitHub\ScamScreener\server\css" />
     </key>
   </component>
-  <component name="RunManager" selected="Gradle.build all">
+  <component name="RunManager" selected="Gradle.Publish All Versions - Modrinth">
     <configuration name="Message Test" type="GradleRunConfiguration" factoryName="Gradle" folderName="Testing">
       <ExternalSystemSettings>
         <option name="executionName" />

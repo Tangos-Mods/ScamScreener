@@ -136,9 +136,9 @@ public final class ClientMessages {
     public static MutableText updateAvailable(String currentVersion, String latestVersion, String modrinthUrl, String changelog) {
         return prefixed()
             .append(Text.literal("Update Available ").formatted(Formatting.GRAY))
-            .append(Text.literal(displayValue(currentVersion)).formatted(Formatting.YELLOW))
+            .append(Text.literal(displayVersionOnly(currentVersion)).formatted(Formatting.YELLOW))
             .append(Text.literal(" -> ").formatted(Formatting.DARK_GRAY))
-            .append(Text.literal(displayValue(latestVersion)).formatted(Formatting.GREEN, Formatting.BOLD))
+            .append(Text.literal(displayVersionOnly(latestVersion)).formatted(Formatting.GREEN, Formatting.BOLD))
             .append(Text.literal(". ").formatted(Formatting.GRAY))
             .append(urlActionTag("click", Formatting.YELLOW, changelogHoverText(changelog), modrinthUrl))
             .append(Text.literal(" to open on Modrinth").formatted(Formatting.GRAY));
@@ -412,6 +412,16 @@ public final class ClientMessages {
         }
 
         return value.trim();
+    }
+
+    private static String displayVersionOnly(String version) {
+        String value = displayValue(version);
+        int separator = value.indexOf('+');
+        if (separator <= 0) {
+            return value;
+        }
+
+        return value.substring(0, separator);
     }
 
     private static String displayVerdict(ReviewVerdict verdict) {

@@ -18,7 +18,7 @@ class ClientMessagesTest {
         );
 
         assertEquals(
-            "[ScamScreener] Update Available 2.0.1+1.21.11 -> 2.0.2+1.21.11. [click] to open on Modrinth",
+            "[ScamScreener] Update Available 2.0.1 -> 2.0.2. [click] to open on Modrinth",
             message.getString()
         );
     }

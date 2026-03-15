@@ -239,4 +239,5 @@ Publish uploads use `MODRINTH.md` as changelog text.
 
 ## License
 
-This project is licensed under `MIT`.
+The source code is licensed under `GPL-3.0-only`.
+Branding, name, icons, and other visual assets remain excluded from the GPL and are covered separately as described in [LICENSE](LICENSE).

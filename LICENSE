@@ -1,7 +1,83 @@
-Copyright 2026 Pankraz01 / Tango
+# ScamScreener License
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+Copyright (c) 2026 Pankraz01 (Tango)
 
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+This project contains multiple licensing regimes depending on the type of content.
 
-THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+---
+
+## 1. Source Code License (GPLv3)
+
+All source code contained in this repository, unless otherwise stated, is licensed under the **GNU General Public License v3.0 (GPL-3.0)**.
+
+You are free to:
+
+* Use the software
+* Study the source code
+* Modify the software
+* Redistribute copies
+* Distribute modified versions
+
+Under the following conditions:
+
+* The source code must remain available
+* Derivative works must also be licensed under GPLv3
+* Proper attribution must be preserved
+
+Full license text: [https://www.gnu.org/licenses/gpl-3.0.en.html](https://www.gnu.org/licenses/gpl-3.0.en.html)
+
+---
+
+## 2. Branding, Name, and Visual Assets (All Rights Reserved)
+
+The following elements are **NOT covered by the GPL license** and are instead licensed under **All Rights Reserved (ARR)**:
+
+* Project name: "ScamScreener"
+* Logos
+* Icons
+* Visual assets
+* Branding elements
+* Modrinth / CurseForge page assets
+* Documentation branding
+
+These elements may **not** be used, copied, redistributed, or modified without explicit written permission from the copyright holder.
+
+Forks and derivative works must:
+
+* Remove all ScamScreener branding
+* Use a different project name
+* Replace all logos and visual identity elements
+
+---
+
+## 3. Distribution Policy
+
+Official distributions of ScamScreener are limited to:
+
+* The official GitHub repository
+* Official Modrinth releases
+* Other platforms explicitly authorized by the maintainer
+
+Third-party redistribution is allowed **only if**:
+
+* The GPLv3 terms are followed
+* Branding restrictions are respected
+* The project is clearly identified as an unofficial fork
+
+---
+
+## 4. Disclaimer
+
+This software is provided "as is", without warranty of any kind, express or implied.
+
+The authors shall not be held liable for any damages arising from the use of this software.
+
+---
+
+## 5. Contact
+
+For licensing questions or permission requests:
+
+Daniel Juric
+
+GitHub: [https://github.com/Tangos-Mods](https://github.com/Tangos-Mods)
