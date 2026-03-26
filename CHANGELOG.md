@@ -2,6 +2,22 @@
 
 All notable changes to this project are documented in this file.
 
+## 2.1.3 - 2026-03-26
+
+### Added
+- Runtime loading of external `PipelineContributor` stages from the `scamscreener-pipeline` Fabric entrypoint.
+- Direct `Review Case` button on the `Alert Rule Details` screen.
+
+### Changed
+- Risk warning action labels now show `[review]` instead of `[manage]` while keeping the existing `/scamscreener review manage <alertId>` command path for compatibility.
+- Versioned config loading now uses a smaller direct store implementation instead of the older generic migration wrapper.
+- Internal review, list, and pipeline-state code was simplified by removing unused wrappers and dead abstraction layers.
+- `1.21.10` release metadata now uses the `_EOL` suffix in the publish title.
+
+### Fixed
+- The public pipeline extension API is now actually wired into runtime pipeline construction instead of existing only as an exposed contract.
+- Alert detail flow no longer requires going back through the review queue before opening the case editor.
+
 ## 2.1.0 - 2026-03-13
 
 ### Added
