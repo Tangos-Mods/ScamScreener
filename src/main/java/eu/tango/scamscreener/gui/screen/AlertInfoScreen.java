@@ -23,7 +23,7 @@ import java.util.Set;
  */
 public final class AlertInfoScreen extends BaseScreen {
     private static final int BOX_PADDING = 6;
-    private static final int BUTTON_ROW_OFFSET = 24;
+    private static final int BUTTON_GAP = 4;
 
     private final AlertContextRegistry.AlertContext context;
     private final List<InfoLine> wrappedLines = new ArrayList<>();
@@ -49,15 +49,21 @@ public final class AlertInfoScreen extends BaseScreen {
     @Override
     protected void init() {
         int buttonWidth = defaultButtonWidth();
-        int buttonY = this.height - FOOTER_MARGIN - BUTTON_ROW_OFFSET;
+        int closeButtonY = this.height - FOOTER_MARGIN - DEFAULT_BUTTON_HEIGHT;
+        int reviewButtonY = closeButtonY - DEFAULT_BUTTON_HEIGHT - BUTTON_GAP;
         textAreaWidth = buttonWidth;
         textAreaX = centeredX(buttonWidth);
         textAreaY = CONTENT_TOP;
-        textAreaHeight = Math.max(80, buttonY - textAreaY - 10);
+        textAreaHeight = Math.max(80, reviewButtonY - textAreaY - 10);
 
         addDrawableChild(
+            ButtonWidget.builder(Text.literal("Review Case"), button -> openReviewCase())
+                .dimensions(textAreaX, reviewButtonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
+                .build()
+        ).active = context != null;
+        addDrawableChild(
             ButtonWidget.builder(Text.literal("Close"), button -> close())
-                .dimensions(textAreaX, buttonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
+                .dimensions(textAreaX, closeButtonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
         rebuildWrappedLines();
@@ -153,6 +159,14 @@ public final class AlertInfoScreen extends BaseScreen {
             int thumbTop = trackTop + (int) Math.round((scrollOffset / (double) maxScroll) * thumbRange);
             context.fill(trackLeft, thumbTop, trackLeft + 2, thumbTop + thumbHeight, 0xFFC8C8C8);
         }
+    }
+
+    private void openReviewCase() {
+        if (this.client == null || context == null) {
+            return;
+        }
+
+        this.client.setScreen(new AlertManageScreen(this, context));
     }
 
     private void rebuildWrappedLines() {

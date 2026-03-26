@@ -15,7 +15,7 @@ ScamScreener is a client-side Fabric mod that analyzes incoming chat, highlights
 - Built-in live profiler HUD for tick cost and phase timing
 - Optional web profiler via Tango Web API with `.sspp` export for debugging
 - Canonical training export (`training-cases-v2.jsonl`) for later tuning
-- Public API entrypoint for integrations (`scamscreener-api`)
+- Public API entrypoint for integrations (`scamscreener-api`) with live pipeline stage hooks
 
 ## Supported Versions And Requirements
 
@@ -37,11 +37,12 @@ ScamScreener is a client-side Fabric mod that analyzes incoming chat, highlights
 
 1. Set your risk threshold (`LOW`, `MEDIUM`, `HIGH`, `CRITICAL`). Note that `LOW` might warn you way often when on large public islands!
 2. Play as usual and let ScamScreener monitor inbound chat.
-3. Open review queue (`/scamscreener review`) for flagged cases.
-4. Mark cases as `RISK`, `SAFE`, or `DISMISSED`.
-5. Use `/ss profiler on` when you want live timing data for lag hunting.
-6. Open `/ss profiler open` if Tango Web API is installed.
-7. Export reviewed data with `/scamscreener review export` if needed.
+3. Use the chat `[review]` action or open the review queue (`/scamscreener review`) for flagged cases.
+4. Use `[info]` when you want the full rule breakdown, then jump into `Review Case` directly from that screen.
+5. Mark cases as `RISK`, `SAFE`, or `DISMISSED`.
+6. Use `/ss profiler on` when you want live timing data for lag hunting.
+7. Open `/ss profiler open` if Tango Web API is installed.
+8. Export reviewed data with `/scamscreener review export` if needed.
 
 ## How Detection Works
 
@@ -111,11 +112,17 @@ Main settings screen includes:
 
 ## Case Review And Training Export
 
+Alert warnings expose `[review]` and `[info]` actions in chat. The info screen also includes a `Review Case` button so you can jump straight into editing without going back first.
+
 Review flow:
 
 1. Open queue and pick a case.
 2. Tag each message as `Exclude`, `Context`, or `Signal`.
 3. Save verdict as `Risk`, `Safe`, or `Dismiss`.
+
+Compatibility note:
+
+- The visible chat action is now `[review]`, but the command path stays `/scamscreener review manage <alertId>` for compatibility.
 
 Export:
 
@@ -152,11 +159,10 @@ ScamScreener stores its data in `config/scamscreener/`:
 
 On first start of v2, ScamScreener performs a one-time migration:
 
-- Migrates legacy whitelist/blacklist files into v2 config files
+- Migrates legacy whitelist/blacklist files into v2 config files when the matching v2 file does not already exist
 - Writes migration marker `.v1-to-v2-migration.done`
 - Cleans up legacy v1 config folder artifacts after migration
-
-Existing v2 target files are never overwritten.
+- Recreates missing or outdated versioned v2 config files from current defaults
 
 ## API For Other Mods
 
@@ -213,6 +219,8 @@ api.settings().setAlertMinimumRiskLevel(ScamScreenerAlertLevel.HIGH);
 ```
 
 Settings updates are saved back to `runtime.json` by ScamScreener.
+
+Pipeline contributors are also supported at runtime. Mods can register the Fabric entrypoint `scamscreener-pipeline` and return `StageContribution` instances relative to the stable slots `MUTE`, `PLAYER_LIST`, `RULE`, `LEVENSHTEIN`, `BEHAVIOR`, `TREND`, `FUNNEL`, and `MODEL`.
 
 ## Build And Release (Maintainers)
 

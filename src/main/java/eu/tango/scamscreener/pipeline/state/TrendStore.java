@@ -14,7 +14,7 @@ import java.util.Set;
 /**
  * Keeps a short global message window for cross-sender trend analysis.
  */
-public final class TrendStore implements PipelineStateStore<TrendStore.TrendSnapshot> {
+public final class TrendStore {
     private static final long DEFAULT_WINDOW_MS = 120_000L;
     private static final int DEFAULT_MAX_HISTORY = 200;
 
@@ -58,7 +58,6 @@ public final class TrendStore implements PipelineStateStore<TrendStore.TrendSnap
      * @param chatEvent the event to inspect
      * @return the current trend snapshot
      */
-    @Override
     public synchronized TrendSnapshot snapshotFor(ChatEvent chatEvent) {
         String senderKey = StateStoreSupport.senderKey(chatEvent);
         String normalizedMessage = StateStoreSupport.normalizedMessage(chatEvent);
@@ -102,7 +101,6 @@ public final class TrendStore implements PipelineStateStore<TrendStore.TrendSnap
      *
      * @param chatEvent the event to append
      */
-    @Override
     public synchronized void record(ChatEvent chatEvent) {
         String senderKey = StateStoreSupport.senderKey(chatEvent);
         String normalizedMessage = StateStoreSupport.normalizedMessage(chatEvent);
@@ -122,7 +120,6 @@ public final class TrendStore implements PipelineStateStore<TrendStore.TrendSnap
     /**
      * Clears all stored trend history.
      */
-    @Override
     public synchronized void reset() {
         recentMessages.clear();
         recordsByFingerprint.clear();

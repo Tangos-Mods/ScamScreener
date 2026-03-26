@@ -16,7 +16,7 @@ import java.util.UUID;
 /**
  * In-memory blacklist for explicitly blocked players.
  */
-public final class Blacklist implements PlayerList, BlacklistAccess {
+public final class Blacklist implements BlacklistAccess {
     private final Map<UUID, BlacklistEntry> entriesByUuid = new LinkedHashMap<>();
     private final Map<String, BlacklistEntry> entriesByName = new LinkedHashMap<>();
     private final Runnable saveHook;
@@ -138,7 +138,6 @@ public final class Blacklist implements PlayerList, BlacklistAccess {
         return entries();
     }
 
-    @Override
     public boolean contains(UUID playerUuid, String playerName) {
         return find(playerUuid, playerName).isPresent();
     }
@@ -163,7 +162,6 @@ public final class Blacklist implements PlayerList, BlacklistAccess {
         return findByName(playerName).isPresent();
     }
 
-    @Override
     public boolean remove(UUID playerUuid, String playerName) {
         Optional<BlacklistEntry> existing = find(playerUuid, playerName);
         if (existing.isEmpty()) {

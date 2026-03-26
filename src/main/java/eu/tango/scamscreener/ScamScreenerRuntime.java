@@ -1,5 +1,7 @@
 package eu.tango.scamscreener;
 
+import eu.tango.scamscreener.api.PipelineContributor;
+import eu.tango.scamscreener.api.StageContribution;
 import eu.tango.scamscreener.api.event.BlacklistEvent;
 import eu.tango.scamscreener.api.event.PlayerListChangeType;
 import eu.tango.scamscreener.api.event.WhitelistEvent;
@@ -25,6 +27,11 @@ import eu.tango.scamscreener.review.ReviewStore;
 import eu.tango.scamscreener.training.TrainingCaseExportService;
 import lombok.Getter;
 import lombok.experimental.Accessors;
+import net.fabricmc.loader.api.FabricLoader;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * Central runtime container for shared ScamScreener services.
@@ -67,6 +74,7 @@ public final class ScamScreenerRuntime {
     @Getter
     @Accessors(fluent = true)
     private final TrainingCaseExportService trainingCaseExportService;
+    private final List<StageContribution> stageContributions;
     private volatile RuntimeConfig runtimeConfig;
     private volatile RulesConfig rulesConfig;
     @Getter
@@ -92,6 +100,7 @@ public final class ScamScreenerRuntime {
         recentChatCache = new RecentChatCache();
         mutePatternManager = new MutePatternManager();
         trainingCaseExportService = new TrainingCaseExportService();
+        stageContributions = loadStageContributions();
         mutePatternManager.reloadFromConfig(runtimeConfig);
         applyRuleStoreSettings();
         whitelistConfigStore.loadInto(whitelist);
@@ -105,7 +114,8 @@ public final class ScamScreenerRuntime {
             trendStore,
             funnelStore,
             recentChatCache,
-            runtimeConfig.pipeline().reviewThreshold()
+            runtimeConfig.pipeline().reviewThreshold(),
+            stageContributions
         );
     }
 
@@ -239,7 +249,37 @@ public final class ScamScreenerRuntime {
             trendStore,
             funnelStore,
             recentChatCache,
-            runtimeConfig.pipeline().reviewThreshold()
+            runtimeConfig.pipeline().reviewThreshold(),
+            stageContributions
         );
+    }
+
+    private static List<StageContribution> loadStageContributions() {
+        List<StageContribution> contributions = new ArrayList<>();
+        for (PipelineContributor contributor : FabricLoader.getInstance().getEntrypoints(PipelineContributor.ENTRYPOINT_KEY, PipelineContributor.class)) {
+            if (contributor == null) {
+                continue;
+            }
+
+            try {
+                Collection<StageContribution> contributedStages = contributor.stageContributions();
+                if (contributedStages == null) {
+                    continue;
+                }
+
+                for (StageContribution stageContribution : contributedStages) {
+                    if (stageContribution != null) {
+                        contributions.add(stageContribution);
+                    }
+                }
+            } catch (LinkageError | RuntimeException exception) {
+                ScamScreenerMod.LOGGER.warn("Failed to load ScamScreener pipeline contributions from {}.", contributor.getClass().getName(), exception);
+            }
+        }
+
+        if (!contributions.isEmpty()) {
+            ScamScreenerMod.LOGGER.info("Loaded {} external ScamScreener pipeline contributions.", contributions.size());
+        }
+        return List.copyOf(contributions);
     }
 }

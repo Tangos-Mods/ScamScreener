@@ -442,31 +442,6 @@ public final class AlertContextRegistry {
         return sanitizePlayerName(playerName).toLowerCase(Locale.ROOT);
     }
 
-    private static Optional<AlertContext> findByLinkedReviewEntryId(String reviewEntryId) {
-        if (reviewEntryId == null || reviewEntryId.isBlank()) {
-            return Optional.empty();
-        }
-
-        String matchingContextId = null;
-        long latestCapturedAtMs = Long.MIN_VALUE;
-        for (Map.Entry<String, AlertContext> entry : RECENT.entrySet()) {
-            AlertContext context = entry.getValue();
-            if (context == null || !reviewEntryId.equals(context.linkedReviewEntryId())) {
-                continue;
-            }
-            if (matchingContextId == null || context.capturedAtMs() >= latestCapturedAtMs) {
-                matchingContextId = entry.getKey();
-                latestCapturedAtMs = context.capturedAtMs();
-            }
-        }
-
-        if (matchingContextId == null) {
-            return Optional.empty();
-        }
-
-        return Optional.ofNullable(RECENT.get(matchingContextId));
-    }
-
     private static ScamScreenerRuntime safeRuntime() {
         try {
             return ScamScreenerRuntime.getInstance();

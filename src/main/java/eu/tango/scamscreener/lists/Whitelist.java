@@ -16,7 +16,7 @@ import java.util.UUID;
 /**
  * In-memory whitelist for trusted players.
  */
-public final class Whitelist implements PlayerList, WhitelistAccess {
+public final class Whitelist implements WhitelistAccess {
     private final Map<UUID, WhitelistEntry> entriesByUuid = new LinkedHashMap<>();
     private final Map<String, WhitelistEntry> entriesByName = new LinkedHashMap<>();
     private final Runnable saveHook;
@@ -126,7 +126,6 @@ public final class Whitelist implements PlayerList, WhitelistAccess {
         return new ArrayList<>(unique);
     }
 
-    @Override
     public boolean contains(UUID playerUuid, String playerName) {
         return find(playerUuid, playerName).isPresent();
     }
@@ -151,7 +150,6 @@ public final class Whitelist implements PlayerList, WhitelistAccess {
         return findByName(playerName).isPresent();
     }
 
-    @Override
     public boolean remove(UUID playerUuid, String playerName) {
         Optional<WhitelistEntry> existing = find(playerUuid, playerName);
         if (existing.isEmpty()) {

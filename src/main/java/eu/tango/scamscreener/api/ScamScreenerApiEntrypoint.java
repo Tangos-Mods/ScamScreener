@@ -1,26 +1,16 @@
 package eu.tango.scamscreener.api;
 
 import eu.tango.scamscreener.ScamScreenerRuntime;
-
-import java.util.List;
+import eu.tango.scamscreener.pipeline.core.ScamScreenerPipelineFactory;
 
 /**
  * Public Fabric entrypoint that exposes the stable ScamScreener API surface.
  *
- * <p>The actual engine wiring will evolve, but the public contract can already
- * expose the stable core stage order for extension discovery.
+ * <p>The public contract exposes the stable core stage order and the live
+ * runtime-backed services used by ScamScreener itself.
  */
 public final class ScamScreenerApiEntrypoint implements ScamScreenerApi {
-    private static final ScamScreenerPipelineApi PIPELINE_API = () -> List.of(
-        StageSlot.MUTE,
-        StageSlot.PLAYER_LIST,
-        StageSlot.RULE,
-        StageSlot.LEVENSHTEIN,
-        StageSlot.BEHAVIOR,
-        StageSlot.TREND,
-        StageSlot.FUNNEL,
-        StageSlot.MODEL
-    );
+    private static final ScamScreenerPipelineApi PIPELINE_API = ScamScreenerPipelineFactory::coreStageOrder;
     private static final ScamScreenerSettingsApi SETTINGS_API = new RuntimeConfigSettingsApi(
         () -> ScamScreenerRuntime.getInstance().config(),
         () -> ScamScreenerRuntime.getInstance().saveConfig()
@@ -34,7 +24,6 @@ public final class ScamScreenerApiEntrypoint implements ScamScreenerApi {
      */
     @Override
     public ScamScreenerPipelineApi pipeline() {
-        // Keep the runtime view immutable until the real engine is wired in.
         return PIPELINE_API;
     }
 

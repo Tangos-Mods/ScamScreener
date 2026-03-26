@@ -12,7 +12,7 @@ import java.util.Map;
 /**
  * Keeps short sender-local message history for behavior analysis.
  */
-public final class BehaviorStore implements PipelineStateStore<BehaviorStore.BehaviorSnapshot> {
+public final class BehaviorStore {
     private static final long DEFAULT_WINDOW_MS = 90_000L;
     private static final int DEFAULT_MAX_HISTORY = 8;
 
@@ -58,7 +58,6 @@ public final class BehaviorStore implements PipelineStateStore<BehaviorStore.Beh
      * @param chatEvent the event to inspect
      * @return the current behavior snapshot for the sender
      */
-    @Override
     public synchronized BehaviorSnapshot snapshotFor(ChatEvent chatEvent) {
         String senderKey = StateStoreSupport.senderKey(chatEvent);
         if (senderKey.isBlank()) {
@@ -90,7 +89,6 @@ public final class BehaviorStore implements PipelineStateStore<BehaviorStore.Beh
      *
      * @param chatEvent the event to append
      */
-    @Override
     public synchronized void record(ChatEvent chatEvent) {
         String senderKey = StateStoreSupport.senderKey(chatEvent);
         if (senderKey.isBlank()) {
@@ -114,7 +112,6 @@ public final class BehaviorStore implements PipelineStateStore<BehaviorStore.Beh
     /**
      * Clears all stored behavior history.
      */
-    @Override
     public synchronized void reset() {
         messagesBySender.clear();
     }

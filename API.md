@@ -412,6 +412,7 @@ The currently exposed core slots are:
 - `TREND`
 - `FUNNEL`
 - `MODEL`
+  The current built-in stage on this slot is the context-aware final stage.
 
 ### Example: Listing The Core Order
 
@@ -535,9 +536,7 @@ Do not currently plan around these capabilities:
 - direct access to `RuntimeConfig`
 - direct manipulation of the internal `PipelineEngine`
 - executing custom stages through `scamscreener-api`
-- relying on `PipelineContributor` as if it were already active in the runtime
-
-Right now, `PipelineContributor` is better understood as a prepared extension contract than as a production-ready hook.
+- mutating the built-in core stage order directly; external stages are attached relative to the exposed slots
 
 ## 11. Best Practices
 

@@ -134,9 +134,10 @@ public final class LegacyV1ConfigMigration {
             whitelist.add(null, playerName);
         }
 
-        WhitelistConfig migratedConfig = new SimpleVersionedConfigMigration<>(ConfigSchema.WHITELIST, WhitelistConfig::new)
-            .prepareForSave(WhitelistConfigStore.fromWhitelist(whitelist))
-            .config();
+        WhitelistConfig migratedConfig = prepareVersionedConfig(
+            WhitelistConfigStore.fromWhitelist(whitelist),
+            ConfigSchema.WHITELIST.currentVersion()
+        );
         writeJson(whitelistTargetFile, migratedConfig);
         int totalEntries = migratedConfig.playerUuids().size() + migratedConfig.playerNames().size();
         ScamScreenerMod.LOGGER.info("Migrated {} whitelist entries from legacy v1 config files.", totalEntries);
@@ -164,9 +165,10 @@ public final class LegacyV1ConfigMigration {
             return;
         }
 
-        BlacklistConfig migratedConfig = new SimpleVersionedConfigMigration<>(ConfigSchema.BLACKLIST, BlacklistConfig::new)
-            .prepareForSave(BlacklistConfigStore.fromBlacklist(blacklist))
-            .config();
+        BlacklistConfig migratedConfig = prepareVersionedConfig(
+            BlacklistConfigStore.fromBlacklist(blacklist),
+            ConfigSchema.BLACKLIST.currentVersion()
+        );
         writeJson(blacklistTargetFile, migratedConfig);
         ScamScreenerMod.LOGGER.info("Migrated {} blacklist entries from legacy v1 config files.", migratedConfig.entries().size());
     }
@@ -434,6 +436,14 @@ public final class LegacyV1ConfigMigration {
         try (Writer writer = Files.newBufferedWriter(targetFile, StandardCharsets.UTF_8)) {
             GSON.toJson(value, writer);
         }
+    }
+
+    private static <T extends VersionedConfig> T prepareVersionedConfig(T config, int version) {
+        T preparedConfig = config;
+        if (preparedConfig != null) {
+            preparedConfig.setVersion(Math.max(0, version));
+        }
+        return preparedConfig;
     }
 
     private static void deleteDirectoryRecursively(Path directory) throws IOException {

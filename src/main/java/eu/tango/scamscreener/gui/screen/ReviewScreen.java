@@ -1,13 +1,13 @@
 package eu.tango.scamscreener.gui.screen;
 
 import eu.tango.scamscreener.ScamScreenerRuntime;
-import eu.tango.scamscreener.gui.base.BaseListScreen;
-import eu.tango.scamscreener.gui.data.ReviewRow;
+import eu.tango.scamscreener.gui.base.BaseScreen;
 import eu.tango.scamscreener.gui.widget.SelectableListWidget;
 import eu.tango.scamscreener.message.AlertContextRegistry;
 import eu.tango.scamscreener.message.ClientMessages;
 import eu.tango.scamscreener.message.MessageDispatcher;
 import eu.tango.scamscreener.review.ReviewActionHandler;
+import eu.tango.scamscreener.review.ReviewCaseMessage;
 import eu.tango.scamscreener.review.ReviewEntry;
 import eu.tango.scamscreener.review.ReviewVerdict;
 import net.minecraft.client.gui.DrawContext;
@@ -26,17 +26,17 @@ import java.util.concurrent.CompletionException;
 /**
  * Review list screen using the case-oriented review workflow.
  */
-public final class ReviewScreen extends BaseListScreen {
+public final class ReviewScreen extends BaseScreen {
     private static final String TRAINING_HUB_URL = "https://scamscreener.creepans.net/";
     private static final int LIST_ROW_HEIGHT = 28;
     private static final int FILTER_BUTTON_WIDTH = 120;
     private static final int ACTION_COLUMNS = 4;
     private static final int ACTION_AREA_HEIGHT = (DEFAULT_BUTTON_HEIGHT * 3) + 22;
 
-    private final List<ReviewRow> rows = new ArrayList<>();
+    private final List<ReviewEntry> rows = new ArrayList<>();
 
     private ReviewFilter activeFilter = ReviewFilter.ALL;
-    private SelectableListWidget<ReviewRow> listWidget;
+    private SelectableListWidget<ReviewEntry> listWidget;
     private TextFieldWidget searchField;
     private ButtonWidget filterButton;
     private ButtonWidget markRiskButton;
@@ -191,22 +191,22 @@ public final class ReviewScreen extends BaseListScreen {
     }
 
     @Override
-    protected boolean handleListClick(double mouseX, double mouseY, int button) {
-        if (button != 0 || listWidget == null) {
-            return false;
+    public boolean mouseClicked(net.minecraft.client.gui.Click event, boolean doubleClick) {
+        if (event != null && event.button() == 0 && listWidget != null && listWidget.mouseClicked(event.x(), event.y(), event.button())) {
+            updateActionState();
+            return true;
         }
 
-        if (!listWidget.mouseClicked(mouseX, mouseY, button)) {
-            return false;
-        }
-
-        updateActionState();
-        return true;
+        return super.mouseClicked(event, doubleClick);
     }
 
     @Override
-    protected boolean handleListScroll(double mouseX, double mouseY, double verticalAmount) {
-        return listWidget != null && listWidget.mouseScrolled(mouseX, mouseY, verticalAmount);
+    public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
+        if (listWidget != null && listWidget.mouseScrolled(mouseX, mouseY, verticalAmount)) {
+            return true;
+        }
+
+        return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
     }
 
     private void cycleFilter() {
@@ -225,28 +225,10 @@ public final class ReviewScreen extends BaseListScreen {
         reloadRows(entry.getId());
     }
 
-    private void cycleSelectedVerdict() {
-        ReviewEntry entry = selectedEntry().orElse(null);
-        if (entry == null) {
-            return;
-        }
-
-        ReviewActionHandler.setVerdict(entry, nextVerdict(entry.getVerdict()));
-        reloadRows(entry.getId());
-    }
-
-    private void resetVisibleChoices() {
-        String selectedRowId = selectedRowId();
-        for (ReviewRow row : rows) {
-            ScamScreenerRuntime.getInstance().reviewStore().setVerdict(row.rowId(), ReviewVerdict.PENDING);
-        }
-        reloadRows(selectedRowId);
-    }
-
     private void clearVisible() {
         List<String> entryIds = new ArrayList<>();
-        for (ReviewRow row : rows) {
-            entryIds.add(row.rowId());
+        for (ReviewEntry row : rows) {
+            entryIds.add(row.getId());
         }
         for (String entryId : entryIds) {
             ScamScreenerRuntime.getInstance().reviewStore().remove(entryId);
@@ -366,8 +348,8 @@ public final class ReviewScreen extends BaseListScreen {
 
     private int count(ReviewVerdict target) {
         int count = 0;
-        for (ReviewRow row : rows) {
-            if (row.verdict() == target) {
+        for (ReviewEntry row : rows) {
+            if (row.getVerdict() == target) {
                 count++;
             }
         }
@@ -381,7 +363,7 @@ public final class ReviewScreen extends BaseListScreen {
     private void reloadRows(String selectedRowId) {
         rows.clear();
         for (ReviewEntry entry : ScamScreenerRuntime.getInstance().reviewStore().entries(activeFilter.verdict(), currentSearch())) {
-            rows.add(ReviewRow.fromEntry(entry));
+            rows.add(entry);
         }
 
         if (listWidget != null) {
@@ -398,7 +380,7 @@ public final class ReviewScreen extends BaseListScreen {
         }
 
         for (int index = 0; index < rows.size(); index++) {
-            if (rowId.equals(rows.get(index).rowId())) {
+            if (rowId.equals(rows.get(index).getId())) {
                 return index;
             }
         }
@@ -409,7 +391,7 @@ public final class ReviewScreen extends BaseListScreen {
     private void renderRow(
         DrawContext context,
         net.minecraft.client.font.TextRenderer textRenderer,
-        ReviewRow row,
+        ReviewEntry row,
         int x,
         int y,
         int width,
@@ -417,10 +399,10 @@ public final class ReviewScreen extends BaseListScreen {
         boolean hovered,
         boolean selected
     ) {
-        String header = "[" + marker(row.verdict()) + "] (" + row.score() + ") " + row.displayName();
+        String header = "[" + marker(row.getVerdict()) + "] (" + row.getScore() + ") " + entryDisplayName(row);
 
-        context.drawTextWithShadow(textRenderer, Text.literal(header), x, y, opaqueColor(color(row.verdict())));
-        context.drawTextWithShadow(textRenderer, Text.literal(row.compactMessage()), x, y + 11, opaqueColor(0xFFFFFF));
+        context.drawTextWithShadow(textRenderer, Text.literal(header), x, y, opaqueColor(color(row.getVerdict())));
+        context.drawTextWithShadow(textRenderer, Text.literal(entryCompactMessage(row)), x, y + 11, opaqueColor(0xFFFFFF));
     }
 
     private String marker(ReviewVerdict verdict) {
@@ -447,26 +429,12 @@ public final class ReviewScreen extends BaseListScreen {
         }
     }
 
-    private ReviewVerdict nextVerdict(ReviewVerdict verdict) {
-        return switch (verdict == null ? ReviewVerdict.PENDING : verdict) {
-            case PENDING -> ReviewVerdict.RISK;
-            case RISK -> ReviewVerdict.SAFE;
-            case SAFE -> ReviewVerdict.IGNORED;
-            case IGNORED -> ReviewVerdict.PENDING;
-        };
-    }
-
     private Optional<ReviewEntry> selectedEntry() {
         if (listWidget == null) {
             return Optional.empty();
         }
 
-        ReviewRow row = listWidget.selectedRow().orElse(null);
-        if (row == null) {
-            return Optional.empty();
-        }
-
-        return ScamScreenerRuntime.getInstance().reviewStore().find(row.rowId());
+        return listWidget.selectedRow();
     }
 
     private String currentSearch() {
@@ -482,12 +450,12 @@ public final class ReviewScreen extends BaseListScreen {
             return null;
         }
 
-        ReviewRow row = listWidget.selectedRow().orElse(null);
-        if (row == null || row.rowId().isBlank()) {
+        ReviewEntry row = listWidget.selectedRow().orElse(null);
+        if (row == null || row.getId().isBlank()) {
             return null;
         }
 
-        return row.rowId();
+        return row.getId();
     }
 
     private String searchSummary() {
@@ -507,6 +475,69 @@ public final class ReviewScreen extends BaseListScreen {
 
         String message = rootCause == null ? null : rootCause.getMessage();
         return message == null || message.isBlank() ? "unknown error" : message;
+    }
+
+    private static String entryDisplayName(ReviewEntry entry) {
+        if (entry == null) {
+            return "Case";
+        }
+
+        String numericId = trailingNumericId(entry.getId());
+        if (isManual(entry)) {
+            return numericId.isBlank() ? "Manual Case" : "Manual Case #" + numericId;
+        }
+
+        return numericId.isBlank() ? "Case" : "Case #" + numericId;
+    }
+
+    private static String entryCompactMessage(ReviewEntry entry) {
+        String summary = caseSummary(entry);
+        if (summary.length() <= 72) {
+            return summary;
+        }
+
+        return summary.substring(0, 69) + "...";
+    }
+
+    private static String caseSummary(ReviewEntry entry) {
+        if (entry == null) {
+            return "";
+        }
+
+        int messageCount = 0;
+        int signalCount = 0;
+        if (entry.hasCaseMessages()) {
+            for (ReviewCaseMessage caseMessage : entry.getCaseMessages()) {
+                if (caseMessage == null || caseMessage.getCleanText().isBlank()) {
+                    continue;
+                }
+                messageCount++;
+                if (caseMessage.isSignalMessage()) {
+                    signalCount++;
+                }
+            }
+        }
+        if (messageCount == 0 && entry.getMessage() != null && !entry.getMessage().isBlank()) {
+            messageCount = 1;
+        }
+
+        String stageLabel = entry.getDecidedByStage() == null || entry.getDecidedByStage().isBlank()
+            ? "Manual"
+            : entry.getDecidedByStage().trim();
+        return messageCount + " messages | " + signalCount + " signals | " + stageLabel;
+    }
+
+    private static boolean isManual(ReviewEntry entry) {
+        return entry != null && (entry.getDecidedByStage() == null || entry.getDecidedByStage().isBlank());
+    }
+
+    private static String trailingNumericId(String rowId) {
+        if (rowId == null || rowId.isBlank()) {
+            return "";
+        }
+
+        int separatorIndex = rowId.lastIndexOf('-');
+        return separatorIndex < 0 ? rowId.trim() : rowId.substring(separatorIndex + 1).trim();
     }
 
     private enum ReviewFilter {

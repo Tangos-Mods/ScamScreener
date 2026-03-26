@@ -14,5 +14,8 @@ public enum StageSlot {
     BEHAVIOR,
     TREND,
     FUNNEL,
+    /**
+     * Final extension slot, currently occupied by the built-in context-aware stage.
+     */
     MODEL
 }

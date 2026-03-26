@@ -2,7 +2,7 @@ package eu.tango.scamscreener.gui.screen;
 
 import eu.tango.scamscreener.ScamScreenerRuntime;
 import eu.tango.scamscreener.chat.RecentChatCache;
-import eu.tango.scamscreener.gui.base.BaseListScreen;
+import eu.tango.scamscreener.gui.base.BaseScreen;
 import eu.tango.scamscreener.gui.widget.SelectableListWidget;
 import eu.tango.scamscreener.pipeline.data.ChatSourceType;
 import net.minecraft.client.gui.DrawContext;
@@ -16,7 +16,7 @@ import java.util.List;
 /**
  * Picker for adding cached inbound chat lines into one review case.
  */
-public final class CaseMessagePickerScreen extends BaseListScreen {
+public final class CaseMessagePickerScreen extends BaseScreen {
     private static final int LIST_ROW_HEIGHT = 28;
 
     private final AlertManageScreen reviewScreen;
@@ -109,21 +109,22 @@ public final class CaseMessagePickerScreen extends BaseListScreen {
     }
 
     @Override
-    protected boolean handleListClick(double mouseX, double mouseY, int button) {
-        if (button != 0 || listWidget == null) {
-            return false;
-        }
-        if (!listWidget.mouseClicked(mouseX, mouseY, button)) {
-            return false;
+    public boolean mouseClicked(net.minecraft.client.gui.Click event, boolean doubleClick) {
+        if (event != null && event.button() == 0 && listWidget != null && listWidget.mouseClicked(event.x(), event.y(), event.button())) {
+            updateActionState();
+            return true;
         }
 
-        updateActionState();
-        return true;
+        return super.mouseClicked(event, doubleClick);
     }
 
     @Override
-    protected boolean handleListScroll(double mouseX, double mouseY, double verticalAmount) {
-        return listWidget != null && listWidget.mouseScrolled(mouseX, mouseY, verticalAmount);
+    public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
+        if (listWidget != null && listWidget.mouseScrolled(mouseX, mouseY, verticalAmount)) {
+            return true;
+        }
+
+        return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
     }
 
     private void addSelected() {

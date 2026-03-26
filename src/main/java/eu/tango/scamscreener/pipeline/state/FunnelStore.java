@@ -12,7 +12,7 @@ import java.util.Map;
 /**
  * Keeps a short sender-local step history for future funnel analysis.
  */
-public final class FunnelStore implements PipelineStateStore<FunnelStore.FunnelSnapshot> {
+public final class FunnelStore {
     private static final long DEFAULT_WINDOW_MS = 300_000L;
     private static final int DEFAULT_MAX_HISTORY = 8;
 
@@ -58,7 +58,6 @@ public final class FunnelStore implements PipelineStateStore<FunnelStore.FunnelS
      * @param chatEvent the event to inspect
      * @return the current funnel snapshot
      */
-    @Override
     public synchronized FunnelSnapshot snapshotFor(ChatEvent chatEvent) {
         String senderKey = StateStoreSupport.senderKey(chatEvent);
         if (senderKey.isBlank()) {
@@ -87,7 +86,6 @@ public final class FunnelStore implements PipelineStateStore<FunnelStore.FunnelS
      *
      * @param chatEvent the event to append
      */
-    @Override
     public synchronized void record(ChatEvent chatEvent) {
         recordStep(chatEvent, FunnelStep.MESSAGE, StateStoreSupport.normalizedMessage(chatEvent));
     }
@@ -117,7 +115,6 @@ public final class FunnelStore implements PipelineStateStore<FunnelStore.FunnelS
     /**
      * Clears all stored funnel history.
      */
-    @Override
     public synchronized void reset() {
         stepsBySender.clear();
     }

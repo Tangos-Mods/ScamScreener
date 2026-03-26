@@ -191,11 +191,11 @@ public final class DecisionMessages {
     }
 
     private static MutableText actionLine(String alertContextId) {
-        MutableText line = Text.literal(leadingPadding("[manage] [info]"));
+        MutableText line = Text.literal(leadingPadding("[review] [info]"));
         boolean hasContext = alertContextId != null && !alertContextId.isBlank();
 
         line.append(actionTag(
-            "manage",
+            "review",
             Formatting.GOLD,
             "Open the case review window to group context messages and assign signal tags.",
             hasContext ? "/scamscreener review manage " + alertContextId : null

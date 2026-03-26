@@ -2,7 +2,6 @@ package eu.tango.scamscreener.config.store;
 
 import eu.tango.scamscreener.config.data.ReviewConfig;
 import eu.tango.scamscreener.config.migration.ConfigSchema;
-import eu.tango.scamscreener.config.migration.SimpleVersionedConfigMigration;
 import eu.tango.scamscreener.pipeline.data.StageResult;
 import eu.tango.scamscreener.review.ReviewCaseMessage;
 import eu.tango.scamscreener.review.ReviewEntry;
@@ -17,10 +16,7 @@ import java.nio.file.Path;
 /**
  * JSON-backed store for the persisted sanitized review queue.
  */
-public final class ReviewConfigStore extends MigratingConfigStore<ReviewConfig> {
-    private static final SimpleVersionedConfigMigration<ReviewConfig> MIGRATION =
-        new SimpleVersionedConfigMigration<>(ConfigSchema.REVIEW, ReviewConfig::new);
-
+public final class ReviewConfigStore extends VersionedConfigStore<ReviewConfig> {
     /**
      * Creates the review config store bound to {@code review.json}.
      */
@@ -29,7 +25,12 @@ public final class ReviewConfigStore extends MigratingConfigStore<ReviewConfig> 
     }
 
     ReviewConfigStore(Path path) {
-        super(path, ReviewConfig.class, MIGRATION);
+        super(path, ReviewConfig.class, ConfigSchema.REVIEW.currentVersion());
+    }
+
+    @Override
+    protected ReviewConfig createDefaultValue() {
+        return new ReviewConfig();
     }
 
     /**
