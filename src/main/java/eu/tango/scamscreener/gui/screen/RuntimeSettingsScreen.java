@@ -3,17 +3,17 @@ package eu.tango.scamscreener.gui.screen;
 import eu.tango.scamscreener.ScamScreenerRuntime;
 import eu.tango.scamscreener.config.data.RuntimeConfig;
 import eu.tango.scamscreener.gui.base.BaseScreen;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 
 /**
  * Runtime and pipeline settings screen.
  */
 public final class RuntimeSettingsScreen extends BaseScreen {
-    private ButtonWidget reviewThresholdButton;
-    private ButtonWidget debugLoggingButton;
+    private Button reviewThresholdButton;
+    private Button debugLoggingButton;
 
     /**
      * Creates the runtime settings screen.
@@ -21,7 +21,7 @@ public final class RuntimeSettingsScreen extends BaseScreen {
      * @param parent the parent screen to return to
      */
     public RuntimeSettingsScreen(Screen parent) {
-        super(Text.literal("ScamScreener Runtime"), parent);
+        super(Component.literal("ScamScreener Runtime"), parent);
     }
 
     /**
@@ -34,37 +34,37 @@ public final class RuntimeSettingsScreen extends BaseScreen {
         int x = column.x();
         int y = column.y() + 12;
 
-        reviewThresholdButton = addDrawableChild(
-            ButtonWidget.builder(Text.empty(), button -> cycleReviewThreshold())
-                .dimensions(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
+        reviewThresholdButton = addRenderableWidget(
+            Button.builder(Component.empty(), button -> cycleReviewThreshold())
+                .bounds(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
         y += ROW_HEIGHT;
 
-        debugLoggingButton = addDrawableChild(
-            ButtonWidget.builder(Text.empty(), button -> toggleDebugLogging())
-                .dimensions(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
+        debugLoggingButton = addRenderableWidget(
+            Button.builder(Component.empty(), button -> toggleDebugLogging())
+                .bounds(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
         y += ROW_HEIGHT;
 
-        addDrawableChild(
-            ButtonWidget.builder(Text.literal("Message Settings"), button -> this.client.setScreen(new MessageSettingsScreen(this)))
-                .dimensions(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
+        addRenderableWidget(
+            Button.builder(Component.literal("Message Settings"), button -> this.minecraft.setScreen(new MessageSettingsScreen(this)))
+                .bounds(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
         y += ROW_HEIGHT;
 
-        addDrawableChild(
-            ButtonWidget.builder(Text.literal("Rules Settings"), button -> this.client.setScreen(new RulesSettingsScreen(this)))
-                .dimensions(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
+        addRenderableWidget(
+            Button.builder(Component.literal("Rules Settings"), button -> this.minecraft.setScreen(new RulesSettingsScreen(this)))
+                .bounds(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
         y += ROW_HEIGHT;
 
-        addDrawableChild(
-            ButtonWidget.builder(Text.literal("Review Settings"), button -> this.client.setScreen(new ReviewSettingsScreen(this)))
-                .dimensions(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
+        addRenderableWidget(
+            Button.builder(Component.literal("Review Settings"), button -> this.minecraft.setScreen(new ReviewSettingsScreen(this)))
+                .bounds(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
 
@@ -81,8 +81,8 @@ public final class RuntimeSettingsScreen extends BaseScreen {
      * @param deltaTicks partial tick delta
      */
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float deltaTicks) {
-        super.render(context, mouseX, mouseY, deltaTicks);
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float deltaTicks) {
+        super.extractRenderState(context, mouseX, mouseY, deltaTicks);
 
         int left = centeredX(defaultButtonWidth());
         drawSectionTitle(context, left, CONTENT_TOP - 18, "Pipeline");
@@ -108,7 +108,7 @@ public final class RuntimeSettingsScreen extends BaseScreen {
         RuntimeConfig config = ScamScreenerRuntime.getInstance().config();
 
         if (reviewThresholdButton != null) {
-            reviewThresholdButton.setMessage(Text.literal("Review Threshold: " + config.pipeline().reviewThreshold()));
+            reviewThresholdButton.setMessage(Component.literal("Review Threshold: " + config.pipeline().reviewThreshold()));
         }
         if (debugLoggingButton != null) {
             debugLoggingButton.setMessage(toggleText("Debug Logging: ", config.output().isDebugLogging()));

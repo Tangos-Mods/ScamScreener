@@ -1,9 +1,9 @@
 package eu.tango.scamscreener.gui.screen;
 
 import eu.tango.scamscreener.gui.base.BaseScreen;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 
 /**
  * Warning gate before opening the low-level advanced rule tuning screen.
@@ -12,7 +12,7 @@ public final class AdvancedRulesWarningScreen extends BaseScreen {
     private final Screen navigationParent;
 
     public AdvancedRulesWarningScreen(Screen parent) {
-        super(Text.literal("Advanced Rule Tuning"), parent);
+        super(Component.literal("Advanced Rule Tuning"), parent);
         navigationParent = parent;
     }
 
@@ -22,22 +22,22 @@ public final class AdvancedRulesWarningScreen extends BaseScreen {
         int x = centeredX(contentWidth);
         int y = CONTENT_TOP + 52;
 
-        addDrawableChild(net.minecraft.client.gui.widget.ButtonWidget.builder(
-                Text.literal("I KNOW WHAT I AM DOING"),
+        addRenderableWidget(net.minecraft.client.gui.components.Button.builder(
+                Component.literal("I KNOW WHAT I AM DOING"),
                 button -> {
-                    if (this.client != null) {
-                        this.client.setScreen(new AdvancedRulesSettingsScreen(navigationParent));
+                    if (this.minecraft != null) {
+                        this.minecraft.setScreen(new AdvancedRulesSettingsScreen(navigationParent));
                     }
                 })
-            .dimensions(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
+            .bounds(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
             .build());
 
-        addCenteredFooterButton(contentWidth, Text.literal("Back"), button -> close());
+        addCenteredFooterButton(contentWidth, Component.literal("Back"), button -> onClose());
     }
 
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float deltaTicks) {
-        super.render(context, mouseX, mouseY, deltaTicks);
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float deltaTicks) {
+        super.extractRenderState(context, mouseX, mouseY, deltaTicks);
 
         int left = centeredX(defaultButtonWidth());
         int y = CONTENT_TOP - 6;

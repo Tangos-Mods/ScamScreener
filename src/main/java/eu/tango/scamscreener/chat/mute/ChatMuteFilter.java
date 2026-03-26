@@ -3,7 +3,7 @@ package eu.tango.scamscreener.chat.mute;
 import eu.tango.scamscreener.ScamScreenerRuntime;
 import eu.tango.scamscreener.profiler.ScamScreenerProfiler;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 /**
  * Early inbound chat filter that restores the old manual mute-pattern flow.
@@ -31,7 +31,7 @@ public final class ChatMuteFilter {
         );
     }
 
-    private static boolean allowGameMessage(Text message, boolean overlay) {
+    private static boolean allowGameMessage(Component message, boolean overlay) {
         if (overlay) {
             return true;
         }
@@ -39,11 +39,11 @@ public final class ChatMuteFilter {
         return allowMessage(message);
     }
 
-    private static boolean allowChatMessage(Text message) {
+    private static boolean allowChatMessage(Component message) {
         return allowMessage(message);
     }
 
-    private static boolean allowMessage(Text message) {
+    private static boolean allowMessage(Component message) {
         ScamScreenerRuntime runtime = ScamScreenerRuntime.getInstance();
         MutePatternManager mutePatternManager = runtime.mutePatternManager();
         if (!runtime.isEnabled() || !mutePatternManager.isEnabled()) {

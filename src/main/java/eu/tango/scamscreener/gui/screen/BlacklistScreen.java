@@ -4,16 +4,15 @@ import eu.tango.scamscreener.ScamScreenerRuntime;
 import eu.tango.scamscreener.api.BlacklistAccess;
 import eu.tango.scamscreener.gui.base.BaseScreen;
 import eu.tango.scamscreener.lists.BlacklistEntry;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.gui.widget.TextFieldWidget;
-import net.minecraft.text.Text;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 
 /**
  * Blacklist management screen.
@@ -23,16 +22,16 @@ public final class BlacklistScreen extends BaseScreen {
     private static final int SCORE_STEP = 10;
 
     private final BlacklistAccess blacklist;
-    private final List<ButtonWidget> entryButtons = new ArrayList<>();
+    private final List<Button> entryButtons = new ArrayList<>();
     private final List<BlacklistEntry> pageEntries = new ArrayList<>();
 
-    private ButtonWidget previousPageButton;
-    private ButtonWidget nextPageButton;
-    private ButtonWidget scoreDownButton;
-    private ButtonWidget scoreUpButton;
-    private ButtonWidget setReasonButton;
-    private ButtonWidget removeButton;
-    private TextFieldWidget reasonInput;
+    private Button previousPageButton;
+    private Button nextPageButton;
+    private Button scoreDownButton;
+    private Button scoreUpButton;
+    private Button setReasonButton;
+    private Button removeButton;
+    private EditBox reasonInput;
     private int page;
     private UUID selectedUuid;
     private String selectedName = "";
@@ -54,7 +53,7 @@ public final class BlacklistScreen extends BaseScreen {
      * @param blacklist the blacklist access to manage
      */
     public BlacklistScreen(Screen parent, BlacklistAccess blacklist) {
-        super(Text.literal("ScamScreener Blacklist"), parent);
+        super(Component.literal("ScamScreener Blacklist"), parent);
         this.blacklist = blacklist;
     }
 
@@ -69,9 +68,9 @@ public final class BlacklistScreen extends BaseScreen {
 
         for (int index = 0; index < ENTRIES_PER_PAGE; index++) {
             final int indexOnPage = index;
-            ButtonWidget rowButton = addDrawableChild(
-                ButtonWidget.builder(Text.literal("-"), button -> selectEntry(indexOnPage))
-                    .dimensions(x, y, buttonWidth, DEFAULT_BUTTON_HEIGHT)
+            Button rowButton = addRenderableWidget(
+                Button.builder(Component.literal("-"), button -> selectEntry(indexOnPage))
+                    .bounds(x, y, buttonWidth, DEFAULT_BUTTON_HEIGHT)
                     .build()
             );
             entryButtons.add(rowButton);
@@ -79,54 +78,54 @@ public final class BlacklistScreen extends BaseScreen {
         }
 
         int halfWidth = splitWidth(buttonWidth, 2, DEFAULT_SPLIT_GAP);
-        previousPageButton = addDrawableChild(
-            ButtonWidget.builder(Text.literal("< Previous"), button -> {
+        previousPageButton = addRenderableWidget(
+            Button.builder(Component.literal("< Previous"), button -> {
                 page = Math.max(0, page - 1);
                 refreshList();
-            }).dimensions(x, y, halfWidth, DEFAULT_BUTTON_HEIGHT).build()
+            }).bounds(x, y, halfWidth, DEFAULT_BUTTON_HEIGHT).build()
         );
-        nextPageButton = addDrawableChild(
-            ButtonWidget.builder(Text.literal("Next >"), button -> {
+        nextPageButton = addRenderableWidget(
+            Button.builder(Component.literal("Next >"), button -> {
                 page = Math.min(Math.max(0, totalPages - 1), page + 1);
                 refreshList();
-            }).dimensions(columnX(x, halfWidth, DEFAULT_SPLIT_GAP, 1), y, halfWidth, DEFAULT_BUTTON_HEIGHT).build()
+            }).bounds(columnX(x, halfWidth, DEFAULT_SPLIT_GAP, 1), y, halfWidth, DEFAULT_BUTTON_HEIGHT).build()
         );
         y += ROW_HEIGHT;
 
         int thirdWidth = splitWidth(buttonWidth, 3, DEFAULT_SPLIT_GAP);
-        scoreDownButton = addDrawableChild(
-            ButtonWidget.builder(Text.literal("Score -" + SCORE_STEP), button -> adjustScore(-SCORE_STEP))
-                .dimensions(x, y, thirdWidth, DEFAULT_BUTTON_HEIGHT)
+        scoreDownButton = addRenderableWidget(
+            Button.builder(Component.literal("Score -" + SCORE_STEP), button -> adjustScore(-SCORE_STEP))
+                .bounds(x, y, thirdWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
-        scoreUpButton = addDrawableChild(
-            ButtonWidget.builder(Text.literal("Score +" + SCORE_STEP), button -> adjustScore(SCORE_STEP))
-                .dimensions(columnX(x, thirdWidth, DEFAULT_SPLIT_GAP, 1), y, thirdWidth, DEFAULT_BUTTON_HEIGHT)
+        scoreUpButton = addRenderableWidget(
+            Button.builder(Component.literal("Score +" + SCORE_STEP), button -> adjustScore(SCORE_STEP))
+                .bounds(columnX(x, thirdWidth, DEFAULT_SPLIT_GAP, 1), y, thirdWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
-        removeButton = addDrawableChild(
-            ButtonWidget.builder(Text.literal("Remove"), button -> removeSelected())
-                .dimensions(columnX(x, thirdWidth, DEFAULT_SPLIT_GAP, 2), y, thirdWidth, DEFAULT_BUTTON_HEIGHT)
+        removeButton = addRenderableWidget(
+            Button.builder(Component.literal("Remove"), button -> removeSelected())
+                .bounds(columnX(x, thirdWidth, DEFAULT_SPLIT_GAP, 2), y, thirdWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
         y += ROW_HEIGHT;
 
         int saveButtonWidth = 52;
         int inputWidth = Math.max(80, buttonWidth - saveButtonWidth - DEFAULT_SPLIT_GAP);
-        reasonInput = addDrawableChild(
-            new TextFieldWidget(
-                this.textRenderer,
+        reasonInput = addRenderableWidget(
+            new EditBox(
+                this.font,
                 x,
                 y,
                 inputWidth,
                 DEFAULT_BUTTON_HEIGHT,
-                Text.literal("Reason")
+                Component.literal("Reason")
             )
         );
         reasonInput.setMaxLength(64);
-        setReasonButton = addDrawableChild(
-            ButtonWidget.builder(Text.literal("Save"), button -> applyReasonInput())
-                .dimensions(x + inputWidth + DEFAULT_SPLIT_GAP, y, saveButtonWidth, DEFAULT_BUTTON_HEIGHT)
+        setReasonButton = addRenderableWidget(
+            Button.builder(Component.literal("Save"), button -> applyReasonInput())
+                .bounds(x + inputWidth + DEFAULT_SPLIT_GAP, y, saveButtonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
 
@@ -135,12 +134,12 @@ public final class BlacklistScreen extends BaseScreen {
     }
 
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float deltaTicks) {
-        super.render(context, mouseX, mouseY, deltaTicks);
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float deltaTicks) {
+        super.extractRenderState(context, mouseX, mouseY, deltaTicks);
 
-        context.drawCenteredTextWithShadow(
-            this.textRenderer,
-            Text.literal("Page " + (totalPages == 0 ? 0 : page + 1) + "/" + Math.max(1, totalPages)),
+        context.centeredText(
+            this.font,
+            Component.literal("Page " + (totalPages == 0 ? 0 : page + 1) + "/" + Math.max(1, totalPages)),
             this.width / 2,
             TITLE_Y + 12,
             opaqueColor(0xAAAAAA)
@@ -152,9 +151,9 @@ public final class BlacklistScreen extends BaseScreen {
             : "Selected: " + displayName(selected.playerUuid(), selected.playerName())
                 + " | score " + Math.max(0, selected.score())
                 + " | " + safeReason(selected.reason());
-        context.drawCenteredTextWithShadow(
-            this.textRenderer,
-            Text.literal(selectedText),
+        context.centeredText(
+            this.font,
+            Component.literal(selectedText),
             this.width / 2,
             this.height - 42,
             opaqueColor(0xCCCCCC)
@@ -190,17 +189,17 @@ public final class BlacklistScreen extends BaseScreen {
         int start = page * ENTRIES_PER_PAGE;
         for (int index = 0; index < ENTRIES_PER_PAGE; index++) {
             int absoluteIndex = start + index;
-            ButtonWidget button = entryButtons.get(index);
+            Button button = entryButtons.get(index);
             if (absoluteIndex >= allEntries.size()) {
                 button.active = false;
-                button.setMessage(Text.literal("-"));
+                button.setMessage(Component.literal("-"));
                 continue;
             }
 
             BlacklistEntry entry = allEntries.get(absoluteIndex);
             pageEntries.add(entry);
             button.active = true;
-            button.setMessage(Text.literal(formatEntry(entry, matchesSelection(entry))));
+            button.setMessage(Component.literal(formatEntry(entry, matchesSelection(entry))));
         }
 
         if ((selectedUuid == null && selectedName.isBlank()) && !allEntries.isEmpty()) {
@@ -227,8 +226,8 @@ public final class BlacklistScreen extends BaseScreen {
             reasonInput.setEditable(hasSelection);
             reasonInput.active = hasSelection;
             String value = hasSelection ? safeReason(selected.reason()) : "";
-            if (!value.equals(reasonInput.getText())) {
-                reasonInput.setText(value);
+            if (!value.equals(reasonInput.getValue())) {
+                reasonInput.setValue(value);
             }
         }
     }
@@ -264,7 +263,7 @@ public final class BlacklistScreen extends BaseScreen {
             return;
         }
 
-        blacklist.add(selected.playerUuid(), selected.playerName(), selected.score(), reasonInput.getText());
+        blacklist.add(selected.playerUuid(), selected.playerName(), selected.score(), reasonInput.getValue());
         refreshList();
     }
 

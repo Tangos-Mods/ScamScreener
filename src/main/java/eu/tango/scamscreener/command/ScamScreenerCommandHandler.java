@@ -31,11 +31,11 @@ import eu.tango.scamscreener.debug.DebugKeys;
 import eu.tango.scamscreener.profiler.ScamScreenerProfiler;
 import eu.tango.scamscreener.profiler.web.ProfilerWebOpenResult;
 import eu.tango.scamscreener.profiler.web.ProfilerWebService;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 import net.minecraft.util.Util;
 
 import java.util.Locale;
@@ -43,8 +43,8 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
-import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument;
-import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal;
+import static net.fabricmc.fabric.api.client.command.v2.ClientCommands.argument;
+import static net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal;
 
 /**
  * Registers the local client-side ScamScreener commands.
@@ -392,7 +392,7 @@ public final class ScamScreenerCommandHandler {
         }
 
         try {
-            Util.getOperatingSystem().open(result.uri().toString());
+            Util.getPlatform().openUri(result.uri().toString());
             source.sendFeedback(ClientMessages.profilerWebOpened(result.uri().toString()));
             return 1;
         } catch (Exception exception) {
@@ -435,7 +435,7 @@ public final class ScamScreenerCommandHandler {
     }
 
     private static int exportTrainingCases(FabricClientCommandSource source) {
-        MinecraftClient client = source.getClient();
+        Minecraft client = source.getClient();
         if (client == null) {
             source.sendError(ClientMessages.uiUnavailable());
             return 0;
@@ -457,7 +457,7 @@ public final class ScamScreenerCommandHandler {
     }
 
     private static int queueScreen(FabricClientCommandSource source, Runnable action) {
-        MinecraftClient client = source.getClient();
+        Minecraft client = source.getClient();
         if (client == null) {
             source.sendError(ClientMessages.uiUnavailable());
             return 0;
@@ -595,7 +595,7 @@ public final class ScamScreenerCommandHandler {
 
     private static void refreshCommandCompletions() {
         try {
-            ClientCommandManager.refreshCommandCompletions();
+            ClientCommands.refreshCommandCompletions();
         } catch (IllegalStateException ignored) {
             // Command suggestions are optional; ignore refresh failures when the dispatcher is unavailable.
         }

@@ -3,13 +3,12 @@ package eu.tango.scamscreener.gui.screen;
 import eu.tango.scamscreener.ScamScreenerRuntime;
 import eu.tango.scamscreener.config.data.RulesConfig;
 import eu.tango.scamscreener.gui.base.BaseScreen;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.text.Text;
-
 import java.util.ArrayList;
 import java.util.List;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 
 /**
  * Safe public rules screen with only simple enable/disable toggles.
@@ -27,7 +26,7 @@ public final class RulesSettingsScreen extends BaseScreen {
     }
 
     private RulesSettingsScreen(Screen parent, Section section) {
-        super(Text.literal("ScamScreener Rules"), parent);
+        super(Component.literal("ScamScreener Rules"), parent);
         navigationParent = parent;
         this.section = section == null ? Section.STAGES : section;
     }
@@ -53,36 +52,36 @@ public final class RulesSettingsScreen extends BaseScreen {
         addFooterButton(
             columnX(x, footerWidth, DEFAULT_SPLIT_GAP, 0),
             footerWidth,
-            Text.literal("< " + section.previous().label()),
+            Component.literal("< " + section.previous().label()),
             button -> openSection(section.previous())
         );
         addFooterButton(
             columnX(x, footerWidth, DEFAULT_SPLIT_GAP, 1),
             footerWidth,
-            Text.literal(section.next().label() + " >"),
+            Component.literal(section.next().label() + " >"),
             button -> openSection(section.next())
         );
         addFooterButton(
             columnX(x, footerWidth, DEFAULT_SPLIT_GAP, 2),
             footerWidth,
-            Text.literal("Advanced..."),
+            Component.literal("Advanced..."),
             button -> {
-                if (this.client != null) {
-                    this.client.setScreen(new AdvancedRulesWarningScreen(this));
+                if (this.minecraft != null) {
+                    this.minecraft.setScreen(new AdvancedRulesWarningScreen(this));
                 }
             }
         );
         addFooterButton(
             columnX(x, footerWidth, DEFAULT_SPLIT_GAP, 3),
             footerWidth,
-            Text.literal("Back"),
-            button -> close()
+            Component.literal("Back"),
+            button -> onClose()
         );
     }
 
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float deltaTicks) {
-        super.render(context, mouseX, mouseY, deltaTicks);
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float deltaTicks) {
+        super.extractRenderState(context, mouseX, mouseY, deltaTicks);
 
         int left = centeredX(rulesContentWidth());
         int y = CONTENT_TOP - 18;
@@ -165,10 +164,10 @@ public final class RulesSettingsScreen extends BaseScreen {
         actions.add(new ToggleAction(labelPrefix, enabled, onPress));
     }
 
-    private ButtonWidget addToggleButton(int x, int y, int width, ToggleAction action) {
-        return addDrawableChild(
-            ButtonWidget.builder(toggleText(action.labelPrefix(), action.enabled()), button -> applyRulesChange(action.onPress()))
-                .dimensions(x, y, width, DEFAULT_BUTTON_HEIGHT)
+    private Button addToggleButton(int x, int y, int width, ToggleAction action) {
+        return addRenderableWidget(
+            Button.builder(toggleText(action.labelPrefix(), action.enabled()), button -> applyRulesChange(action.onPress()))
+                .bounds(x, y, width, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
     }
@@ -180,8 +179,8 @@ public final class RulesSettingsScreen extends BaseScreen {
     }
 
     private void openSection(Section nextSection) {
-        if (this.client != null) {
-            this.client.setScreen(new RulesSettingsScreen(navigationParent, nextSection));
+        if (this.minecraft != null) {
+            this.minecraft.setScreen(new RulesSettingsScreen(navigationParent, nextSection));
         }
     }
 

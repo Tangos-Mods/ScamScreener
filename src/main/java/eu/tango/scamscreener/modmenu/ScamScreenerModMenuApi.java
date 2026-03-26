@@ -3,7 +3,7 @@ package eu.tango.scamscreener.modmenu;
 import com.terraformersmc.modmenu.api.ConfigScreenFactory;
 import com.terraformersmc.modmenu.api.ModMenuApi;
 import eu.tango.scamscreener.gui.screen.ScamScreenerMainScreen;
-import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.screens.Screen;
 
 /**
  * ModMenu bridge that opens the ScamScreener root GUI.

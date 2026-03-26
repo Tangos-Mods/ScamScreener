@@ -24,7 +24,7 @@
   },
   "accessWidener": "scamscreener.accesswidener",
   "depends": {
-    "fabricloader": ">=0.17",
+    "fabricloader": ">=0.18.5",
     "minecraft": "${minecraft}",
     "fabric-message-api-v1": "*"
   },

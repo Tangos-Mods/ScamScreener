@@ -3,8 +3,7 @@ package eu.tango.scamscreener.pipeline.data;
 import com.mojang.authlib.GameProfile;
 import eu.tango.scamscreener.chat.TextNormalization;
 import lombok.Getter;
-import net.minecraft.text.Text;
-
+import net.minecraft.network.chat.Component;
 import java.time.Instant;
 import java.util.Locale;
 import java.util.UUID;
@@ -93,7 +92,7 @@ public final class ChatEvent {
      * @return a normalized chat event for pipeline processing
      */
     public static ChatEvent fromInboundChat(
-        Text message,
+        Component message,
         GameProfile sender,
         Instant receptionTimestamp,
         int maxChatLength
@@ -112,7 +111,7 @@ public final class ChatEvent {
      * @return a normalized chat event for pipeline processing
      */
     public static ChatEvent fromInboundChat(
-        Text message,
+        Component message,
         GameProfile sender,
         Instant receptionTimestamp,
         int maxChatLength,
@@ -133,14 +132,14 @@ public final class ChatEvent {
      * @return a normalized chat event for pipeline processing
      */
     public static ChatEvent fromInboundChat(
-        Text message,
+        Component message,
         GameProfile sender,
         Object params,
         Instant receptionTimestamp,
         int maxChatLength,
         ChatSourceType sourceType
     ) {
-        String rawMessage = message == null ? "" : message.asTruncatedString(maxChatLength);
+        String rawMessage = message == null ? "" : message.getString(maxChatLength);
         UUID senderUuid = sender == null ? null : sender.id();
         String senderName = sender == null || sender.name() == null ? "" : sender.name();
         if (senderName.isBlank()) {
@@ -159,8 +158,8 @@ public final class ChatEvent {
      * @param maxChatLength the maximum message length to extract
      * @return a normalized system chat event for pipeline processing
      */
-    public static ChatEvent fromGameMessage(Text message, int maxChatLength) {
-        String rawMessage = message == null ? "" : message.asTruncatedString(maxChatLength);
+    public static ChatEvent fromGameMessage(Component message, int maxChatLength) {
+        String rawMessage = message == null ? "" : message.getString(maxChatLength);
         return new ChatEvent(rawMessage, null, "", System.currentTimeMillis(), ChatSourceType.SYSTEM);
     }
 
@@ -239,8 +238,8 @@ public final class ChatEvent {
     private static String invokeNameMethod(Object params, String methodName, int maxChatLength) {
         try {
             Object value = params.getClass().getMethod(methodName).invoke(params);
-            if (value instanceof Text textValue) {
-                return textValue.asTruncatedString(maxChatLength).trim();
+            if (value instanceof Component textValue) {
+                return textValue.getString(maxChatLength).trim();
             }
             if (value instanceof String stringValue) {
                 return stringValue.trim();

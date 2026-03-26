@@ -4,16 +4,15 @@ import eu.tango.scamscreener.ScamScreenerRuntime;
 import eu.tango.scamscreener.api.WhitelistAccess;
 import eu.tango.scamscreener.gui.base.BaseScreen;
 import eu.tango.scamscreener.lists.WhitelistEntry;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.gui.widget.TextFieldWidget;
-import net.minecraft.text.Text;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 
 /**
  * Whitelist management screen.
@@ -22,13 +21,13 @@ public final class WhitelistScreen extends BaseScreen {
     private static final int ENTRIES_PER_PAGE = 8;
 
     private final WhitelistAccess whitelist;
-    private final List<ButtonWidget> entryButtons = new ArrayList<>();
+    private final List<Button> entryButtons = new ArrayList<>();
     private final List<WhitelistEntry> pageEntries = new ArrayList<>();
 
-    private ButtonWidget previousPageButton;
-    private ButtonWidget nextPageButton;
-    private ButtonWidget removeButton;
-    private TextFieldWidget addInput;
+    private Button previousPageButton;
+    private Button nextPageButton;
+    private Button removeButton;
+    private EditBox addInput;
     private int page;
     private int totalPages = 1;
     private UUID selectedUuid;
@@ -50,7 +49,7 @@ public final class WhitelistScreen extends BaseScreen {
      * @param whitelist the whitelist access to manage
      */
     public WhitelistScreen(Screen parent, WhitelistAccess whitelist) {
-        super(Text.literal("ScamScreener Whitelist"), parent);
+        super(Component.literal("ScamScreener Whitelist"), parent);
         this.whitelist = whitelist;
     }
 
@@ -65,9 +64,9 @@ public final class WhitelistScreen extends BaseScreen {
 
         for (int index = 0; index < ENTRIES_PER_PAGE; index++) {
             final int indexOnPage = index;
-            ButtonWidget rowButton = addDrawableChild(
-                ButtonWidget.builder(Text.literal("-"), button -> selectEntry(indexOnPage))
-                    .dimensions(x, y, buttonWidth, DEFAULT_BUTTON_HEIGHT)
+            Button rowButton = addRenderableWidget(
+                Button.builder(Component.literal("-"), button -> selectEntry(indexOnPage))
+                    .bounds(x, y, buttonWidth, DEFAULT_BUTTON_HEIGHT)
                     .build()
             );
             entryButtons.add(rowButton);
@@ -75,43 +74,43 @@ public final class WhitelistScreen extends BaseScreen {
         }
 
         int halfWidth = splitWidth(buttonWidth, 2, DEFAULT_SPLIT_GAP);
-        previousPageButton = addDrawableChild(
-            ButtonWidget.builder(Text.literal("< Previous"), button -> {
+        previousPageButton = addRenderableWidget(
+            Button.builder(Component.literal("< Previous"), button -> {
                 page = Math.max(0, page - 1);
                 refreshList();
-            }).dimensions(x, y, halfWidth, DEFAULT_BUTTON_HEIGHT).build()
+            }).bounds(x, y, halfWidth, DEFAULT_BUTTON_HEIGHT).build()
         );
-        nextPageButton = addDrawableChild(
-            ButtonWidget.builder(Text.literal("Next >"), button -> {
+        nextPageButton = addRenderableWidget(
+            Button.builder(Component.literal("Next >"), button -> {
                 page = Math.min(Math.max(0, totalPages - 1), page + 1);
                 refreshList();
-            }).dimensions(columnX(x, halfWidth, DEFAULT_SPLIT_GAP, 1), y, halfWidth, DEFAULT_BUTTON_HEIGHT).build()
+            }).bounds(columnX(x, halfWidth, DEFAULT_SPLIT_GAP, 1), y, halfWidth, DEFAULT_BUTTON_HEIGHT).build()
         );
         y += ROW_HEIGHT;
 
         int addButtonWidth = 72;
         int addInputWidth = Math.max(80, buttonWidth - addButtonWidth - DEFAULT_SPLIT_GAP);
-        addInput = addDrawableChild(
-            new TextFieldWidget(
-                this.textRenderer,
+        addInput = addRenderableWidget(
+            new EditBox(
+                this.font,
                 x,
                 y,
                 addInputWidth,
                 DEFAULT_BUTTON_HEIGHT,
-                Text.literal("Player Name")
+                Component.literal("Player Name")
             )
         );
         addInput.setMaxLength(36);
-        addDrawableChild(
-            ButtonWidget.builder(Text.literal("Add"), button -> addEntryFromInput())
-                .dimensions(x + addInputWidth + DEFAULT_SPLIT_GAP, y, addButtonWidth, DEFAULT_BUTTON_HEIGHT)
+        addRenderableWidget(
+            Button.builder(Component.literal("Add"), button -> addEntryFromInput())
+                .bounds(x + addInputWidth + DEFAULT_SPLIT_GAP, y, addButtonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
         y += ROW_HEIGHT;
 
-        removeButton = addDrawableChild(
-            ButtonWidget.builder(Text.literal("Remove Selected"), button -> removeSelected())
-                .dimensions(x, y, buttonWidth, DEFAULT_BUTTON_HEIGHT)
+        removeButton = addRenderableWidget(
+            Button.builder(Component.literal("Remove Selected"), button -> removeSelected())
+                .bounds(x, y, buttonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
 
@@ -120,12 +119,12 @@ public final class WhitelistScreen extends BaseScreen {
     }
 
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float deltaTicks) {
-        super.render(context, mouseX, mouseY, deltaTicks);
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float deltaTicks) {
+        super.extractRenderState(context, mouseX, mouseY, deltaTicks);
 
-        context.drawCenteredTextWithShadow(
-            this.textRenderer,
-            Text.literal("Page " + (totalPages == 0 ? 0 : page + 1) + "/" + Math.max(1, totalPages)),
+        context.centeredText(
+            this.font,
+            Component.literal("Page " + (totalPages == 0 ? 0 : page + 1) + "/" + Math.max(1, totalPages)),
             this.width / 2,
             TITLE_Y + 12,
             opaqueColor(0xAAAAAA)
@@ -134,9 +133,9 @@ public final class WhitelistScreen extends BaseScreen {
         String selectedText = selectedUuid == null && selectedName.isBlank()
             ? "Selected: none"
             : "Selected: " + displayName(selectedUuid, selectedName);
-        context.drawCenteredTextWithShadow(
-            this.textRenderer,
-            Text.literal(selectedText),
+        context.centeredText(
+            this.font,
+            Component.literal(selectedText),
             this.width / 2,
             this.height - 42,
             opaqueColor(0xCCCCCC)
@@ -172,17 +171,17 @@ public final class WhitelistScreen extends BaseScreen {
         int start = page * ENTRIES_PER_PAGE;
         for (int index = 0; index < ENTRIES_PER_PAGE; index++) {
             int absoluteIndex = start + index;
-            ButtonWidget button = entryButtons.get(index);
+            Button button = entryButtons.get(index);
             if (absoluteIndex >= allEntries.size()) {
                 button.active = false;
-                button.setMessage(Text.literal("-"));
+                button.setMessage(Component.literal("-"));
                 continue;
             }
 
             WhitelistEntry entry = allEntries.get(absoluteIndex);
             pageEntries.add(entry);
             button.active = true;
-            button.setMessage(Text.literal(formatEntry(entry, matchesSelection(entry))));
+            button.setMessage(Component.literal(formatEntry(entry, matchesSelection(entry))));
         }
 
         if ((selectedUuid == null && selectedName.isBlank()) && !allEntries.isEmpty()) {
@@ -203,7 +202,7 @@ public final class WhitelistScreen extends BaseScreen {
             return;
         }
 
-        String rawValue = addInput.getText();
+        String rawValue = addInput.getValue();
         if (rawValue == null || rawValue.isBlank()) {
             return;
         }
@@ -217,7 +216,7 @@ public final class WhitelistScreen extends BaseScreen {
 
         selectedUuid = playerUuid;
         selectedName = playerName;
-        addInput.setText("");
+        addInput.setValue("");
         refreshList();
     }
 

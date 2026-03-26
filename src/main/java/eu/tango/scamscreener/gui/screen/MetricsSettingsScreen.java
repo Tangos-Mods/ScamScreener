@@ -3,10 +3,10 @@ package eu.tango.scamscreener.gui.screen;
 import eu.tango.scamscreener.ScamScreenerRuntime;
 import eu.tango.scamscreener.gui.base.BaseScreen;
 import eu.tango.scamscreener.profiler.ScamScreenerProfiler;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 
 /**
  * Small observability summary using the currently available runtime counters.
@@ -17,7 +17,7 @@ public final class MetricsSettingsScreen extends BaseScreen {
     private static final int METRICS_LINE_COUNT = 5;
     private static final int BUTTON_SECTION_TOP = METRICS_FIRST_LINE_Y + (METRICS_LINE_GAP * METRICS_LINE_COUNT) + 8;
 
-    private ButtonWidget profilerButton;
+    private Button profilerButton;
 
     /**
      * Creates the metrics screen.
@@ -25,7 +25,7 @@ public final class MetricsSettingsScreen extends BaseScreen {
      * @param parent the parent screen
      */
     public MetricsSettingsScreen(Screen parent) {
-        super(Text.literal("ScamScreener Observability"), parent);
+        super(Component.literal("ScamScreener Observability"), parent);
     }
 
     @Override
@@ -35,17 +35,17 @@ public final class MetricsSettingsScreen extends BaseScreen {
         int x = column.x();
         int y = BUTTON_SECTION_TOP;
 
-        profilerButton = addDrawableChild(
-            ButtonWidget.builder(Text.empty(), button -> toggleProfilerHud())
-                .dimensions(x, y, buttonWidth, DEFAULT_BUTTON_HEIGHT)
+        profilerButton = addRenderableWidget(
+            Button.builder(Component.empty(), button -> toggleProfilerHud())
+                .bounds(x, y, buttonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
         y += ROW_HEIGHT;
 
-        addDrawableChild(
-            ButtonWidget.builder(Text.literal("Reset State"), button -> {
+        addRenderableWidget(
+            Button.builder(Component.literal("Reset State"), button -> {
                 ScamScreenerRuntime.getInstance().resetDetectionState();
-            }).dimensions(x, y, buttonWidth, DEFAULT_BUTTON_HEIGHT).build()
+            }).bounds(x, y, buttonWidth, DEFAULT_BUTTON_HEIGHT).build()
         );
 
         addBackButton(buttonWidth);
@@ -53,8 +53,8 @@ public final class MetricsSettingsScreen extends BaseScreen {
     }
 
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float deltaTicks) {
-        super.render(context, mouseX, mouseY, deltaTicks);
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float deltaTicks) {
+        super.extractRenderState(context, mouseX, mouseY, deltaTicks);
 
         int left = centeredX(defaultButtonWidth());
         drawSectionTitle(context, left, CONTENT_TOP - 18, "Observability");

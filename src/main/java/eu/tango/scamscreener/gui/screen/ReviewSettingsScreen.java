@@ -3,10 +3,10 @@ package eu.tango.scamscreener.gui.screen;
 import eu.tango.scamscreener.ScamScreenerRuntime;
 import eu.tango.scamscreener.config.data.RuntimeConfig;
 import eu.tango.scamscreener.gui.base.BaseScreen;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 
 /**
  * Review queue behavior and maintenance screen.
@@ -17,10 +17,10 @@ public final class ReviewSettingsScreen extends BaseScreen {
     private static final int REVIEW_CAPACITY_STEP = 25;
     private static final int SUMMARY_TO_CONTROLS_GAP = 56;
 
-    private ButtonWidget captureEnabledButton;
-    private ButtonWidget maxEntriesButton;
-    private ButtonWidget clearQueueButton;
-    private ButtonWidget resetDetectionStateButton;
+    private Button captureEnabledButton;
+    private Button maxEntriesButton;
+    private Button clearQueueButton;
+    private Button resetDetectionStateButton;
 
     /**
      * Creates the review settings screen.
@@ -28,7 +28,7 @@ public final class ReviewSettingsScreen extends BaseScreen {
      * @param parent the parent screen to return to
      */
     public ReviewSettingsScreen(Screen parent) {
-        super(Text.literal("ScamScreener Review"), parent);
+        super(Component.literal("ScamScreener Review"), parent);
     }
 
     /**
@@ -41,44 +41,44 @@ public final class ReviewSettingsScreen extends BaseScreen {
         int x = column.x();
         int y = column.y() + SUMMARY_TO_CONTROLS_GAP;
 
-        captureEnabledButton = addDrawableChild(
-            ButtonWidget.builder(Text.empty(), button -> toggleCaptureEnabled())
-                .dimensions(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
+        captureEnabledButton = addRenderableWidget(
+            Button.builder(Component.empty(), button -> toggleCaptureEnabled())
+                .bounds(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
         y += ROW_HEIGHT;
 
-        maxEntriesButton = addDrawableChild(
-            ButtonWidget.builder(Text.empty(), button -> cycleMaxEntries())
-                .dimensions(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
+        maxEntriesButton = addRenderableWidget(
+            Button.builder(Component.empty(), button -> cycleMaxEntries())
+                .bounds(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
         y += ROW_HEIGHT;
 
-        clearQueueButton = addDrawableChild(
-            ButtonWidget.builder(Text.literal("Clear Review Queue"), button -> clearReviewQueue())
-                .dimensions(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
+        clearQueueButton = addRenderableWidget(
+            Button.builder(Component.literal("Clear Review Queue"), button -> clearReviewQueue())
+                .bounds(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
         y += ROW_HEIGHT;
 
-        resetDetectionStateButton = addDrawableChild(
-            ButtonWidget.builder(Text.literal("Reset Detection State"), button -> resetDetectionState())
-                .dimensions(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
+        resetDetectionStateButton = addRenderableWidget(
+            Button.builder(Component.literal("Reset Detection State"), button -> resetDetectionState())
+                .bounds(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
         y += ROW_HEIGHT;
 
-        addDrawableChild(
-            ButtonWidget.builder(Text.literal("Open Review Queue"), button -> this.client.setScreen(new ReviewScreen(this)))
-                .dimensions(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
+        addRenderableWidget(
+            Button.builder(Component.literal("Open Review Queue"), button -> this.minecraft.setScreen(new ReviewScreen(this)))
+                .bounds(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
         y += ROW_HEIGHT;
 
-        addDrawableChild(
-            ButtonWidget.builder(Text.literal("Runtime Settings"), button -> this.client.setScreen(new RuntimeSettingsScreen(this)))
-                .dimensions(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
+        addRenderableWidget(
+            Button.builder(Component.literal("Runtime Settings"), button -> this.minecraft.setScreen(new RuntimeSettingsScreen(this)))
+                .bounds(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
 
@@ -95,8 +95,8 @@ public final class ReviewSettingsScreen extends BaseScreen {
      * @param deltaTicks partial tick delta
      */
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float deltaTicks) {
-        super.render(context, mouseX, mouseY, deltaTicks);
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float deltaTicks) {
+        super.extractRenderState(context, mouseX, mouseY, deltaTicks);
 
         ScamScreenerRuntime runtime = ScamScreenerRuntime.getInstance();
         int left = centeredX(defaultButtonWidth());
@@ -150,7 +150,7 @@ public final class ReviewSettingsScreen extends BaseScreen {
             captureEnabledButton.setMessage(toggleText("Auto-Capture Cases: ", review.isCaptureEnabled()));
         }
         if (maxEntriesButton != null) {
-            maxEntriesButton.setMessage(Text.literal("Review Queue Capacity: " + review.maxEntries()));
+            maxEntriesButton.setMessage(Component.literal("Review Queue Capacity: " + review.maxEntries()));
         }
         if (clearQueueButton != null) {
             clearQueueButton.active = !runtime.reviewStore().entries().isEmpty();

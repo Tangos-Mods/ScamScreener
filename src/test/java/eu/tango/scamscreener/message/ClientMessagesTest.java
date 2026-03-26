@@ -1,6 +1,6 @@
 package eu.tango.scamscreener.message;
 
-import net.minecraft.text.MutableText;
+import net.minecraft.network.chat.MutableComponent;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -10,9 +10,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ClientMessagesTest {
     @Test
     void updateAvailableMatchesExpectedText() {
-        MutableText message = ClientMessages.updateAvailable(
-            "2.0.1+1.21.11",
-            "2.0.2+1.21.11",
+        MutableComponent message = ClientMessages.updateAvailable(
+            "2.0.1+26.1",
+            "2.0.2+26.1",
             "https://modrinth.com/project/XTB0bgAW",
             "line 1"
         );

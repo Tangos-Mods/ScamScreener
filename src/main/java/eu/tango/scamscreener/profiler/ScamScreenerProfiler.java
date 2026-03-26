@@ -8,11 +8,10 @@ import eu.tango.scamscreener.training.TrainingCaseMappings;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.render.RenderTickCounter;
-
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -210,17 +209,17 @@ public final class ScamScreenerProfiler {
         }
     }
 
-    private void renderHud(DrawContext context, RenderTickCounter tickCounter) {
+    private void renderHud(GuiGraphicsExtractor context, DeltaTracker tickCounter) {
         if (!isEnabled()) {
             return;
         }
 
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client == null || client.player == null || client.world == null || client.options.hudHidden) {
+        Minecraft client = Minecraft.getInstance();
+        if (client == null || client.player == null || client.level == null || client.options.hideGui) {
             return;
         }
 
-        TextRenderer textRenderer = client.textRenderer;
+        Font textRenderer = client.font;
         if (textRenderer == null) {
             return;
         }
@@ -232,7 +231,7 @@ public final class ScamScreenerProfiler {
 
         int width = 0;
         for (HudLine line : lines) {
-            width = Math.max(width, textRenderer.getWidth(line.text()));
+            width = Math.max(width, textRenderer.width(line.text()));
         }
 
         int height = lines.size() * HUD_LINE_HEIGHT;
@@ -248,7 +247,7 @@ public final class ScamScreenerProfiler {
 
         int y = top;
         for (HudLine line : lines) {
-            context.drawTextWithShadow(textRenderer, line.text(), left, y, line.color());
+            context.text(textRenderer, line.text(), left, y, line.color());
             y += HUD_LINE_HEIGHT;
         }
     }

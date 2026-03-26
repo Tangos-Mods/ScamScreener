@@ -1,11 +1,10 @@
 package eu.tango.scamscreener.message;
 
 import eu.tango.scamscreener.profiler.ScamScreenerProfiler;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.text.Text;
-
 import java.util.ArrayList;
 import java.util.List;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 
 /**
  * Small client-side message bridge for local ScamScreener output.
@@ -23,14 +22,14 @@ public final class MessageDispatcher {
      *
      * @param text the message to show
      */
-    public static void reply(Text text) {
+    public static void reply(Component text) {
         if (text == null) {
             return;
         }
 
         rememberLocalEchoText(text.getString());
 
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client == null) {
             return;
         }
@@ -38,7 +37,7 @@ public final class MessageDispatcher {
         client.execute(() -> {
             try (ScamScreenerProfiler.Scope ignored = ScamScreenerProfiler.getInstance().scope("message.reply", "  Client Message Reply")) {
                 if (client.player != null) {
-                    client.player.sendMessage(text, false);
+                    client.player.sendSystemMessage(text);
                 }
             }
         });
@@ -54,15 +53,15 @@ public final class MessageDispatcher {
             return;
         }
 
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client == null) {
             return;
         }
 
         client.execute(() -> {
             try (ScamScreenerProfiler.Scope ignored = ScamScreenerProfiler.getInstance().scope("message.send_command", "  Client Command Send")) {
-                if (client.getNetworkHandler() != null) {
-                    client.getNetworkHandler().sendChatCommand(command.trim());
+                if (client.getConnection() != null) {
+                    client.getConnection().sendCommand(command.trim());
                 }
             }
         });

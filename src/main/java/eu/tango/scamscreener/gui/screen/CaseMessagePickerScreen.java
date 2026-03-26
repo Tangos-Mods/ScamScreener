@@ -5,13 +5,12 @@ import eu.tango.scamscreener.chat.RecentChatCache;
 import eu.tango.scamscreener.gui.base.BaseScreen;
 import eu.tango.scamscreener.gui.widget.SelectableListWidget;
 import eu.tango.scamscreener.pipeline.data.ChatSourceType;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.gui.widget.TextFieldWidget;
-import net.minecraft.text.Text;
-
 import java.util.ArrayList;
 import java.util.List;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.network.chat.Component;
 
 /**
  * Picker for adding cached inbound chat lines into one review case.
@@ -24,14 +23,14 @@ public final class CaseMessagePickerScreen extends BaseScreen {
     private final List<RecentChatCache.CachedChatMessage> visibleEntries = new ArrayList<>();
 
     private SelectableListWidget<RecentChatCache.CachedChatMessage> listWidget;
-    private TextFieldWidget playerFilterField;
-    private ButtonWidget addSelectedButton;
-    private ButtonWidget addAllVisibleButton;
-    private ButtonWidget addLastTenButton;
+    private EditBox playerFilterField;
+    private Button addSelectedButton;
+    private Button addAllVisibleButton;
+    private Button addLastTenButton;
     private long lastSeenCacheVersion = -1L;
 
     public CaseMessagePickerScreen(AlertManageScreen reviewScreen, String initialPlayerFilter) {
-        super(Text.literal("Add Case Messages"), reviewScreen);
+        super(Component.literal("Add Case Messages"), reviewScreen);
         this.reviewScreen = reviewScreen;
         this.initialPlayerFilter = initialPlayerFilter == null ? "" : initialPlayerFilter.trim();
     }
@@ -42,20 +41,20 @@ public final class CaseMessagePickerScreen extends BaseScreen {
         int contentX = centeredX(contentWidth);
         int controlsY = CONTENT_TOP + 24;
 
-        playerFilterField = addDrawableChild(
-            new TextFieldWidget(
-                this.textRenderer,
+        playerFilterField = addRenderableWidget(
+            new EditBox(
+                this.font,
                 contentX,
                 controlsY,
                 contentWidth,
                 DEFAULT_BUTTON_HEIGHT,
-                Text.literal("Player Filter")
+                Component.literal("Player Filter")
             )
         );
         playerFilterField.setMaxLength(64);
         playerFilterField.setSuggestion("Filter by player name...");
-        playerFilterField.setText(initialPlayerFilter);
-        playerFilterField.setChangedListener(value -> reloadRows());
+        playerFilterField.setValue(initialPlayerFilter);
+        playerFilterField.setResponder(value -> reloadRows());
 
         int listY = controlsY + ROW_HEIGHT;
         int buttonY = footerY() - DEFAULT_BUTTON_HEIGHT - 24;
@@ -70,19 +69,19 @@ public final class CaseMessagePickerScreen extends BaseScreen {
         );
 
         int buttonWidth = splitWidth(contentWidth, 3, DEFAULT_SPLIT_GAP);
-        addSelectedButton = addDrawableChild(
-            ButtonWidget.builder(Text.literal("Add Selected"), button -> addSelected())
-                .dimensions(contentX, buttonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
+        addSelectedButton = addRenderableWidget(
+            Button.builder(Component.literal("Add Selected"), button -> addSelected())
+                .bounds(contentX, buttonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
-        addAllVisibleButton = addDrawableChild(
-            ButtonWidget.builder(Text.literal("Add All Visible"), button -> addAllVisible())
-                .dimensions(columnX(contentX, buttonWidth, DEFAULT_SPLIT_GAP, 1), buttonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
+        addAllVisibleButton = addRenderableWidget(
+            Button.builder(Component.literal("Add All Visible"), button -> addAllVisible())
+                .bounds(columnX(contentX, buttonWidth, DEFAULT_SPLIT_GAP, 1), buttonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
-        addLastTenButton = addDrawableChild(
-            ButtonWidget.builder(Text.literal("Add Last 10"), button -> addLastTen())
-                .dimensions(columnX(contentX, buttonWidth, DEFAULT_SPLIT_GAP, 2), buttonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
+        addLastTenButton = addRenderableWidget(
+            Button.builder(Component.literal("Add Last 10"), button -> addLastTen())
+                .bounds(columnX(contentX, buttonWidth, DEFAULT_SPLIT_GAP, 2), buttonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
 
@@ -99,17 +98,17 @@ public final class CaseMessagePickerScreen extends BaseScreen {
     }
 
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float deltaTicks) {
-        super.render(context, mouseX, mouseY, deltaTicks);
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float deltaTicks) {
+        super.extractRenderState(context, mouseX, mouseY, deltaTicks);
         int left = centeredX(Math.min(620, Math.max(360, this.width - 40)));
         drawLine(context, left, CONTENT_TOP, "Pick cached chat lines, filter by player, then add one, all visible, or the latest 10 visible.");
         if (listWidget != null) {
-            listWidget.render(context, this.textRenderer, mouseX, mouseY);
+            listWidget.render(context, this.font, mouseX, mouseY);
         }
     }
 
     @Override
-    public boolean mouseClicked(net.minecraft.client.gui.Click event, boolean doubleClick) {
+    public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
         if (event != null && event.button() == 0 && listWidget != null && listWidget.mouseClicked(event.x(), event.y(), event.button())) {
             updateActionState();
             return true;
@@ -138,7 +137,7 @@ public final class CaseMessagePickerScreen extends BaseScreen {
         }
 
         reviewScreen.appendCachedMessages(List.of(selected));
-        close();
+        onClose();
     }
 
     private void addAllVisible() {
@@ -147,7 +146,7 @@ public final class CaseMessagePickerScreen extends BaseScreen {
         }
 
         reviewScreen.appendCachedMessages(visibleEntries);
-        close();
+        onClose();
     }
 
     private void addLastTen() {
@@ -156,7 +155,7 @@ public final class CaseMessagePickerScreen extends BaseScreen {
         }
 
         reviewScreen.appendCachedMessages(visibleEntries.subList(0, Math.min(10, visibleEntries.size())));
-        close();
+        onClose();
     }
 
     private void reloadRows() {
@@ -195,8 +194,8 @@ public final class CaseMessagePickerScreen extends BaseScreen {
     }
 
     private void renderRow(
-        DrawContext context,
-        net.minecraft.client.font.TextRenderer textRenderer,
+        GuiGraphicsExtractor context,
+        net.minecraft.client.gui.Font textRenderer,
         RecentChatCache.CachedChatMessage row,
         int x,
         int y,
@@ -206,8 +205,8 @@ public final class CaseMessagePickerScreen extends BaseScreen {
         boolean selected
     ) {
         String header = row.displaySender() + " | " + row.sourceLabel();
-        context.drawTextWithShadow(textRenderer, Text.literal(header), x, y, opaqueColor(0xFFFFFF));
-        context.drawTextWithShadow(textRenderer, Text.literal(compact(row.cleanText(), 84)), x, y + 11, opaqueColor(0xCCCCCC));
+        context.text(textRenderer, Component.literal(header), x, y, opaqueColor(0xFFFFFF));
+        context.text(textRenderer, Component.literal(compact(row.cleanText(), 84)), x, y + 11, opaqueColor(0xCCCCCC));
     }
 
     private int indexOf(RecentChatCache.CachedChatMessage selected) {
@@ -229,7 +228,7 @@ public final class CaseMessagePickerScreen extends BaseScreen {
     }
 
     private String currentPlayerFilter() {
-        return playerFilterField == null ? "" : playerFilterField.getText();
+        return playerFilterField == null ? "" : playerFilterField.getValue();
     }
 
     private static String compact(String value, int maxLength) {

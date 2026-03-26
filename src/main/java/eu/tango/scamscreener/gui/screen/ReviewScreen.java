@@ -10,12 +10,12 @@ import eu.tango.scamscreener.review.ReviewActionHandler;
 import eu.tango.scamscreener.review.ReviewCaseMessage;
 import eu.tango.scamscreener.review.ReviewEntry;
 import eu.tango.scamscreener.review.ReviewVerdict;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.ConfirmLinkScreen;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.gui.widget.TextFieldWidget;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.screens.ConfirmLinkScreen;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 import net.minecraft.util.Util;
 
 import java.util.ArrayList;
@@ -37,15 +37,15 @@ public final class ReviewScreen extends BaseScreen {
 
     private ReviewFilter activeFilter = ReviewFilter.ALL;
     private SelectableListWidget<ReviewEntry> listWidget;
-    private TextFieldWidget searchField;
-    private ButtonWidget filterButton;
-    private ButtonWidget markRiskButton;
-    private ButtonWidget markSafeButton;
-    private ButtonWidget ignoreButton;
-    private ButtonWidget resetVisibleButton;
-    private ButtonWidget removeButton;
-    private ButtonWidget clearVisibleButton;
-    private ButtonWidget contributeTrainingButton;
+    private EditBox searchField;
+    private Button filterButton;
+    private Button markRiskButton;
+    private Button markSafeButton;
+    private Button ignoreButton;
+    private Button resetVisibleButton;
+    private Button removeButton;
+    private Button clearVisibleButton;
+    private Button contributeTrainingButton;
 
     /**
      * Creates a review screen backed by the shared runtime review queue.
@@ -53,7 +53,7 @@ public final class ReviewScreen extends BaseScreen {
      * @param parent the parent screen to return to
      */
     public ReviewScreen(Screen parent) {
-        super(Text.literal("Review Queue"), parent);
+        super(Component.literal("Review Queue"), parent);
     }
 
     /**
@@ -66,23 +66,23 @@ public final class ReviewScreen extends BaseScreen {
         int controlsY = CONTENT_TOP + 56;
         int searchWidth = Math.max(140, contentWidth - FILTER_BUTTON_WIDTH - DEFAULT_SPLIT_GAP);
 
-        filterButton = addDrawableChild(
-            ButtonWidget.builder(Text.empty(), button -> cycleFilter())
-                .dimensions(contentX, controlsY, FILTER_BUTTON_WIDTH, DEFAULT_BUTTON_HEIGHT)
+        filterButton = addRenderableWidget(
+            Button.builder(Component.empty(), button -> cycleFilter())
+                .bounds(contentX, controlsY, FILTER_BUTTON_WIDTH, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
-        searchField = addDrawableChild(
-            new TextFieldWidget(
-                this.textRenderer,
+        searchField = addRenderableWidget(
+            new EditBox(
+                this.font,
                 contentX + FILTER_BUTTON_WIDTH + DEFAULT_SPLIT_GAP,
                 controlsY,
                 searchWidth,
                 DEFAULT_BUTTON_HEIGHT,
-                Text.literal("Review Search")
+                Component.literal("Review Search")
             )
         );
         searchField.setMaxLength(64);
-        searchField.setChangedListener(value -> reloadRows());
+        searchField.setResponder(value -> reloadRows());
 
         int listY = controlsY + ROW_HEIGHT;
         int listHeight = Math.max(80, footerY() - listY - ACTION_AREA_HEIGHT - 10);
@@ -98,53 +98,53 @@ public final class ReviewScreen extends BaseScreen {
         int buttonWidth = splitWidth(contentWidth, ACTION_COLUMNS, DEFAULT_SPLIT_GAP);
         int buttonY = listY + listHeight + 10;
 
-        markRiskButton = addDrawableChild(
-            ButtonWidget.builder(Text.literal("Review Case"), button -> openCaseReview())
-                .dimensions(contentX, buttonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
+        markRiskButton = addRenderableWidget(
+            Button.builder(Component.literal("Review Case"), button -> openCaseReview())
+                .bounds(contentX, buttonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
-        markSafeButton = addDrawableChild(
-            ButtonWidget.builder(Text.literal("Info"), button -> openInfo())
-                .dimensions(columnX(contentX, buttonWidth, DEFAULT_SPLIT_GAP, 1), buttonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
+        markSafeButton = addRenderableWidget(
+            Button.builder(Component.literal("Info"), button -> openInfo())
+                .bounds(columnX(contentX, buttonWidth, DEFAULT_SPLIT_GAP, 1), buttonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
-        ignoreButton = addDrawableChild(
-            ButtonWidget.builder(Text.literal("Dismiss"), button -> setSelectedVerdict(ReviewVerdict.IGNORED))
-                .dimensions(columnX(contentX, buttonWidth, DEFAULT_SPLIT_GAP, 2), buttonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
+        ignoreButton = addRenderableWidget(
+            Button.builder(Component.literal("Dismiss"), button -> setSelectedVerdict(ReviewVerdict.IGNORED))
+                .bounds(columnX(contentX, buttonWidth, DEFAULT_SPLIT_GAP, 2), buttonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
-        resetVisibleButton = addDrawableChild(
-            ButtonWidget.builder(Text.literal("New Case"), button -> openNewCase())
-                .dimensions(columnX(contentX, buttonWidth, DEFAULT_SPLIT_GAP, 3), buttonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
+        resetVisibleButton = addRenderableWidget(
+            Button.builder(Component.literal("New Case"), button -> openNewCase())
+                .bounds(columnX(contentX, buttonWidth, DEFAULT_SPLIT_GAP, 3), buttonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
 
         buttonY += DEFAULT_BUTTON_HEIGHT + 4;
         int lowerButtonWidth = splitWidth(contentWidth, 2, DEFAULT_SPLIT_GAP);
-        removeButton = addDrawableChild(
-            ButtonWidget.builder(Text.literal("Remove"), button -> removeSelectedEntry())
-                .dimensions(contentX, buttonY, lowerButtonWidth, DEFAULT_BUTTON_HEIGHT)
+        removeButton = addRenderableWidget(
+            Button.builder(Component.literal("Remove"), button -> removeSelectedEntry())
+                .bounds(contentX, buttonY, lowerButtonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
-        clearVisibleButton = addDrawableChild(
-            ButtonWidget.builder(Text.literal("Clear Visible"), button -> clearVisible())
-                .dimensions(columnX(contentX, lowerButtonWidth, DEFAULT_SPLIT_GAP, 1), buttonY, lowerButtonWidth, DEFAULT_BUTTON_HEIGHT)
+        clearVisibleButton = addRenderableWidget(
+            Button.builder(Component.literal("Clear Visible"), button -> clearVisible())
+                .bounds(columnX(contentX, lowerButtonWidth, DEFAULT_SPLIT_GAP, 1), buttonY, lowerButtonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
 
         int footerButtonWidth = splitWidth(contentWidth, 3, DEFAULT_SPLIT_GAP);
-        addFooterButton(contentX, footerButtonWidth, Text.literal("Review Settings"), button -> this.client.setScreen(new ReviewSettingsScreen(this)));
+        addFooterButton(contentX, footerButtonWidth, Component.literal("Review Settings"), button -> this.minecraft.setScreen(new ReviewSettingsScreen(this)));
         contributeTrainingButton = addFooterButton(
             columnX(contentX, footerButtonWidth, DEFAULT_SPLIT_GAP, 1),
             footerButtonWidth,
-            Text.literal("Contribute Training Data"),
+            Component.literal("Contribute Training Data"),
             button -> contributeTrainingData()
         );
         addFooterButton(
             columnX(contentX, footerButtonWidth, DEFAULT_SPLIT_GAP, 2),
             footerButtonWidth,
-            Text.literal("Back"),
-            button -> close()
+            Component.literal("Back"),
+            button -> onClose()
         );
         refreshFilterButton();
         reloadRows();
@@ -160,8 +160,8 @@ public final class ReviewScreen extends BaseScreen {
      * @param deltaTicks partial tick delta
      */
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float deltaTicks) {
-        super.render(context, mouseX, mouseY, deltaTicks);
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float deltaTicks) {
+        super.extractRenderState(context, mouseX, mouseY, deltaTicks);
 
         int left = centeredX(Math.min(620, Math.max(360, this.width - 40)));
         drawSectionTitle(context, left, CONTENT_TOP, "Review Summary");
@@ -186,12 +186,12 @@ public final class ReviewScreen extends BaseScreen {
         drawLine(context, left, CONTENT_TOP + 48, "Training Hub contribution will be available soon.");
 
         if (listWidget != null) {
-            listWidget.render(context, this.textRenderer, mouseX, mouseY);
+            listWidget.render(context, this.font, mouseX, mouseY);
         }
     }
 
     @Override
-    public boolean mouseClicked(net.minecraft.client.gui.Click event, boolean doubleClick) {
+    public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
         if (event != null && event.button() == 0 && listWidget != null && listWidget.mouseClicked(event.x(), event.y(), event.button())) {
             updateActionState();
             return true;
@@ -248,7 +248,7 @@ public final class ReviewScreen extends BaseScreen {
 
     private void openCaseReview() {
         ReviewEntry entry = selectedEntry().orElse(null);
-        if (entry == null || this.client == null) {
+        if (entry == null || this.minecraft == null) {
             return;
         }
 
@@ -257,12 +257,12 @@ public final class ReviewScreen extends BaseScreen {
             return;
         }
 
-        this.client.setScreen(new AlertManageScreen(this, context));
+        this.minecraft.setScreen(new AlertManageScreen(this, context));
     }
 
     private void openInfo() {
         ReviewEntry entry = selectedEntry().orElse(null);
-        if (entry == null || this.client == null) {
+        if (entry == null || this.minecraft == null) {
             return;
         }
 
@@ -271,15 +271,15 @@ public final class ReviewScreen extends BaseScreen {
             return;
         }
 
-        this.client.setScreen(new AlertInfoScreen(this, context));
+        this.minecraft.setScreen(new AlertInfoScreen(this, context));
     }
 
     private void openNewCase() {
-        if (this.client == null) {
+        if (this.minecraft == null) {
             return;
         }
 
-        this.client.setScreen(new AlertManageScreen(this, null));
+        this.minecraft.setScreen(new AlertManageScreen(this, null));
     }
 
     private void exportTrainingCases() {
@@ -302,20 +302,20 @@ public final class ReviewScreen extends BaseScreen {
     }
 
     private void openTrainingHub() {
-        if (this.client == null) {
+        if (this.minecraft == null) {
             MessageDispatcher.reply(ClientMessages.trainingHubOpenFailed("Client unavailable."));
             return;
         }
 
-        this.client.setScreen(new ConfirmLinkScreen(open -> {
+        this.minecraft.setScreen(new ConfirmLinkScreen(open -> {
             if (open) {
                 try {
-                    Util.getOperatingSystem().open(TRAINING_HUB_URL);
+                    Util.getPlatform().openUri(TRAINING_HUB_URL);
                 } catch (Exception exception) {
                     MessageDispatcher.reply(ClientMessages.trainingHubOpenFailed(exception.getMessage()));
                 }
             }
-            this.client.setScreen(this);
+            this.minecraft.setScreen(this);
         }, TRAINING_HUB_URL, true));
     }
 
@@ -389,8 +389,8 @@ public final class ReviewScreen extends BaseScreen {
     }
 
     private void renderRow(
-        DrawContext context,
-        net.minecraft.client.font.TextRenderer textRenderer,
+        GuiGraphicsExtractor context,
+        net.minecraft.client.gui.Font textRenderer,
         ReviewEntry row,
         int x,
         int y,
@@ -401,8 +401,8 @@ public final class ReviewScreen extends BaseScreen {
     ) {
         String header = "[" + marker(row.getVerdict()) + "] (" + row.getScore() + ") " + entryDisplayName(row);
 
-        context.drawTextWithShadow(textRenderer, Text.literal(header), x, y, opaqueColor(color(row.getVerdict())));
-        context.drawTextWithShadow(textRenderer, Text.literal(entryCompactMessage(row)), x, y + 11, opaqueColor(0xFFFFFF));
+        context.text(textRenderer, Component.literal(header), x, y, opaqueColor(color(row.getVerdict())));
+        context.text(textRenderer, Component.literal(entryCompactMessage(row)), x, y + 11, opaqueColor(0xFFFFFF));
     }
 
     private String marker(ReviewVerdict verdict) {
@@ -425,7 +425,7 @@ public final class ReviewScreen extends BaseScreen {
 
     private void refreshFilterButton() {
         if (filterButton != null) {
-            filterButton.setMessage(Text.literal("Filter: " + activeFilter.label()));
+            filterButton.setMessage(Component.literal("Filter: " + activeFilter.label()));
         }
     }
 
@@ -442,7 +442,7 @@ public final class ReviewScreen extends BaseScreen {
             return "";
         }
 
-        return searchField.getText();
+        return searchField.getValue();
     }
 
     private String selectedRowId() {

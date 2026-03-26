@@ -3,13 +3,12 @@ package eu.tango.scamscreener.gui.screen;
 import eu.tango.scamscreener.ScamScreenerRuntime;
 import eu.tango.scamscreener.config.data.RulesConfig;
 import eu.tango.scamscreener.gui.base.BaseScreen;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.text.Text;
-
 import java.util.ArrayList;
 import java.util.List;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 
 /**
  * Advanced low-level rule tuning screen.
@@ -36,7 +35,7 @@ public final class AdvancedRulesSettingsScreen extends BaseScreen {
     }
 
     private AdvancedRulesSettingsScreen(Screen parent, Section section) {
-        super(Text.literal("ScamScreener Rules (Advanced)"), parent);
+        super(Component.literal("ScamScreener Rules (Advanced)"), parent);
         navigationParent = parent;
         this.section = section == null ? Section.RULE_STAGE : section;
     }
@@ -62,36 +61,36 @@ public final class AdvancedRulesSettingsScreen extends BaseScreen {
         addFooterButton(
             columnX(x, footerWidth, DEFAULT_SPLIT_GAP, 0),
             footerWidth,
-            Text.literal("< " + section.previous().label()),
+            Component.literal("< " + section.previous().label()),
             button -> openSection(section.previous())
         );
         addFooterButton(
             columnX(x, footerWidth, DEFAULT_SPLIT_GAP, 1),
             footerWidth,
-            Text.literal(section.next().label() + " >"),
+            Component.literal(section.next().label() + " >"),
             button -> openSection(section.next())
         );
         addFooterButton(
             columnX(x, footerWidth, DEFAULT_SPLIT_GAP, 2),
             footerWidth,
-            Text.literal("Runtime"),
+            Component.literal("Runtime"),
             button -> {
-                if (this.client != null) {
-                    this.client.setScreen(new RuntimeSettingsScreen(this));
+                if (this.minecraft != null) {
+                    this.minecraft.setScreen(new RuntimeSettingsScreen(this));
                 }
             }
         );
         addFooterButton(
             columnX(x, footerWidth, DEFAULT_SPLIT_GAP, 3),
             footerWidth,
-            Text.literal("Back"),
-            button -> close()
+            Component.literal("Back"),
+            button -> onClose()
         );
     }
 
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float deltaTicks) {
-        super.render(context, mouseX, mouseY, deltaTicks);
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float deltaTicks) {
+        super.extractRenderState(context, mouseX, mouseY, deltaTicks);
 
         RulesConfig rules = rules();
         int left = centeredX(rulesContentWidth());
@@ -249,15 +248,15 @@ public final class AdvancedRulesSettingsScreen extends BaseScreen {
     }
 
     private void openSection(Section nextSection) {
-        if (this.client != null) {
-            this.client.setScreen(new AdvancedRulesSettingsScreen(navigationParent, nextSection));
+        if (this.minecraft != null) {
+            this.minecraft.setScreen(new AdvancedRulesSettingsScreen(navigationParent, nextSection));
         }
     }
 
-    private ButtonWidget addSettingButton(int x, int y, int width, SettingAction action) {
-        return addDrawableChild(
-            ButtonWidget.builder(Text.literal(action.label()), button -> applyRulesChange(action.onPress()))
-                .dimensions(x, y, width, DEFAULT_BUTTON_HEIGHT)
+    private Button addSettingButton(int x, int y, int width, SettingAction action) {
+        return addRenderableWidget(
+            Button.builder(Component.literal(action.label()), button -> applyRulesChange(action.onPress()))
+                .bounds(x, y, width, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
     }

@@ -13,15 +13,14 @@ import eu.tango.scamscreener.review.ReviewEntry;
 import eu.tango.scamscreener.review.ReviewSignalTag;
 import eu.tango.scamscreener.review.ReviewVerdict;
 import eu.tango.scamscreener.training.TrainingCaseMappings;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.text.Text;
-
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 
 public final class AlertManageScreen extends BaseScreen {
     private static final int LIST_TOP = 48;
@@ -58,14 +57,14 @@ public final class AlertManageScreen extends BaseScreen {
     private boolean blacklistChecked;
     private boolean blockChecked;
 
-    private ButtonWidget excludeButton;
-    private ButtonWidget contextButton;
-    private ButtonWidget signalButton;
-    private ButtonWidget advancedButton;
-    private ButtonWidget addMessageButton;
+    private Button excludeButton;
+    private Button contextButton;
+    private Button signalButton;
+    private Button advancedButton;
+    private Button addMessageButton;
 
     public AlertManageScreen(Screen parent, AlertContextRegistry.AlertContext context) {
-        super(Text.literal("Manage Alert"), parent);
+        super(Component.literal("Manage Alert"), parent);
         this.context = context;
         caseMessages.addAll(copyCaseMessages(context));
         advancedRuleOptions.addAll(TrainingCaseMappings.optionsForStageResults(context == null ? List.of() : context.stageResults()));
@@ -88,18 +87,18 @@ public final class AlertManageScreen extends BaseScreen {
         maxVisibleRows = Math.max(1, listHeight / LIST_ROW_HEIGHT);
 
         int quarter = splitWidth(contentWidth, 4, DEFAULT_SPLIT_GAP);
-        excludeButton = addDrawableChild(ButtonWidget.builder(Text.literal("Exclude"), button -> setRole(ReviewCaseRole.EXCLUDED))
-            .dimensions(contentX, editorTop, quarter, DEFAULT_BUTTON_HEIGHT).build());
-        contextButton = addDrawableChild(ButtonWidget.builder(Text.literal("Context"), button -> setRole(ReviewCaseRole.CONTEXT))
-            .dimensions(columnX(contentX, quarter, DEFAULT_SPLIT_GAP, 1), editorTop, quarter, DEFAULT_BUTTON_HEIGHT).build());
-        signalButton = addDrawableChild(ButtonWidget.builder(Text.literal("Signal"), button -> setRole(ReviewCaseRole.SIGNAL))
-            .dimensions(columnX(contentX, quarter, DEFAULT_SPLIT_GAP, 2), editorTop, quarter, DEFAULT_BUTTON_HEIGHT).build());
-        advancedButton = addDrawableChild(ButtonWidget.builder(Text.empty(), button -> toggleAdvanced())
-            .dimensions(columnX(contentX, quarter, DEFAULT_SPLIT_GAP, 3), editorTop, quarter, DEFAULT_BUTTON_HEIGHT).build());
+        excludeButton = addRenderableWidget(Button.builder(Component.literal("Exclude"), button -> setRole(ReviewCaseRole.EXCLUDED))
+            .bounds(contentX, editorTop, quarter, DEFAULT_BUTTON_HEIGHT).build());
+        contextButton = addRenderableWidget(Button.builder(Component.literal("Context"), button -> setRole(ReviewCaseRole.CONTEXT))
+            .bounds(columnX(contentX, quarter, DEFAULT_SPLIT_GAP, 1), editorTop, quarter, DEFAULT_BUTTON_HEIGHT).build());
+        signalButton = addRenderableWidget(Button.builder(Component.literal("Signal"), button -> setRole(ReviewCaseRole.SIGNAL))
+            .bounds(columnX(contentX, quarter, DEFAULT_SPLIT_GAP, 2), editorTop, quarter, DEFAULT_BUTTON_HEIGHT).build());
+        advancedButton = addRenderableWidget(Button.builder(Component.empty(), button -> toggleAdvanced())
+            .bounds(columnX(contentX, quarter, DEFAULT_SPLIT_GAP, 3), editorTop, quarter, DEFAULT_BUTTON_HEIGHT).build());
 
         int inputY = editorTop + DEFAULT_BUTTON_HEIGHT + 4;
-        addMessageButton = addDrawableChild(ButtonWidget.builder(Text.literal("Add Case Message"), button -> openMessagePicker())
-            .dimensions(contentX, inputY, contentWidth, DEFAULT_BUTTON_HEIGHT).build());
+        addMessageButton = addRenderableWidget(Button.builder(Component.literal("Add Case Message"), button -> openMessagePicker())
+            .bounds(contentX, inputY, contentWidth, DEFAULT_BUTTON_HEIGHT).build());
 
         int checkboxSectionY = inputY + DEFAULT_BUTTON_HEIGHT + 12;
         buildSignalCheckboxes(contentX, checkboxSectionY, contentWidth);
@@ -114,21 +113,21 @@ public final class AlertManageScreen extends BaseScreen {
         blockY = checkboxY + CHECKBOX_HEIGHT + CHECKBOX_GAP;
 
         int actionWidth = splitWidth(contentWidth, 4, DEFAULT_SPLIT_GAP);
-        addDrawableChild(ButtonWidget.builder(Text.literal("Cancel"), button -> close())
-            .dimensions(contentX, actionY, actionWidth, DEFAULT_BUTTON_HEIGHT).build());
-        addDrawableChild(ButtonWidget.builder(Text.literal("Dismiss"), button -> submit(ReviewVerdict.IGNORED))
-            .dimensions(columnX(contentX, actionWidth, DEFAULT_SPLIT_GAP, 1), actionY, actionWidth, DEFAULT_BUTTON_HEIGHT).build());
-        addDrawableChild(ButtonWidget.builder(Text.literal("Save Safe"), button -> submit(ReviewVerdict.SAFE))
-            .dimensions(columnX(contentX, actionWidth, DEFAULT_SPLIT_GAP, 2), actionY, actionWidth, DEFAULT_BUTTON_HEIGHT).build());
-        addDrawableChild(ButtonWidget.builder(Text.literal("Save Risk"), button -> submit(ReviewVerdict.RISK))
-            .dimensions(columnX(contentX, actionWidth, DEFAULT_SPLIT_GAP, 3), actionY, actionWidth, DEFAULT_BUTTON_HEIGHT).build());
+        addRenderableWidget(Button.builder(Component.literal("Cancel"), button -> onClose())
+            .bounds(contentX, actionY, actionWidth, DEFAULT_BUTTON_HEIGHT).build());
+        addRenderableWidget(Button.builder(Component.literal("Dismiss"), button -> submit(ReviewVerdict.IGNORED))
+            .bounds(columnX(contentX, actionWidth, DEFAULT_SPLIT_GAP, 1), actionY, actionWidth, DEFAULT_BUTTON_HEIGHT).build());
+        addRenderableWidget(Button.builder(Component.literal("Save Safe"), button -> submit(ReviewVerdict.SAFE))
+            .bounds(columnX(contentX, actionWidth, DEFAULT_SPLIT_GAP, 2), actionY, actionWidth, DEFAULT_BUTTON_HEIGHT).build());
+        addRenderableWidget(Button.builder(Component.literal("Save Risk"), button -> submit(ReviewVerdict.RISK))
+            .bounds(columnX(contentX, actionWidth, DEFAULT_SPLIT_GAP, 3), actionY, actionWidth, DEFAULT_BUTTON_HEIGHT).build());
         refreshButtons();
     }
 
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float deltaTicks) {
-        super.render(context, mouseX, mouseY, deltaTicks);
-        context.drawCenteredTextWithShadow(this.textRenderer, Text.literal(headerLine()), this.width / 2, TITLE_Y + 12, opaqueColor(0xCCCCCC));
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float deltaTicks) {
+        super.extractRenderState(context, mouseX, mouseY, deltaTicks);
+        context.centeredText(this.font, Component.literal(headerLine()), this.width / 2, TITLE_Y + 12, opaqueColor(0xCCCCCC));
         drawLine(context, listX, TITLE_Y + 24, summaryLine());
         renderList(context, mouseX, mouseY);
         renderEditor(context, mouseX, mouseY);
@@ -139,7 +138,7 @@ public final class AlertManageScreen extends BaseScreen {
     }
 
     @Override
-    public boolean mouseClicked(net.minecraft.client.gui.Click event, boolean doubleClick) {
+    public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
         if (event != null && event.button() == 0 && handleMouseClick(event.x(), event.y())) {
             return true;
         }
@@ -234,7 +233,7 @@ public final class AlertManageScreen extends BaseScreen {
             advancedButton.setMessage(toggleText("Advanced: ", showAdvanced));
         }
         if (addMessageButton != null) {
-            addMessageButton.active = this.client != null;
+            addMessageButton.active = this.minecraft != null;
         }
     }
 
@@ -258,11 +257,11 @@ public final class AlertManageScreen extends BaseScreen {
     }
 
     private void openMessagePicker() {
-        if (this.client == null) {
+        if (this.minecraft == null) {
             return;
         }
 
-        this.client.setScreen(new CaseMessagePickerScreen(this, defaultPickerFilter()));
+        this.minecraft.setScreen(new CaseMessagePickerScreen(this, defaultPickerFilter()));
     }
 
     private void submit(ReviewVerdict verdict) {
@@ -290,14 +289,14 @@ public final class AlertManageScreen extends BaseScreen {
             sendBlockCommand();
         }
         MessageDispatcher.reply(ClientMessages.caseReviewSaved(included, signals, verdict));
-        close();
+        onClose();
     }
 
-    private void renderList(DrawContext context, int mouseX, int mouseY) {
+    private void renderList(GuiGraphicsExtractor context, int mouseX, int mouseY) {
         context.fill(listX, listY, listX + listWidth, listY + listHeight, 0xA0101010);
         drawBoxBorder(context, listX, listY, listWidth, listHeight);
         if (caseMessages.isEmpty()) {
-            context.drawCenteredTextWithShadow(this.textRenderer, Text.literal("No case messages available"), this.width / 2, listY + (listHeight / 2) - 4, opaqueColor(0xAAAAAA));
+            context.centeredText(this.font, Component.literal("No case messages available"), this.width / 2, listY + (listHeight / 2) - 4, opaqueColor(0xAAAAAA));
             return;
         }
 
@@ -314,14 +313,14 @@ public final class AlertManageScreen extends BaseScreen {
 
             ReviewCaseMessage message = caseMessages.get(absolute);
             String line = message.getCaseRole().marker() + (message.isTriggerMessage() ? " [TRIGGER] " : " ") + compact(message.getCleanText(), 180);
-            context.drawTextWithShadow(this.textRenderer, Text.literal(line), listX + 8, rowY + 6, opaqueColor(message.getCaseRole().color()));
+            context.text(this.font, Component.literal(line), listX + 8, rowY + 6, opaqueColor(message.getCaseRole().color()));
         }
         if (caseMessages.size() > maxVisibleRows) {
             renderScrollBar(context, listX + listWidth - 4, listY + 2, listHeight - 4, listScrollOffset, caseMessages.size(), maxVisibleRows);
         }
     }
 
-    private void renderEditor(DrawContext context, int mouseX, int mouseY) {
+    private void renderEditor(GuiGraphicsExtractor context, int mouseX, int mouseY) {
         ReviewCaseMessage selected = selectedMessage();
         int helperY = signalCheckboxes.isEmpty() ? advancedY - 12 : signalCheckboxes.get(0).y - 12;
         String helperText;
@@ -342,15 +341,15 @@ public final class AlertManageScreen extends BaseScreen {
         context.fill(advancedX, advancedY, advancedX + advancedWidth, advancedY + advancedHeight, 0x20202020);
         drawBoxBorder(context, advancedX, advancedY, advancedWidth, advancedHeight);
         if (!showAdvanced) {
-            context.drawTextWithShadow(this.textRenderer, Text.literal("Advanced rule mapping is hidden."), advancedX + 6, advancedY + 6, opaqueColor(0xA0A0A0));
+            context.text(this.font, Component.literal("Advanced rule mapping is hidden."), advancedX + 6, advancedY + 6, opaqueColor(0xA0A0A0));
             return;
         }
         if (selected == null || !selected.isSignalMessage()) {
-            context.drawTextWithShadow(this.textRenderer, Text.literal("Mark one message as Signal to map advanced rules."), advancedX + 6, advancedY + 6, opaqueColor(0xA0A0A0));
+            context.text(this.font, Component.literal("Mark one message as Signal to map advanced rules."), advancedX + 6, advancedY + 6, opaqueColor(0xA0A0A0));
             return;
         }
         if (advancedRuleOptions.isEmpty()) {
-            context.drawTextWithShadow(this.textRenderer, Text.literal("No pipeline rule hints were captured for this alert."), advancedX + 6, advancedY + 6, opaqueColor(0xA0A0A0));
+            context.text(this.font, Component.literal("No pipeline rule hints were captured for this alert."), advancedX + 6, advancedY + 6, opaqueColor(0xA0A0A0));
             return;
         }
 
@@ -378,11 +377,11 @@ public final class AlertManageScreen extends BaseScreen {
         }
     }
 
-    private void renderBottomCheckbox(DrawContext context, int mouseX, int mouseY, int y, String label, boolean checked, boolean enabled) {
+    private void renderBottomCheckbox(GuiGraphicsExtractor context, int mouseX, int mouseY, int y, String label, boolean checked, boolean enabled) {
         renderCheckbox(context, mouseX, mouseY, blacklistX, y, checkboxWidth, label, checked, enabled);
     }
 
-    private void renderCheckbox(DrawContext context, int mouseX, int mouseY, int x, int y, int width, String label, boolean checked, boolean enabled) {
+    private void renderCheckbox(GuiGraphicsExtractor context, int mouseX, int mouseY, int x, int y, int width, String label, boolean checked, boolean enabled) {
         boolean hovered = enabled && inside(mouseX, mouseY, x, y, width, CHECKBOX_HEIGHT);
         int fill = !enabled ? 0x20222222 : (hovered ? 0x40444444 : 0x302A2A2A);
         context.fill(x, y, x + width, y + CHECKBOX_HEIGHT, fill);
@@ -396,21 +395,21 @@ public final class AlertManageScreen extends BaseScreen {
         context.fill(boxX, boxY, boxX + 1, boxY + 12, 0xFF9A9A9A);
         context.fill(boxX + 11, boxY, boxX + 12, boxY + 12, 0xFF9A9A9A);
         if (checked) {
-            context.drawTextWithShadow(this.textRenderer, Text.literal("x"), boxX + 3, boxY + 2, opaqueColor(0x90EE90));
+            context.text(this.font, Component.literal("x"), boxX + 3, boxY + 2, opaqueColor(0x90EE90));
         }
 
         int color = !enabled ? 0x888888 : (checked ? 0x90EE90 : 0xE0E0E0);
-        context.drawTextWithShadow(this.textRenderer, Text.literal(label), boxX + 20, y + 6, opaqueColor(color));
+        context.text(this.font, Component.literal(label), boxX + 20, y + 6, opaqueColor(color));
     }
 
-    private void drawBoxBorder(DrawContext context, int x, int y, int width, int height) {
+    private void drawBoxBorder(GuiGraphicsExtractor context, int x, int y, int width, int height) {
         context.fill(x, y, x + width, y + 1, 0xFF5A5A5A);
         context.fill(x, y + height - 1, x + width, y + height, 0xFF5A5A5A);
         context.fill(x, y, x + 1, y + height, 0xFF5A5A5A);
         context.fill(x + width - 1, y, x + width, y + height, 0xFF5A5A5A);
     }
 
-    private static void renderScrollBar(DrawContext context, int x, int y, int height, int offset, int total, int visible) {
+    private static void renderScrollBar(GuiGraphicsExtractor context, int x, int y, int height, int offset, int total, int visible) {
         context.fill(x, y, x + 2, y + height, 0xFF3A3A3A);
         int thumbHeight = Math.max(12, (int) (height * (visible / (double) Math.max(1, total))));
         int thumbRange = Math.max(1, height - thumbHeight);
@@ -467,12 +466,12 @@ public final class AlertManageScreen extends BaseScreen {
     }
 
     private void sendBlockCommand() {
-        if (!hasPlayerTarget() || context == null || this.client == null || this.client.getNetworkHandler() == null) {
+        if (!hasPlayerTarget() || context == null || this.minecraft == null || this.minecraft.getConnection() == null) {
             return;
         }
         String senderName = context.senderName().trim();
         if (!senderName.isBlank()) {
-            this.client.getNetworkHandler().sendChatCommand("block " + senderName);
+            this.minecraft.getConnection().sendCommand("block " + senderName);
         }
     }
 

@@ -24,7 +24,7 @@ class ProfilerExportPayloadTest {
         String json = ProfilerExportPayload.exportJson(
             1_710_000_000_000L,
             "1.2.3",
-            "1.21.11",
+            "26.1",
             true,
             true,
             core.snapshot(5_000_000L, 16),
@@ -50,7 +50,7 @@ class ProfilerExportPayloadTest {
 
         JsonObject metadata = root.getAsJsonObject("metadata");
         assertEquals("1.2.3", metadata.get("modVersion").getAsString());
-        assertEquals("1.21.11", metadata.get("minecraftVersion").getAsString());
+        assertEquals("26.1", metadata.get("minecraftVersion").getAsString());
 
         JsonObject runtime = root.getAsJsonObject("runtime");
         assertTrue(runtime.get("recordingEnabled").getAsBoolean());

@@ -3,20 +3,20 @@ package eu.tango.scamscreener.gui.screen;
 import eu.tango.scamscreener.ScamScreenerRuntime;
 import eu.tango.scamscreener.config.data.RuntimeConfig;
 import eu.tango.scamscreener.gui.base.BaseScreen;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 
 /**
  * User-facing output settings screen.
  */
 public final class MessageSettingsScreen extends BaseScreen {
-    private ButtonWidget scamWarningMessageButton;
-    private ButtonWidget scamWarningPingButton;
-    private ButtonWidget blacklistMessageButton;
-    private ButtonWidget blacklistPingButton;
-    private ButtonWidget autoLeaveMessageButton;
+    private Button scamWarningMessageButton;
+    private Button scamWarningPingButton;
+    private Button blacklistMessageButton;
+    private Button blacklistPingButton;
+    private Button autoLeaveMessageButton;
 
     /**
      * Creates the message settings screen.
@@ -24,7 +24,7 @@ public final class MessageSettingsScreen extends BaseScreen {
      * @param parent the parent screen to return to
      */
     public MessageSettingsScreen(Screen parent) {
-        super(Text.literal("ScamScreener Messages"), parent);
+        super(Component.literal("ScamScreener Messages"), parent);
     }
 
     /**
@@ -37,37 +37,37 @@ public final class MessageSettingsScreen extends BaseScreen {
         int x = column.x();
         int y = column.y() + 12;
 
-        scamWarningMessageButton = addDrawableChild(
-            ButtonWidget.builder(Text.empty(), button -> toggleRiskMessage())
-                .dimensions(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
+        scamWarningMessageButton = addRenderableWidget(
+            Button.builder(Component.empty(), button -> toggleRiskMessage())
+                .bounds(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
         y += ROW_HEIGHT;
 
-        scamWarningPingButton = addDrawableChild(
-            ButtonWidget.builder(Text.empty(), button -> toggleRiskPing())
-                .dimensions(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
+        scamWarningPingButton = addRenderableWidget(
+            Button.builder(Component.empty(), button -> toggleRiskPing())
+                .bounds(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
         y += ROW_HEIGHT;
 
-        blacklistMessageButton = addDrawableChild(
-            ButtonWidget.builder(Text.empty(), button -> toggleBlacklistMessage())
-                .dimensions(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
+        blacklistMessageButton = addRenderableWidget(
+            Button.builder(Component.empty(), button -> toggleBlacklistMessage())
+                .bounds(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
         y += ROW_HEIGHT;
 
-        blacklistPingButton = addDrawableChild(
-            ButtonWidget.builder(Text.empty(), button -> toggleBlacklistPing())
-                .dimensions(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
+        blacklistPingButton = addRenderableWidget(
+            Button.builder(Component.empty(), button -> toggleBlacklistPing())
+                .bounds(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
         y += ROW_HEIGHT;
 
-        autoLeaveMessageButton = addDrawableChild(
-            ButtonWidget.builder(Text.empty(), button -> toggleAutoLeaveMessage())
-                .dimensions(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
+        autoLeaveMessageButton = addRenderableWidget(
+            Button.builder(Component.empty(), button -> toggleAutoLeaveMessage())
+                .bounds(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
 
@@ -84,8 +84,8 @@ public final class MessageSettingsScreen extends BaseScreen {
      * @param deltaTicks partial tick delta
      */
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float deltaTicks) {
-        super.render(context, mouseX, mouseY, deltaTicks);
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float deltaTicks) {
+        super.extractRenderState(context, mouseX, mouseY, deltaTicks);
 
         int left = centeredX(defaultButtonWidth());
         drawSectionTitle(context, left, CONTENT_TOP - 18, "Warnings");

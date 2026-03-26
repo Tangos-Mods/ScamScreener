@@ -1,11 +1,10 @@
 package eu.tango.scamscreener.message;
 
 import eu.tango.scamscreener.profiler.ScamScreenerProfiler;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.sound.SoundEvents;
-
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import net.minecraft.client.Minecraft;
+import net.minecraft.sounds.SoundEvents;
 
 /**
  * Client-side notification helpers for ScamScreener warnings.
@@ -21,7 +20,7 @@ public final class NotificationService {
      * Plays the same short warning tone pattern used by the legacy output flow.
      */
     public static void playWarningTone() {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client == null) {
             return;
         }
@@ -35,7 +34,7 @@ public final class NotificationService {
                             return;
                         }
 
-                        client.player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_PLING.value(), 0.8F, 1.2F);
+                        client.player.playSound(SoundEvents.NOTE_BLOCK_PLING.value(), 0.8F, 1.2F);
                     }
                 })
             );

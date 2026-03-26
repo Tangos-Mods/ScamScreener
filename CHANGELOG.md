@@ -2,7 +2,14 @@
 
 All notable changes to this project are documented in this file.
 
-## 2.1.3 - 2026-03-26
+## 2.2.0 - 2026-03-26
+
+### Changed
+- The branch now targets only Minecraft `26.1` and uses Mojang Official Mappings instead of Yarn.
+- Stonecutter versioning remains in place, but now only builds the single `26.1` target on this branch.
+- Build and CI now target Java `25` for Minecraft `26.1`.
+
+## 2.1.3 - 2026-03-26 END OF LIFE for 1.21.x (legacy Minecraft Versioning)
 
 ### Added
 - Runtime loading of external `PipelineContributor` stages from the `scamscreener-pipeline` Fabric entrypoint.
@@ -12,7 +19,6 @@ All notable changes to this project are documented in this file.
 - Risk warning action labels now show `[review]` instead of `[manage]` while keeping the existing `/scamscreener review manage <alertId>` command path for compatibility.
 - Versioned config loading now uses a smaller direct store implementation instead of the older generic migration wrapper.
 - Internal review, list, and pipeline-state code was simplified by removing unused wrappers and dead abstraction layers.
-- `1.21.10` release metadata now uses the `_EOL` suffix in the publish title.
 
 ### Fixed
 - The public pipeline extension API is now actually wired into runtime pipeline construction instead of existing only as an exposed contract.

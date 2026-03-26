@@ -1,11 +1,10 @@
 package eu.tango.scamscreener.gui.widget;
 
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.DrawContext;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 /**
  * Small reusable scrollable list helper for ScamScreener screens.
@@ -139,7 +138,7 @@ public final class SelectableListWidget<T> {
      * @param mouseX the current mouse x position
      * @param mouseY the current mouse y position
      */
-    public void render(DrawContext context, TextRenderer textRenderer, int mouseX, int mouseY) {
+    public void render(GuiGraphicsExtractor context, Font textRenderer, int mouseX, int mouseY) {
         context.fill(x, y, x + width, y + height, 0xA0101010);
         context.fill(x, y, x + width, y + 1, 0xFF5A5A5A);
         context.fill(x, y + height - 1, x + width, y + height, 0xFF5A5A5A);
@@ -147,7 +146,7 @@ public final class SelectableListWidget<T> {
         context.fill(x + width - 1, y, x + width, y + height, 0xFF5A5A5A);
 
         if (rows.isEmpty()) {
-            context.drawCenteredTextWithShadow(textRenderer, "No entries", x + (width / 2), y + (height / 2) - 4, opaqueColor(0xAAAAAA));
+            context.centeredText(textRenderer, "No entries", x + (width / 2), y + (height / 2) - 4, opaqueColor(0xAAAAAA));
             return;
         }
 
@@ -229,7 +228,7 @@ public final class SelectableListWidget<T> {
         return true;
     }
 
-    private void renderScrollBar(DrawContext context, int visibleRows) {
+    private void renderScrollBar(GuiGraphicsExtractor context, int visibleRows) {
         int trackLeft = x + width - 4;
         int trackTop = y + 2;
         int trackBottom = y + height - 2;
@@ -294,8 +293,8 @@ public final class SelectableListWidget<T> {
          * @param selected whether the row is selected
          */
         void render(
-            DrawContext context,
-            TextRenderer textRenderer,
+            GuiGraphicsExtractor context,
+            Font textRenderer,
             T row,
             int x,
             int y,

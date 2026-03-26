@@ -1,15 +1,15 @@
 package eu.tango.scamscreener.message;
 
 import eu.tango.scamscreener.chat.ChatLineClassifier;
-import net.minecraft.client.MinecraftClient;
 import eu.tango.scamscreener.pipeline.data.PipelineDecision;
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.ClickEvent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
 import eu.tango.scamscreener.pipeline.data.ChatEvent;
-import net.minecraft.text.ClickEvent;
-import net.minecraft.text.HoverEvent;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
 
 /**
  * Minimal user-facing chat messages for pipeline decisions.
@@ -30,7 +30,7 @@ public final class DecisionMessages {
      * @param decision the final pipeline decision
      * @return the formatted warning message
      */
-    public static MutableText riskWarning(ChatEvent chatEvent, PipelineDecision decision) {
+    public static MutableComponent riskWarning(ChatEvent chatEvent, PipelineDecision decision) {
         String player = safePlayer(chatEvent);
         int scoreValue = decision == null ? 0 : Math.max(0, decision.getTotalScore());
         AlertSeverity severity = AlertSeverity.fromDecision(decision);
@@ -39,17 +39,17 @@ public final class DecisionMessages {
         String playerScoreLine = player + " | " + score;
         String alertContextId = AlertContextRegistry.register(chatEvent, decision);
 
-        MutableText message = Text.empty()
-            .append(Text.literal(WARNING_BORDER).formatted(Formatting.DARK_RED))
-            .append(Text.literal("\n" + centeredBold(title)).formatted(severityColor(severity), Formatting.BOLD))
-            .append(Text.literal("\n" + leadingPadding(playerScoreLine)))
-            .append(Text.literal(player).formatted(Formatting.AQUA))
-            .append(Text.literal(" | ").formatted(Formatting.DARK_GRAY))
-            .append(Text.literal(score).formatted(scoreColor(scoreValue), Formatting.BOLD))
-            .append(Text.literal("\n"))
+        MutableComponent message = Component.empty()
+            .append(Component.literal(WARNING_BORDER).withStyle(ChatFormatting.DARK_RED))
+            .append(Component.literal("\n" + centeredBold(title)).withStyle(severityColor(severity), ChatFormatting.BOLD))
+            .append(Component.literal("\n" + leadingPadding(playerScoreLine)))
+            .append(Component.literal(player).withStyle(ChatFormatting.AQUA))
+            .append(Component.literal(" | ").withStyle(ChatFormatting.DARK_GRAY))
+            .append(Component.literal(score).withStyle(scoreColor(scoreValue), ChatFormatting.BOLD))
+            .append(Component.literal("\n"))
             .append(actionLine(alertContextId));
 
-        return message.append(Text.literal("\n" + WARNING_BORDER).formatted(Formatting.DARK_RED));
+        return message.append(Component.literal("\n" + WARNING_BORDER).withStyle(ChatFormatting.DARK_RED));
     }
 
     /**
@@ -59,23 +59,23 @@ public final class DecisionMessages {
      * @param decision the final pipeline decision
      * @return the formatted blacklist warning
      */
-    public static MutableText blacklistWarning(ChatEvent chatEvent, PipelineDecision decision) {
+    public static MutableComponent blacklistWarning(ChatEvent chatEvent, PipelineDecision decision) {
         String player = safePlayer(chatEvent);
         int scoreValue = decision == null ? 0 : Math.max(0, decision.getTotalScore());
         String score = String.valueOf(scoreValue);
         String reason = primaryReason(decision, "Matched a blacklist entry.");
         String playerScoreLine = player + " | " + score;
 
-        MutableText message = Text.empty()
-            .append(Text.literal(WARNING_BORDER).formatted(Formatting.DARK_RED))
-            .append(Text.literal("\n" + centeredBold("BLACKLIST WARNING")).formatted(Formatting.DARK_RED, Formatting.BOLD))
-            .append(Text.literal("\n" + leadingPadding(playerScoreLine)))
-            .append(Text.literal(player).formatted(Formatting.AQUA))
-            .append(Text.literal(" | ").formatted(Formatting.DARK_GRAY))
-            .append(Text.literal(score).formatted(scoreColor(scoreValue), Formatting.BOLD))
-            .append(Text.literal("\n" + centered(reason)).formatted(Formatting.YELLOW));
+        MutableComponent message = Component.empty()
+            .append(Component.literal(WARNING_BORDER).withStyle(ChatFormatting.DARK_RED))
+            .append(Component.literal("\n" + centeredBold("BLACKLIST WARNING")).withStyle(ChatFormatting.DARK_RED, ChatFormatting.BOLD))
+            .append(Component.literal("\n" + leadingPadding(playerScoreLine)))
+            .append(Component.literal(player).withStyle(ChatFormatting.AQUA))
+            .append(Component.literal(" | ").withStyle(ChatFormatting.DARK_GRAY))
+            .append(Component.literal(score).withStyle(scoreColor(scoreValue), ChatFormatting.BOLD))
+            .append(Component.literal("\n" + centered(reason)).withStyle(ChatFormatting.YELLOW));
 
-        return message.append(Text.literal("\n" + WARNING_BORDER).formatted(Formatting.DARK_RED));
+        return message.append(Component.literal("\n" + WARNING_BORDER).withStyle(ChatFormatting.DARK_RED));
     }
 
     private static String safePlayer(ChatEvent chatEvent) {
@@ -105,26 +105,26 @@ public final class DecisionMessages {
         return reason;
     }
 
-    private static Formatting severityColor(AlertSeverity severity) {
+    private static ChatFormatting severityColor(AlertSeverity severity) {
         return switch (severity == null ? AlertSeverity.LOW : severity) {
-            case LOW -> Formatting.RED;
-            case MEDIUM -> Formatting.GOLD;
-            case HIGH -> Formatting.RED;
-            default -> Formatting.DARK_RED;
+            case LOW -> ChatFormatting.RED;
+            case MEDIUM -> ChatFormatting.GOLD;
+            case HIGH -> ChatFormatting.RED;
+            default -> ChatFormatting.DARK_RED;
         };
     }
 
-    private static Formatting scoreColor(int score) {
+    private static ChatFormatting scoreColor(int score) {
         if (score >= 75) {
-            return Formatting.DARK_RED;
+            return ChatFormatting.DARK_RED;
         }
         if (score >= 50) {
-            return Formatting.RED;
+            return ChatFormatting.RED;
         }
         if (score >= 25) {
-            return Formatting.GOLD;
+            return ChatFormatting.GOLD;
         }
-        return Formatting.YELLOW;
+        return ChatFormatting.YELLOW;
     }
 
     private static String centered(String text) {
@@ -154,10 +154,10 @@ public final class DecisionMessages {
             return "";
         }
 
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client != null && client.textRenderer != null) {
-            int targetWidth = client.textRenderer.getWidth(WARNING_BORDER);
-            int textWidth = client.textRenderer.getWidth(text);
+        Minecraft client = Minecraft.getInstance();
+        if (client != null && client.font != null) {
+            int targetWidth = client.font.width(WARNING_BORDER);
+            int textWidth = client.font.width(text);
             if (bold) {
                 textWidth += estimateBoldExtraPixels(text);
             }
@@ -165,7 +165,7 @@ public final class DecisionMessages {
                 return "";
             }
 
-            int spaceWidth = Math.max(1, client.textRenderer.getWidth(" "));
+            int spaceWidth = Math.max(1, client.font.width(" "));
             int leftPixels = (targetWidth - textWidth) / 2;
             int spaceCount = Math.max(0, (leftPixels + (spaceWidth / 2)) / spaceWidth);
             return " ".repeat(spaceCount);
@@ -190,20 +190,20 @@ public final class DecisionMessages {
         return extra;
     }
 
-    private static MutableText actionLine(String alertContextId) {
-        MutableText line = Text.literal(leadingPadding("[review] [info]"));
+    private static MutableComponent actionLine(String alertContextId) {
+        MutableComponent line = Component.literal(leadingPadding("[review] [info]"));
         boolean hasContext = alertContextId != null && !alertContextId.isBlank();
 
         line.append(actionTag(
             "review",
-            Formatting.GOLD,
+            ChatFormatting.GOLD,
             "Open the case review window to group context messages and assign signal tags.",
             hasContext ? "/scamscreener review manage " + alertContextId : null
         ));
-        line.append(Text.literal(" "));
+        line.append(Component.literal(" "));
         line.append(actionTag(
             "info",
-            Formatting.YELLOW,
+            ChatFormatting.YELLOW,
             "Open rule detail window for this alert.",
             hasContext ? "/scamscreener review info " + alertContextId : null
         ));
@@ -211,10 +211,10 @@ public final class DecisionMessages {
         return line;
     }
 
-    private static MutableText actionTag(String label, Formatting color, String hover, String command) {
+    private static MutableComponent actionTag(String label, ChatFormatting color, String hover, String command) {
         Style style = Style.EMPTY.withColor(color);
         if (hover != null && !hover.isBlank()) {
-            style = style.withHoverEvent(new HoverEvent.ShowText(Text.literal(hover)));
+            style = style.withHoverEvent(new HoverEvent.ShowText(Component.literal(hover)));
         }
         if (command != null && !command.isBlank()) {
             style = style.withClickEvent(new ClickEvent.RunCommand(command));
@@ -222,6 +222,6 @@ public final class DecisionMessages {
             style = style.withStrikethrough(true);
         }
 
-        return Text.literal("[" + label + "]").setStyle(style);
+        return Component.literal("[" + label + "]").setStyle(style);
     }
 }

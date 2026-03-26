@@ -1,5 +1,8 @@
+import me.modmuss50.mpp.ReleaseType
+import org.gradle.jvm.tasks.Jar
+
 plugins {
-    id("net.fabricmc.fabric-loom-remap")
+    id("net.fabricmc.fabric-loom")
 
     // `maven-publish`
     id("me.modmuss50.mod-publish-plugin")
@@ -61,23 +64,12 @@ fun resolveSecret(name: String): String? {
 
 val modrinthToken = resolveSecret("MODRINTH_TOKEN")
 val curseforgeToken = resolveSecret("CURSEFORGE_TOKEN")
+val releaseType: String = property("mod.type").toString().substringBefore('#').trim()
 
 version = "${property("mod.version")}+${sc.current.version}"
 base.archivesName = property("mod.id") as String
 
-val requiredJava = when {
-    sc.current.parsed >= "26.1" -> JavaVersion.VERSION_25
-    sc.current.parsed >= "1.20.5" -> JavaVersion.VERSION_21
-    sc.current.parsed >= "1.18" -> JavaVersion.VERSION_17
-    sc.current.parsed >= "1.17" -> JavaVersion.VERSION_16
-    else -> JavaVersion.VERSION_1_8
-}
-
-val yarnMappings = when (sc.current.version) {
-    "1.21.10" -> "1.21.10+build.3"
-    "1.21.11" -> "1.21.11+build.4"
-    else -> error("No Yarn mappings configured for ${sc.current.version}. Add a matching Yarn version before building this target.")
-}
+val requiredJava = JavaVersion.VERSION_25
 
 repositories {
     /**
@@ -90,6 +82,7 @@ repositories {
     }
     strictMaven("https://www.cursemaven.com", "CurseForge", "curse.maven")
     strictMaven("https://api.modrinth.com/maven", "Modrinth", "maven.modrinth")
+    maven("https://maven.terraformersmc.com/releases/") { name = "TerraformersMC" }
 }
 
 dependencies {
@@ -98,18 +91,17 @@ dependencies {
      * @see <a href="https://github.com/FabricMC/fabric">List of Fabric API modules</a>
      */
     fun fapi(vararg modules: String) {
-        for (it in modules) modImplementation(fabricApi.module(it, property("deps.fabric_api") as String))
+        for (it in modules) implementation(fabricApi.module(it, property("deps.fabric_api") as String))
     }
 
     minecraft("com.mojang:minecraft:${sc.current.version}")
-    mappings("net.fabricmc:yarn:${yarnMappings}:v2")
-    modImplementation("net.fabricmc:fabric-loader:${property("deps.fabric_loader")}")
-    compileOnly("org.projectlombok:lombok:1.18.36")
-    annotationProcessor("org.projectlombok:lombok:1.18.36")
+    implementation("net.fabricmc:fabric-loader:${property("deps.fabric_loader")}")
+    compileOnly("org.projectlombok:lombok:1.18.44")
+    annotationProcessor("org.projectlombok:lombok:1.18.44")
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.11.4")
-    modImplementation("maven.modrinth:modmenu:${property("deps.modmenu_version")}")
-    modCompileOnly("maven.modrinth:tango-webapi:NU0SuChL")
+    compileOnly("com.terraformersmc:modmenu:${property("deps.modmenu_version")}")
+    compileOnly("maven.modrinth:tango-webapi:NU0SuChL")
 
     fapi(
         "fabric-command-api-v2",
@@ -133,11 +125,14 @@ loom {
     runConfigs.all {
         ideConfigGenerated(true)
         vmArgs("-Dmixin.debug.export=true") // Exports transformed classes for debugging
-        runDir = "../../run" // Shares the run directory between versions
+        runDir = "../../run"
     }
 }
 
 java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(requiredJava.majorVersion.toInt()))
+    }
     withSourcesJar()
     targetCompatibility = requiredJava
     sourceCompatibility = requiredJava
@@ -188,7 +183,7 @@ tasks {
     // Builds the version into a shared folder in `build/libs/${mod version}/`
     register<Copy>("buildAndCollect") {
         group = "build"
-        from(remapJar.map { it.archiveFile }, remapSourcesJar.map { it.archiveFile })
+        from(named<Jar>("jar").map { it.archiveFile }, named<Jar>("sourcesJar").map { it.archiveFile })
         into(rootProject.layout.buildDirectory.file("libs/${project.property("mod.version")}"))
         dependsOn("build")
     }
@@ -196,12 +191,12 @@ tasks {
 
 // Publishes builds to Modrinth and Curseforge with player-facing changelog from MODRINTH.md
 publishMods {
-    file = tasks.remapJar.map { it.archiveFile.get() }
-    additionalFiles.from(tasks.remapSourcesJar.map { it.archiveFile.get() })
+    file = tasks.named<Jar>("jar").map { it.archiveFile.get() }
+    additionalFiles.from(tasks.named<Jar>("sourcesJar").map { it.archiveFile.get() })
     displayName = "${property("mod.name")} ${property("mod.version")} for ${property("mod.mc_title")}"
     version = project.version.toString()
     changelog = rootProject.file("MODRINTH.md").readText()
-    type = STABLE
+    type = ReleaseType.of(releaseType)
     modLoaders.add("fabric")
 
     dryRun = modrinthToken == null || curseforgeToken == null

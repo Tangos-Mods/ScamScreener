@@ -1,10 +1,10 @@
 package eu.tango.scamscreener.gui.base;
 
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 
 /**
  * Shared base screen for ScamScreener GUI pages.
@@ -30,7 +30,7 @@ public abstract class BaseScreen extends Screen {
      * @param title the visible screen title
      * @param parent the parent screen to return to
      */
-    protected BaseScreen(Text title, Screen parent) {
+    protected BaseScreen(Component title, Screen parent) {
         super(title);
         this.parent = parent;
     }
@@ -44,22 +44,22 @@ public abstract class BaseScreen extends Screen {
      * @param deltaTicks partial tick delta
      */
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float deltaTicks) {
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float deltaTicks) {
         context.fill(0, 0, this.width, this.height, 0x90000000);
-        context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, TITLE_Y, opaqueColor(0xFFFFFF));
-        super.render(context, mouseX, mouseY, deltaTicks);
+        context.centeredText(this.font, this.title, this.width / 2, TITLE_Y, opaqueColor(0xFFFFFF));
+        super.extractRenderState(context, mouseX, mouseY, deltaTicks);
     }
 
     /**
      * Returns to the parent screen.
      */
     @Override
-    public void close() {
-        if (this.client == null) {
+    public void onClose() {
+        if (this.minecraft == null) {
             return;
         }
 
-        this.client.setScreen(parent);
+        this.minecraft.setScreen(parent);
     }
 
     /**
@@ -118,10 +118,10 @@ public abstract class BaseScreen extends Screen {
      * @param onPress the press handler
      * @return the created button widget
      */
-    protected ButtonWidget addFooterButton(int x, int width, Text label, ButtonWidget.PressAction onPress) {
-        return addDrawableChild(
-            ButtonWidget.builder(label, onPress)
-                .dimensions(x, footerY(), width, DEFAULT_BUTTON_HEIGHT)
+    protected Button addFooterButton(int x, int width, Component label, Button.OnPress onPress) {
+        return addRenderableWidget(
+            Button.builder(label, onPress)
+                .bounds(x, footerY(), width, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
     }
@@ -134,7 +134,7 @@ public abstract class BaseScreen extends Screen {
      * @param onPress the press handler
      * @return the created button widget
      */
-    protected ButtonWidget addCenteredFooterButton(int width, Text label, ButtonWidget.PressAction onPress) {
+    protected Button addCenteredFooterButton(int width, Component label, Button.OnPress onPress) {
         return addFooterButton(centeredX(width), width, label, onPress);
     }
 
@@ -144,8 +144,8 @@ public abstract class BaseScreen extends Screen {
      * @param width the button width
      * @return the created button widget
      */
-    protected ButtonWidget addCloseButton(int width) {
-        return addCenteredFooterButton(width, Text.literal("Close"), button -> close());
+    protected Button addCloseButton(int width) {
+        return addCenteredFooterButton(width, Component.literal("Close"), button -> onClose());
     }
 
     /**
@@ -154,8 +154,8 @@ public abstract class BaseScreen extends Screen {
      * @param width the button width
      * @return the created button widget
      */
-    protected ButtonWidget addBackButton(int width) {
-        return addCenteredFooterButton(width, Text.literal("Back"), button -> close());
+    protected Button addBackButton(int width) {
+        return addCenteredFooterButton(width, Component.literal("Back"), button -> onClose());
     }
 
     /**
@@ -166,8 +166,8 @@ public abstract class BaseScreen extends Screen {
      * @param y the y position
      * @param title the visible section title
      */
-    protected void drawSectionTitle(DrawContext context, int x, int y, String title) {
-        context.drawTextWithShadow(this.textRenderer, Text.literal(title), x, y, opaqueColor(0x55FF55));
+    protected void drawSectionTitle(GuiGraphicsExtractor context, int x, int y, String title) {
+        context.text(this.font, Component.literal(title), x, y, opaqueColor(0x55FF55));
     }
 
     /**
@@ -178,8 +178,8 @@ public abstract class BaseScreen extends Screen {
      * @param y the y position
      * @param text the visible text
      */
-    protected void drawLine(DrawContext context, int x, int y, String text) {
-        context.drawTextWithShadow(this.textRenderer, Text.literal(text), x, y, opaqueColor(0xFFFFFF));
+    protected void drawLine(GuiGraphicsExtractor context, int x, int y, String text) {
+        context.text(this.font, Component.literal(text), x, y, opaqueColor(0xFFFFFF));
     }
 
     /**
@@ -209,10 +209,10 @@ public abstract class BaseScreen extends Screen {
      * @param enabled the current state
      * @return the composed colored label
      */
-    protected Text toggleText(String prefix, boolean enabled) {
-        MutableText status = Text.literal(onOff(enabled))
-            .styled(style -> style.withColor(enabled ? TOGGLE_ON_COLOR : TOGGLE_OFF_COLOR));
-        return Text.literal(prefix).append(status);
+    protected Component toggleText(String prefix, boolean enabled) {
+        MutableComponent status = Component.literal(onOff(enabled))
+            .withStyle(style -> style.withColor(enabled ? TOGGLE_ON_COLOR : TOGGLE_OFF_COLOR));
+        return Component.literal(prefix).append(status);
     }
 
     /**
@@ -223,14 +223,14 @@ public abstract class BaseScreen extends Screen {
      * @param enabledDetail optional detail appended after ON, such as a threshold
      * @return the composed colored label
      */
-    protected Text toggleText(String prefix, boolean enabled, String enabledDetail) {
-        MutableText base = Text.literal(prefix)
-            .append(Text.literal(onOff(enabled)).styled(style -> style.withColor(enabled ? TOGGLE_ON_COLOR : TOGGLE_OFF_COLOR)));
+    protected Component toggleText(String prefix, boolean enabled, String enabledDetail) {
+        MutableComponent base = Component.literal(prefix)
+            .append(Component.literal(onOff(enabled)).withStyle(style -> style.withColor(enabled ? TOGGLE_ON_COLOR : TOGGLE_OFF_COLOR)));
         if (!enabled || enabledDetail == null || enabledDetail.isBlank()) {
             return base;
         }
 
-        return base.append(Text.literal(enabledDetail));
+        return base.append(Component.literal(enabledDetail));
     }
 
     /**

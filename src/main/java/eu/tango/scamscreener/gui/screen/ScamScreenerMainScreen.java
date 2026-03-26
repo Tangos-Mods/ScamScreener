@@ -7,11 +7,11 @@ import eu.tango.scamscreener.config.data.RuntimeConfig;
 import eu.tango.scamscreener.gui.base.BaseScreen;
 import eu.tango.scamscreener.message.ClientMessages;
 import eu.tango.scamscreener.message.MessageDispatcher;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.ConfirmLinkScreen;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.screens.ConfirmLinkScreen;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 import net.minecraft.util.Util;
 
 import java.util.concurrent.CompletionException;
@@ -21,14 +21,14 @@ import java.util.concurrent.CompletionException;
  */
 public final class ScamScreenerMainScreen extends BaseScreen {
     private static final String TRAINING_HUB_URL = "https://scamscreener.creepans.net/";
-    private static final Text AUTHOR_TEXT = Text.literal("Made by Pankraz01");
-    private static final Text TRAINING_HUB_SOON_TEXT = Text.literal("Training Hub coming soon.");
+    private static final Component AUTHOR_TEXT = Component.literal("Made by Pankraz01");
+    private static final Component TRAINING_HUB_SOON_TEXT = Component.literal("Training Hub coming soon.");
 
-    private ButtonWidget alertLevelButton;
-    private ButtonWidget autoCaptureButton;
-    private ButtonWidget autoLeaveButton;
-    private ButtonWidget muteFilterButton;
-    private ButtonWidget contributeTrainingButton;
+    private Button alertLevelButton;
+    private Button autoCaptureButton;
+    private Button autoLeaveButton;
+    private Button muteFilterButton;
+    private Button contributeTrainingButton;
     private int trainingHubNoteY;
 
     /**
@@ -37,7 +37,7 @@ public final class ScamScreenerMainScreen extends BaseScreen {
      * @param parent the parent screen to return to
      */
     public ScamScreenerMainScreen(Screen parent) {
-        super(Text.literal("ScamScreener Settings"), parent);
+        super(Component.literal("ScamScreener Settings"), parent);
     }
 
     /**
@@ -50,30 +50,30 @@ public final class ScamScreenerMainScreen extends BaseScreen {
         int x = column.x();
         int y = column.y();
 
-        alertLevelButton = addDrawableChild(
-            ButtonWidget.builder(Text.empty(), button -> cycleAlertLevel())
-                .dimensions(x, y, buttonWidth, DEFAULT_BUTTON_HEIGHT)
+        alertLevelButton = addRenderableWidget(
+            Button.builder(Component.empty(), button -> cycleAlertLevel())
+                .bounds(x, y, buttonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
         y += ROW_HEIGHT;
 
-        autoCaptureButton = addDrawableChild(
-            ButtonWidget.builder(Text.empty(), button -> cycleAutoCaptureLevel())
-                .dimensions(x, y, buttonWidth, DEFAULT_BUTTON_HEIGHT)
+        autoCaptureButton = addRenderableWidget(
+            Button.builder(Component.empty(), button -> cycleAutoCaptureLevel())
+                .bounds(x, y, buttonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
         y += ROW_HEIGHT;
 
-        autoLeaveButton = addDrawableChild(
-            ButtonWidget.builder(Text.empty(), button -> toggleAutoLeave())
-                .dimensions(x, y, buttonWidth, DEFAULT_BUTTON_HEIGHT)
+        autoLeaveButton = addRenderableWidget(
+            Button.builder(Component.empty(), button -> toggleAutoLeave())
+                .bounds(x, y, buttonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
         y += ROW_HEIGHT;
 
-        muteFilterButton = addDrawableChild(
-            ButtonWidget.builder(Text.empty(), button -> toggleMuteFilter())
-                .dimensions(x, y, buttonWidth, DEFAULT_BUTTON_HEIGHT)
+        muteFilterButton = addRenderableWidget(
+            Button.builder(Component.empty(), button -> toggleMuteFilter())
+                .bounds(x, y, buttonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
         y += ROW_HEIGHT;
@@ -82,56 +82,56 @@ public final class ScamScreenerMainScreen extends BaseScreen {
         int menuX = x;
         int menuButtonWidth = splitWidth(menuWidth, 3, DEFAULT_SPLIT_GAP);
 
-        addDrawableChild(
-            ButtonWidget.builder(Text.literal("Rule Settings"), button -> this.client.setScreen(new RulesSettingsScreen(this)))
-                .dimensions(menuX, y, menuButtonWidth, DEFAULT_BUTTON_HEIGHT)
+        addRenderableWidget(
+            Button.builder(Component.literal("Rule Settings"), button -> this.minecraft.setScreen(new RulesSettingsScreen(this)))
+                .bounds(menuX, y, menuButtonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
-        addDrawableChild(
-            ButtonWidget.builder(Text.literal("Debug Settings"), button -> this.client.setScreen(new DebugSettingsScreen(this)))
-                .dimensions(columnX(menuX, menuButtonWidth, DEFAULT_SPLIT_GAP, 1), y, menuButtonWidth, DEFAULT_BUTTON_HEIGHT)
+        addRenderableWidget(
+            Button.builder(Component.literal("Debug Settings"), button -> this.minecraft.setScreen(new DebugSettingsScreen(this)))
+                .bounds(columnX(menuX, menuButtonWidth, DEFAULT_SPLIT_GAP, 1), y, menuButtonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
-        addDrawableChild(
-            ButtonWidget.builder(Text.literal("Blacklist"), button -> this.client.setScreen(new BlacklistScreen(this)))
-                .dimensions(columnX(menuX, menuButtonWidth, DEFAULT_SPLIT_GAP, 2), y, menuButtonWidth, DEFAULT_BUTTON_HEIGHT)
-                .build()
-        );
-        y += ROW_HEIGHT;
-
-        addDrawableChild(
-            ButtonWidget.builder(Text.literal("Message Settings"), button -> this.client.setScreen(new MessageSettingsScreen(this)))
-                .dimensions(menuX, y, menuButtonWidth, DEFAULT_BUTTON_HEIGHT)
-                .build()
-        );
-        addDrawableChild(
-            ButtonWidget.builder(Text.literal("Observability"), button -> this.client.setScreen(new MetricsSettingsScreen(this)))
-                .dimensions(columnX(menuX, menuButtonWidth, DEFAULT_SPLIT_GAP, 1), y, menuButtonWidth, DEFAULT_BUTTON_HEIGHT)
-                .build()
-        );
-        addDrawableChild(
-            ButtonWidget.builder(Text.literal("Runtime"), button -> this.client.setScreen(new RuntimeSettingsScreen(this)))
-                .dimensions(columnX(menuX, menuButtonWidth, DEFAULT_SPLIT_GAP, 2), y, menuButtonWidth, DEFAULT_BUTTON_HEIGHT)
+        addRenderableWidget(
+            Button.builder(Component.literal("Blacklist"), button -> this.minecraft.setScreen(new BlacklistScreen(this)))
+                .bounds(columnX(menuX, menuButtonWidth, DEFAULT_SPLIT_GAP, 2), y, menuButtonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
         y += ROW_HEIGHT;
 
-        addDrawableChild(
-            ButtonWidget.builder(Text.literal("Whitelist"), button -> this.client.setScreen(new WhitelistScreen(this)))
-                .dimensions(x, y, buttonWidth, DEFAULT_BUTTON_HEIGHT)
+        addRenderableWidget(
+            Button.builder(Component.literal("Message Settings"), button -> this.minecraft.setScreen(new MessageSettingsScreen(this)))
+                .bounds(menuX, y, menuButtonWidth, DEFAULT_BUTTON_HEIGHT)
+                .build()
+        );
+        addRenderableWidget(
+            Button.builder(Component.literal("Observability"), button -> this.minecraft.setScreen(new MetricsSettingsScreen(this)))
+                .bounds(columnX(menuX, menuButtonWidth, DEFAULT_SPLIT_GAP, 1), y, menuButtonWidth, DEFAULT_BUTTON_HEIGHT)
+                .build()
+        );
+        addRenderableWidget(
+            Button.builder(Component.literal("Runtime"), button -> this.minecraft.setScreen(new RuntimeSettingsScreen(this)))
+                .bounds(columnX(menuX, menuButtonWidth, DEFAULT_SPLIT_GAP, 2), y, menuButtonWidth, DEFAULT_BUTTON_HEIGHT)
+                .build()
+        );
+        y += ROW_HEIGHT;
+
+        addRenderableWidget(
+            Button.builder(Component.literal("Whitelist"), button -> this.minecraft.setScreen(new WhitelistScreen(this)))
+                .bounds(x, y, buttonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
         y += ROW_HEIGHT;
 
         int halfWidth = splitWidth(buttonWidth, 2, DEFAULT_SPLIT_GAP);
-        addDrawableChild(
-            ButtonWidget.builder(Text.literal("Case Review"), button -> this.client.setScreen(new ReviewScreen(this)))
-                .dimensions(x, y, halfWidth, DEFAULT_BUTTON_HEIGHT)
+        addRenderableWidget(
+            Button.builder(Component.literal("Case Review"), button -> this.minecraft.setScreen(new ReviewScreen(this)))
+                .bounds(x, y, halfWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
-        contributeTrainingButton = addDrawableChild(
-            ButtonWidget.builder(Text.literal("Contribute Training Data"), button -> contributeTrainingData())
-                .dimensions(columnX(x, halfWidth, DEFAULT_SPLIT_GAP, 1), y, halfWidth, DEFAULT_BUTTON_HEIGHT)
+        contributeTrainingButton = addRenderableWidget(
+            Button.builder(Component.literal("Contribute Training Data"), button -> contributeTrainingData())
+                .bounds(columnX(x, halfWidth, DEFAULT_SPLIT_GAP, 1), y, halfWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
         trainingHubNoteY = y + ROW_HEIGHT;
@@ -141,22 +141,22 @@ public final class ScamScreenerMainScreen extends BaseScreen {
     }
 
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float deltaTicks) {
-        super.render(context, mouseX, mouseY, deltaTicks);
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float deltaTicks) {
+        super.extractRenderState(context, mouseX, mouseY, deltaTicks);
 
-        context.getMatrices().pushMatrix();
-        context.getMatrices().scale(0.5F, 0.5F);
-        context.drawCenteredTextWithShadow(
-            this.textRenderer,
+        context.pose().pushMatrix();
+        context.pose().scale(0.5F, 0.5F);
+        context.centeredText(
+            this.font,
             AUTHOR_TEXT,
             this.width,
             (TITLE_Y + 12) * 2,
             opaqueColor(0x8C8C8C)
         );
-        context.getMatrices().popMatrix();
+        context.pose().popMatrix();
 
-        context.drawCenteredTextWithShadow(
-            this.textRenderer,
+        context.centeredText(
+            this.font,
             TRAINING_HUB_SOON_TEXT,
             this.width / 2,
             trainingHubNoteY,
@@ -214,20 +214,20 @@ public final class ScamScreenerMainScreen extends BaseScreen {
     }
 
     private void openTrainingHub() {
-        if (this.client == null) {
+        if (this.minecraft == null) {
             MessageDispatcher.reply(ClientMessages.trainingHubOpenFailed("Client unavailable."));
             return;
         }
 
-        this.client.setScreen(new ConfirmLinkScreen(open -> {
+        this.minecraft.setScreen(new ConfirmLinkScreen(open -> {
             if (open) {
                 try {
-                    Util.getOperatingSystem().open(TRAINING_HUB_URL);
+                    Util.getPlatform().openUri(TRAINING_HUB_URL);
                 } catch (Exception exception) {
                     MessageDispatcher.reply(ClientMessages.trainingHubOpenFailed(exception.getMessage()));
                 }
             }
-            this.client.setScreen(this);
+            this.minecraft.setScreen(this);
         }, TRAINING_HUB_URL, true));
     }
 
@@ -235,7 +235,7 @@ public final class ScamScreenerMainScreen extends BaseScreen {
         RuntimeConfig config = ScamScreenerRuntime.getInstance().config();
 
         if (alertLevelButton != null) {
-            alertLevelButton.setMessage(Text.literal("Alert Threshold: " + config.alerts().minimumRiskLevel().name()));
+            alertLevelButton.setMessage(Component.literal("Alert Threshold: " + config.alerts().minimumRiskLevel().name()));
         }
         if (autoCaptureButton != null) {
             AutoCaptureAlertLevel autoCaptureLevel = config.alerts().autoCaptureLevel();

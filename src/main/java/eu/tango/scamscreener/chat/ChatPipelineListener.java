@@ -173,13 +173,13 @@ public final class ChatPipelineListener {
         );
     }
 
-    static ChatEvent classifyGameMessage(net.minecraft.text.Text message, int maxChatLength) {
-        String rawLine = message == null ? "" : message.asTruncatedString(maxChatLength);
+    static ChatEvent classifyGameMessage(net.minecraft.network.chat.Component message, int maxChatLength) {
+        String rawLine = message == null ? "" : message.getString(maxChatLength);
         return classifyVisibleLine(rawLine, System.currentTimeMillis());
     }
 
     static ChatEvent classifyChatMessage(
-        net.minecraft.text.Text message,
+        net.minecraft.network.chat.Component message,
         com.mojang.authlib.GameProfile sender,
         Object params,
         Instant receptionTimestamp,

@@ -5,10 +5,6 @@ import eu.tango.scamscreener.gui.base.BaseScreen;
 import eu.tango.scamscreener.message.AlertContextRegistry;
 import eu.tango.scamscreener.pipeline.data.PipelineDecision;
 import eu.tango.scamscreener.review.ReviewCaseMessage;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.text.Text;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
@@ -17,6 +13,10 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 
 /**
  * Scrollable v1-style alert detail screen backed by the new v2 alert context.
@@ -42,7 +42,7 @@ public final class AlertInfoScreen extends BaseScreen {
      * @param context the alert context to inspect
      */
     public AlertInfoScreen(Screen parent, AlertContextRegistry.AlertContext context) {
-        super(Text.literal("Alert Rule Details"), parent);
+        super(Component.literal("Alert Rule Details"), parent);
         this.context = context;
     }
 
@@ -56,22 +56,22 @@ public final class AlertInfoScreen extends BaseScreen {
         textAreaY = CONTENT_TOP;
         textAreaHeight = Math.max(80, reviewButtonY - textAreaY - 10);
 
-        addDrawableChild(
-            ButtonWidget.builder(Text.literal("Review Case"), button -> openReviewCase())
-                .dimensions(textAreaX, reviewButtonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
+        addRenderableWidget(
+            Button.builder(Component.literal("Review Case"), button -> openReviewCase())
+                .bounds(textAreaX, reviewButtonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         ).active = context != null;
-        addDrawableChild(
-            ButtonWidget.builder(Text.literal("Close"), button -> close())
-                .dimensions(textAreaX, closeButtonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
+        addRenderableWidget(
+            Button.builder(Component.literal("Close"), button -> onClose())
+                .bounds(textAreaX, closeButtonY, buttonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
         rebuildWrappedLines();
     }
 
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float deltaTicks) {
-        super.render(context, mouseX, mouseY, deltaTicks);
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float deltaTicks) {
+        super.extractRenderState(context, mouseX, mouseY, deltaTicks);
         renderTextBox(context);
     }
 
@@ -86,7 +86,7 @@ public final class AlertInfoScreen extends BaseScreen {
     }
 
     @Override
-    public boolean keyPressed(net.minecraft.client.input.KeyInput event) {
+    public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
         if (event == null) {
             return false;
         }
@@ -120,14 +120,14 @@ public final class AlertInfoScreen extends BaseScreen {
         return super.keyPressed(event);
     }
 
-    private void renderTextBox(DrawContext context) {
+    private void renderTextBox(GuiGraphicsExtractor context) {
         context.fill(textAreaX, textAreaY, textAreaX + textAreaWidth, textAreaY + textAreaHeight, 0xA0101010);
         context.fill(textAreaX, textAreaY, textAreaX + textAreaWidth, textAreaY + 1, 0xFF5A5A5A);
         context.fill(textAreaX, textAreaY + textAreaHeight - 1, textAreaX + textAreaWidth, textAreaY + textAreaHeight, 0xFF5A5A5A);
         context.fill(textAreaX, textAreaY, textAreaX + 1, textAreaY + textAreaHeight, 0xFF5A5A5A);
         context.fill(textAreaX + textAreaWidth - 1, textAreaY, textAreaX + textAreaWidth, textAreaY + textAreaHeight, 0xFF5A5A5A);
 
-        int lineHeight = this.textRenderer.fontHeight + 1;
+        int lineHeight = this.font.lineHeight + 1;
         int startX = textAreaX + BOX_PADDING;
         int startY = textAreaY + BOX_PADDING;
         int visible = visibleLineCount();
@@ -138,9 +138,9 @@ public final class AlertInfoScreen extends BaseScreen {
             }
 
             InfoLine line = wrappedLines.get(absoluteIndex);
-            context.drawTextWithShadow(
-                this.textRenderer,
-                Text.literal(line.text()),
+            context.text(
+                this.font,
+                Component.literal(line.text()),
                 startX,
                 startY + (lineIndex * lineHeight),
                 opaqueColor(line.color())
@@ -162,11 +162,11 @@ public final class AlertInfoScreen extends BaseScreen {
     }
 
     private void openReviewCase() {
-        if (this.client == null || context == null) {
+        if (this.minecraft == null || context == null) {
             return;
         }
 
-        this.client.setScreen(new AlertManageScreen(this, context));
+        this.minecraft.setScreen(new AlertManageScreen(this, context));
     }
 
     private void rebuildWrappedLines() {
@@ -299,12 +299,12 @@ public final class AlertInfoScreen extends BaseScreen {
         if (text == null || text.isEmpty()) {
             return 0;
         }
-        if (this.textRenderer.getWidth(text) <= maxWidth) {
+        if (this.font.width(text) <= maxWidth) {
             return text.length();
         }
 
         int candidate = text.length();
-        while (candidate > 1 && this.textRenderer.getWidth(text.substring(0, candidate)) > maxWidth) {
+        while (candidate > 1 && this.font.width(text.substring(0, candidate)) > maxWidth) {
             candidate--;
         }
 
@@ -317,7 +317,7 @@ public final class AlertInfoScreen extends BaseScreen {
     }
 
     private int visibleLineCount() {
-        int lineHeight = this.textRenderer.fontHeight + 1;
+        int lineHeight = this.font.lineHeight + 1;
         return Math.max(1, (textAreaHeight - (BOX_PADDING * 2)) / lineHeight);
     }
 
