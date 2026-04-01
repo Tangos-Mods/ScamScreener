@@ -234,7 +234,7 @@ Pipeline contributors are also supported at runtime. Mods can register the Fabri
    - update `CHANGELOG.md`
 4. Publish:
    - set `MODRINTH_TOKEN` and `CURSEFORGE_TOKEN`
-   - run `.\gradlew.bat publishMods`
+   - run `.\gradlew.bat publishAllMods`
 
 Publish uploads use `MODRINTH.md` as changelog text.
 
