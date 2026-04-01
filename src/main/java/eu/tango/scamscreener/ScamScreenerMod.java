@@ -10,14 +10,18 @@ import eu.tango.scamscreener.profiler.ScamScreenerProfiler;
 import eu.tango.scamscreener.profiler.web.ProfilerWebService;
 import eu.tango.scamscreener.review.ReviewCaptureHandler;
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.resources.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ScamScreenerMod implements ClientModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger("scamscreener");
-    public static final String VERSION = "2.2.0";
-    public static final String MINECRAFT = "26.1";
+    private static final String MOD_ID = "scamscreener";
+    private static final String DEFAULT_MOD_VERSION = "2.2.1";
+    private static final String DEFAULT_MINECRAFT_VERSION = "26.1";
+    public static final String VERSION = resolveModVersion();
+    public static final String MINECRAFT = resolveMinecraftVersion();
 
     @Override
     public void onInitializeClient() {
@@ -36,5 +40,26 @@ public class ScamScreenerMod implements ClientModInitializer {
 
     public static Identifier id(String namespace, String path) {
         return Identifier.fromNamespaceAndPath(namespace, path);
+    }
+
+    private static String resolveModVersion() {
+        String fullVersion = FabricLoader.getInstance()
+            .getModContainer(MOD_ID)
+            .map(container -> container.getMetadata().getVersion().getFriendlyString())
+            .orElse(DEFAULT_MOD_VERSION);
+
+        int separatorIndex = fullVersion.indexOf('+');
+        if (separatorIndex <= 0) {
+            return fullVersion;
+        }
+
+        return fullVersion.substring(0, separatorIndex);
+    }
+
+    private static String resolveMinecraftVersion() {
+        return FabricLoader.getInstance()
+            .getModContainer("minecraft")
+            .map(container -> container.getMetadata().getVersion().getFriendlyString())
+            .orElse(DEFAULT_MINECRAFT_VERSION);
     }
 }

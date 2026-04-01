@@ -37,38 +37,47 @@ public final class DecisionMessageHandler {
                 return;
             }
 
-            RuntimeConfig.OutputSettings output = ScamScreenerRuntime.getInstance().config().output();
-            AlertRiskLevel minimumRiskLevel = ScamScreenerRuntime.getInstance().config().alerts().minimumRiskLevel();
-            AlertSeverity severity = AlertSeverity.fromDecision(decision);
+            RuntimeConfig runtimeConfig = ScamScreenerRuntime.getInstance().config();
             switch (decision.getOutcome()) {
-                case REVIEW, BLOCK -> {
-                    if (output.isShowRiskWarningMessage()
-                        && severity.riskLevel().isAtLeast(minimumRiskLevel)
-                        && meetsVisibleRiskWarningThreshold(decision)) {
-                        MessageDispatcher.reply(DecisionMessages.riskWarning(chatEvent, decision));
-                    }
-                    if (output.isPingOnRiskWarning()
-                        && severity.riskLevel().isAtLeast(minimumRiskLevel)
-                        && meetsVisibleRiskWarningThreshold(decision)) {
-                        NotificationService.playWarningTone();
-                    }
-                }
-                case BLACKLISTED -> {
-                    if (output.isShowBlacklistWarningMessage()) {
-                        MessageDispatcher.reply(DecisionMessages.blacklistWarning(chatEvent, decision));
-                    }
-                    if (output.isPingOnBlacklistWarning()) {
-                        NotificationService.playWarningTone();
-                    }
-                    if (ScamScreenerRuntime.getInstance().config().safety().isAutoLeaveOnBlacklist()) {
-                        MessageDispatcher.sendCommand("p leave");
-                        if (output.isShowAutoLeaveMessage()) {
-                            MessageDispatcher.reply(ClientMessages.autoLeaveExecuted(chatEvent == null ? "" : chatEvent.getSenderName()));
-                        }
-                    }
-                }
+                case REVIEW, BLOCK -> handleRiskDecision(chatEvent, decision, runtimeConfig);
+                case BLACKLISTED -> handleBlacklistDecision(chatEvent, decision, runtimeConfig);
                 default -> {
                 }
+            }
+        }
+    }
+
+    private static void handleRiskDecision(ChatEvent chatEvent, PipelineDecision decision, RuntimeConfig runtimeConfig) {
+        RuntimeConfig.OutputSettings output = runtimeConfig.output();
+        AlertSeverity severity = AlertSeverity.fromDecision(decision);
+        AlertRiskLevel minimumRiskLevel = runtimeConfig.alerts().minimumRiskLevel();
+        boolean shouldNotify = severity.riskLevel().isAtLeast(minimumRiskLevel)
+            && meetsVisibleRiskWarningThreshold(decision);
+
+        if (output.isShowRiskWarningMessage() && shouldNotify) {
+            MessageDispatcher.reply(DecisionMessages.riskWarning(chatEvent, decision));
+            var educationFollowUp = EducationMessages.followUpFor(decision);
+            if (educationFollowUp != null) {
+                MessageDispatcher.reply(educationFollowUp);
+            }
+        }
+        if (output.isPingOnRiskWarning() && shouldNotify) {
+            NotificationService.playWarningTone();
+        }
+    }
+
+    private static void handleBlacklistDecision(ChatEvent chatEvent, PipelineDecision decision, RuntimeConfig runtimeConfig) {
+        RuntimeConfig.OutputSettings output = runtimeConfig.output();
+        if (output.isShowBlacklistWarningMessage()) {
+            MessageDispatcher.reply(DecisionMessages.blacklistWarning(chatEvent, decision));
+        }
+        if (output.isPingOnBlacklistWarning()) {
+            NotificationService.playWarningTone();
+        }
+        if (runtimeConfig.safety().isAutoLeaveOnBlacklist()) {
+            MessageDispatcher.sendCommand("p leave");
+            if (output.isShowAutoLeaveMessage()) {
+                MessageDispatcher.reply(ClientMessages.autoLeaveExecuted(chatEvent == null ? "" : chatEvent.getSenderName()));
             }
         }
     }

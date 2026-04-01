@@ -48,4 +48,18 @@ class ClientMessagesTest {
         assertFalse(hover.contains("line 12"));
         assertTrue(hover.endsWith("and many more..."));
     }
+
+    @Test
+    void commandHelpListsEducationDisableCommand() {
+        assertTrue(ClientMessages.commandHelp().getString().contains("edu disable"));
+    }
+
+    @Test
+    void trainingUploadRetryMessageIncludesRemainingRetriesAndDelay() {
+        String message = ClientMessages.trainingUploadRetryScheduled("network timeout", 3, 30).getString();
+
+        assertTrue(message.contains("Training upload failed: network timeout."));
+        assertTrue(message.contains("Retrying automatically 3 more times"));
+        assertTrue(message.contains("30s between attempts"));
+    }
 }

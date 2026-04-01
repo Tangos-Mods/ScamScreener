@@ -79,9 +79,9 @@ public final class TrainingCaseV2Mapper {
 
             messages.add(new TrainingCaseV2.MessageData(
                 Math.max(0, message.getMessageIndex()),
+                normalizeValue(message.getSpeakerRole()),
                 ReviewPersistenceSanitizer.sanitizePersistedText(message.getCleanText(), entry.getSenderName()),
                 normalizeValue(message.getMessageSourceType()),
-                normalizeValue(message.getSpeakerRole()),
                 message.isTriggerMessage(),
                 caseRoleId(message.getCaseRole()),
                 List.copyOf(message.getSignalTagIds()),
@@ -118,6 +118,7 @@ public final class TrainingCaseV2Mapper {
                     stageResult.getStageId(),
                     decisionId(stageResult.getDecision()),
                     stageResult.getScoreDelta(),
+                    normalizeValue(stageResult.getReason()),
                     stageResult.getReasonIds()
                 ));
             }

@@ -24,7 +24,9 @@ import eu.tango.scamscreener.pipeline.state.BehaviorStore;
 import eu.tango.scamscreener.pipeline.state.FunnelStore;
 import eu.tango.scamscreener.pipeline.state.TrendStore;
 import eu.tango.scamscreener.review.ReviewStore;
+import eu.tango.scamscreener.training.ScamScreenerClientSession;
 import eu.tango.scamscreener.training.TrainingCaseExportService;
+import eu.tango.scamscreener.training.TrainingHubUploadWorker;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import net.fabricmc.loader.api.FabricLoader;
@@ -32,6 +34,7 @@ import net.fabricmc.loader.api.FabricLoader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Central runtime container for shared ScamScreener services.
@@ -74,9 +77,13 @@ public final class ScamScreenerRuntime {
     @Getter
     @Accessors(fluent = true)
     private final TrainingCaseExportService trainingCaseExportService;
+    @Getter
+    @Accessors(fluent = true)
+    private final TrainingHubUploadWorker trainingHubUploadWorker;
     private final List<StageContribution> stageContributions;
     private volatile RuntimeConfig runtimeConfig;
     private volatile RulesConfig rulesConfig;
+    private volatile ScamScreenerClientSession trainingHubSession;
     @Getter
     @Accessors(fluent = true)
     private volatile PipelineEngine pipelineEngine;
@@ -90,6 +97,7 @@ public final class ScamScreenerRuntime {
         reviewConfigStore = new ReviewConfigStore();
         runtimeConfig = runtimeConfigStore.loadOrCreate();
         rulesConfig = rulesConfigStore.loadOrCreate();
+        String trainingClientId = ensureTrainingClientId();
         whitelist = new Whitelist(this::saveWhitelist);
         blacklist = new Blacklist(this::saveBlacklist);
         reviewStore = new ReviewStore(this::saveReviewStore);
@@ -99,7 +107,14 @@ public final class ScamScreenerRuntime {
         funnelStore = new FunnelStore();
         recentChatCache = new RecentChatCache();
         mutePatternManager = new MutePatternManager();
-        trainingCaseExportService = new TrainingCaseExportService();
+        trainingCaseExportService = new TrainingCaseExportService(trainingClientId);
+        trainingHubUploadWorker = new TrainingHubUploadWorker(
+            trainingCaseExportService,
+            reviewStore::entries,
+            this::trainingHubSession,
+            this::clearTrainingHubSession,
+            this::config
+        );
         stageContributions = loadStageContributions();
         mutePatternManager.reloadFromConfig(runtimeConfig);
         applyRuleStoreSettings();
@@ -169,10 +184,42 @@ public final class ScamScreenerRuntime {
     }
 
     /**
+     * Returns the active in-memory Training Hub session, clearing it when expired.
+     *
+     * @return the active authenticated upload session, when still valid
+     */
+    public synchronized ScamScreenerClientSession trainingHubSession() {
+        ScamScreenerClientSession currentSession = trainingHubSession;
+        if (currentSession != null && currentSession.isExpired()) {
+            trainingHubSession = null;
+            return null;
+        }
+
+        return currentSession;
+    }
+
+    /**
+     * Stores the current in-memory Training Hub session.
+     *
+     * @param trainingHubSession the authenticated upload session to reuse
+     */
+    public synchronized void setTrainingHubSession(ScamScreenerClientSession trainingHubSession) {
+        this.trainingHubSession = trainingHubSession;
+    }
+
+    /**
+     * Clears the current in-memory Training Hub session.
+     */
+    public synchronized void clearTrainingHubSession() {
+        trainingHubSession = null;
+    }
+
+    /**
      * Reloads runtime config and persisted list contents from disk.
      */
     public synchronized void reload() {
         runtimeConfig = runtimeConfigStore.reload();
+        trainingCaseExportService.setTrainingClientId(ensureTrainingClientId());
         rulesConfig = rulesConfigStore.reload();
         applyRuleStoreSettings();
         resetDetectionState();
@@ -252,6 +299,18 @@ public final class ScamScreenerRuntime {
             runtimeConfig.pipeline().reviewThreshold(),
             stageContributions
         );
+    }
+
+    private String ensureTrainingClientId() {
+        String trainingClientId = runtimeConfig.trainingClientId();
+        if (!trainingClientId.isBlank()) {
+            return trainingClientId;
+        }
+
+        trainingClientId = UUID.randomUUID().toString();
+        runtimeConfig.setTrainingClientId(trainingClientId);
+        runtimeConfigStore.saveAsync(runtimeConfig);
+        return trainingClientId;
     }
 
     private static List<StageContribution> loadStageContributions() {

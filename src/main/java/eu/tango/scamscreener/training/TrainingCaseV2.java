@@ -31,9 +31,9 @@ public record TrainingCaseV2(
      * One canonical case message.
      *
      * @param index stable message order inside the case
+     * @param role normalized speaker role used by current hub renderers
      * @param text persisted message text (UUID-sanitized)
-     * @param sourceType message source type id
-     * @param speakerRole message speaker role id
+     * @param source message source type id
      * @param trigger indicates whether the message triggered the review
      * @param caseRole reviewed case role
      * @param signalTagIds explicit reviewed signal tags
@@ -41,9 +41,9 @@ public record TrainingCaseV2(
      */
     public record MessageData(
         int index,
+        String role,
         String text,
-        String sourceType,
-        String speakerRole,
+        String source,
         boolean trigger,
         String caseRole,
         List<String> signalTagIds,
@@ -71,14 +71,16 @@ public record TrainingCaseV2(
      * One normalized observed stage result.
      *
      * @param stageId stable stage id
-     * @param decision normalized pipeline decision
-     * @param scoreDelta captured score contribution
+     * @param outcome normalized pipeline decision
+     * @param score captured score contribution
+     * @param reason raw human-readable stage reason
      * @param reasonIds stable reason ids derived from the captured stage reason
      */
     public record ObservedStageResult(
         String stageId,
-        String decision,
-        int scoreDelta,
+        String outcome,
+        int score,
+        String reason,
         List<String> reasonIds
     ) {
     }

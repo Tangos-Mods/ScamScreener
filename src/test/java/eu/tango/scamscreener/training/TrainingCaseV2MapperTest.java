@@ -79,7 +79,9 @@ class TrainingCaseV2MapperTest {
         assertEquals("case.review-7", trainingCase.caseId());
         assertEquals("risk", trainingCase.caseData().label());
         assertEquals(2, trainingCase.caseData().messages().size());
+        assertEquals("other", trainingCase.caseData().messages().get(1).role());
         assertEquals("Alpha add me on discord", trainingCase.caseData().messages().get(1).text());
+        assertEquals("player", trainingCase.caseData().messages().get(1).source());
         assertEquals(
             List.of("stage.rule::rule.external_platform", "stage.behavior::behavior.repeated_message"),
             trainingCase.caseData().messages().get(1).mappingIds()
@@ -88,6 +90,9 @@ class TrainingCaseV2MapperTest {
 
         assertEquals("review", trainingCase.observedPipeline().outcomeAtCapture());
         assertEquals("stage.rule", trainingCase.observedPipeline().decidedByStageId());
+        assertEquals("pass", trainingCase.observedPipeline().stageResults().get(0).outcome());
+        assertEquals(20, trainingCase.observedPipeline().stageResults().get(0).score());
+        assertEquals("External platform push: \"discord\"", trainingCase.observedPipeline().stageResults().get(0).reason());
         assertEquals(
             List.of("rule.external_platform"),
             trainingCase.observedPipeline().stageResults().get(0).reasonIds()

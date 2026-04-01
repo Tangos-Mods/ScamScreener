@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class TrainingCaseExportServiceTest {
@@ -29,7 +30,7 @@ class TrainingCaseExportServiceTest {
 
         Path trainingCasesFile = tempDir.resolve("training-cases-v2.jsonl");
 
-        TrainingCaseExportService.TrainingCaseExportResult result = new TrainingCaseExportService().exportReviewedCases(
+        TrainingCaseExportService.TrainingCaseExportResult result = new TrainingCaseExportService("client-abc").exportReviewedCases(
             List.of(pending, risk, safe),
             trainingCasesFile
         );
@@ -37,13 +38,21 @@ class TrainingCaseExportServiceTest {
         assertEquals(2, result.exportedCaseCount());
 
         List<String> trainingLines = Files.readAllLines(trainingCasesFile);
+        String rawContent = Files.readString(trainingCasesFile);
 
         assertEquals(2, trainingLines.size());
-        assertTrue(trainingLines.getFirst().contains("\"caseId\":\"case_000001\""));
-        assertTrue(trainingLines.get(1).contains("\"caseId\":\"case_000002\""));
+        assertTrue(trainingLines.getFirst().contains("\"caseId\":\"case.client-abc.review-2\""));
+        assertTrue(trainingLines.get(1).contains("\"caseId\":\"case.client-abc.review-3\""));
         assertTrue(trainingLines.getFirst().contains("\"format\":\"training_case_v2\""));
+        assertTrue(trainingLines.getFirst().contains("\"role\":\"other\""));
+        assertTrue(trainingLines.getFirst().contains("\"source\":\"player\""));
+        assertTrue(trainingLines.getFirst().contains("\"outcome\":\"pass\""));
+        assertTrue(trainingLines.getFirst().contains("\"score\":20"));
+        assertTrue(trainingLines.getFirst().contains("\"reason\":\"External platform push: \\\"discord\\\"\""));
         assertTrue(trainingLines.getFirst().contains("\"fixedStageCalibrations\""));
         assertTrue(trainingLines.getFirst().contains("\"mappingId\":\"stage.rule::rule.external_platform\""));
+        assertTrue(rawContent.contains("\n"));
+        assertFalse(rawContent.contains("\r\n"));
     }
 
     @Test
@@ -54,7 +63,7 @@ class TrainingCaseExportServiceTest {
 
         Path trainingCasesFile = tempDir.resolve("training-cases-v2-async.jsonl");
 
-        TrainingCaseExportService.TrainingCaseExportResult result = new TrainingCaseExportService()
+        TrainingCaseExportService.TrainingCaseExportResult result = new TrainingCaseExportService("client-async")
             .exportReviewedCasesAsync(List.of(pending, risk, safe), trainingCasesFile)
             .get();
 
@@ -63,8 +72,28 @@ class TrainingCaseExportServiceTest {
         List<String> trainingLines = Files.readAllLines(trainingCasesFile);
 
         assertEquals(2, trainingLines.size());
-        assertTrue(trainingLines.getFirst().contains("\"caseId\":\"case_000001\""));
-        assertTrue(trainingLines.get(1).contains("\"caseId\":\"case_000002\""));
+        assertTrue(trainingLines.getFirst().contains("\"caseId\":\"case.client-async.review-2\""));
+        assertTrue(trainingLines.get(1).contains("\"caseId\":\"case.client-async.review-3\""));
+    }
+
+    @Test
+    void writesEachCaseIdOnlyOncePerExport() throws IOException {
+        ReviewEntry first = reviewedEntry("review-2", ReviewVerdict.RISK, 2_000L);
+        ReviewEntry updated = reviewedEntry("review-2", ReviewVerdict.SAFE, 4_000L);
+
+        Path trainingCasesFile = tempDir.resolve("training-cases-v2-deduplicated.jsonl");
+
+        TrainingCaseExportService.TrainingCaseExportResult result = new TrainingCaseExportService("client-dup").exportReviewedCases(
+            List.of(first, updated),
+            trainingCasesFile
+        );
+
+        List<String> trainingLines = Files.readAllLines(trainingCasesFile);
+
+        assertEquals(1, result.exportedCaseCount());
+        assertEquals(1, trainingLines.size());
+        assertTrue(trainingLines.getFirst().contains("\"caseId\":\"case.client-dup.review-2\""));
+        assertTrue(trainingLines.getFirst().contains("\"label\":\"safe\""));
     }
 
     private static ReviewEntry reviewedEntry(String id, ReviewVerdict verdict, long capturedAtMs) {
