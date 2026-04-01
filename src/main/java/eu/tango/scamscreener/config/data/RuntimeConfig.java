@@ -5,6 +5,11 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.LinkedHashSet;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+
 /**
  * Runtime-wide configuration loaded from {@code runtime.json}.
  *
@@ -18,6 +23,9 @@ import lombok.Setter;
 public final class RuntimeConfig implements VersionedConfig {
     private int version;
     private boolean enabled = true;
+    private String trainingClientId = "";
+    private int trainingUploadRetryCount = 3;
+    private int trainingUploadRetryDelaySeconds = 30;
     private PipelineSettings pipeline = new PipelineSettings();
     private AlertSettings alerts = new AlertSettings();
     private OutputSettings output = new OutputSettings();
@@ -37,6 +45,37 @@ public final class RuntimeConfig implements VersionedConfig {
         }
 
         return pipeline;
+    }
+
+    /**
+     * Returns the normalized installation-local training export id.
+     *
+     * @return the persisted training client id, or an empty string when unset
+     */
+    public String trainingClientId() {
+        if (trainingClientId == null) {
+            trainingClientId = "";
+        }
+
+        return trainingClientId.trim().toLowerCase(Locale.ROOT);
+    }
+
+    /**
+     * Returns the normalized number of automatic Training Hub upload retries.
+     *
+     * @return the configured retry count
+     */
+    public int trainingUploadRetryCount() {
+        return Math.max(0, Math.min(10, trainingUploadRetryCount));
+    }
+
+    /**
+     * Returns the normalized delay between Training Hub upload retries in seconds.
+     *
+     * @return the configured retry delay in seconds
+     */
+    public int trainingUploadRetryDelaySeconds() {
+        return Math.max(1, Math.min(3600, trainingUploadRetryDelaySeconds));
     }
 
     /**
@@ -188,6 +227,20 @@ public final class RuntimeConfig implements VersionedConfig {
         private boolean pingOnBlacklistWarning = true;
         private boolean showAutoLeaveMessage = true;
         private boolean debugLogging = false;
+        private Set<String> disabledEducationMessageIds = new LinkedHashSet<>();
+
+        /**
+         * Returns the normalized set of disabled education follow-up ids.
+         *
+         * @return the configured disabled education ids
+         */
+        public Set<String> disabledEducationMessageIds() {
+            if (disabledEducationMessageIds == null) {
+                disabledEducationMessageIds = new LinkedHashSet<>();
+            }
+
+            return disabledEducationMessageIds;
+        }
     }
 
     /**
@@ -252,14 +305,14 @@ public final class RuntimeConfig implements VersionedConfig {
     @Setter
     @NoArgsConstructor
     public static final class DebugSettings {
-        private java.util.Map<String, Boolean> flags = new java.util.LinkedHashMap<>();
+        private Map<String, Boolean> flags = new java.util.LinkedHashMap<>();
 
         /**
          * Returns the normalized debug-flag map.
          *
          * @return the configured debug flags
          */
-        public java.util.Map<String, Boolean> flags() {
+        public Map<String, Boolean> flags() {
             if (flags == null) {
                 flags = new java.util.LinkedHashMap<>();
             }

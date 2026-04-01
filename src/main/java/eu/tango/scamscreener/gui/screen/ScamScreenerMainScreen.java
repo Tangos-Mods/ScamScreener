@@ -5,24 +5,17 @@ import eu.tango.scamscreener.config.data.AlertRiskLevel;
 import eu.tango.scamscreener.config.data.AutoCaptureAlertLevel;
 import eu.tango.scamscreener.config.data.RuntimeConfig;
 import eu.tango.scamscreener.gui.base.BaseScreen;
-import eu.tango.scamscreener.message.ClientMessages;
-import eu.tango.scamscreener.message.MessageDispatcher;
 import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.ConfirmLinkScreen;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.text.Text;
-import net.minecraft.util.Util;
-
-import java.util.concurrent.CompletionException;
 
 /**
  * Root settings hub for ScamScreener.
  */
 public final class ScamScreenerMainScreen extends BaseScreen {
-    private static final String TRAINING_HUB_URL = "https://scamscreener.creepans.net/";
     private static final Text AUTHOR_TEXT = Text.literal("Made by Pankraz01");
-    private static final Text TRAINING_HUB_SOON_TEXT = Text.literal("Training Hub coming soon.");
+    private static final Text TRAINING_HUB_NOTE_TEXT = Text.literal("ScamScreener login only. Never use Minecraft credentials.");
 
     private ButtonWidget alertLevelButton;
     private ButtonWidget autoCaptureButton;
@@ -157,7 +150,7 @@ public final class ScamScreenerMainScreen extends BaseScreen {
 
         context.drawCenteredTextWithShadow(
             this.textRenderer,
-            TRAINING_HUB_SOON_TEXT,
+            TRAINING_HUB_NOTE_TEXT,
             this.width / 2,
             trainingHubNoteY,
             opaqueColor(0xB8B8B8)
@@ -194,41 +187,14 @@ public final class ScamScreenerMainScreen extends BaseScreen {
         refreshButtons();
     }
 
-    private void exportTrainingCases() {
-        MessageDispatcher.reply(ClientMessages.trainingCasesExportStarted());
-        ScamScreenerRuntime.getInstance().trainingCaseExportService()
-            .exportReviewedCasesAsync(ScamScreenerRuntime.getInstance().reviewStore().entries())
-            .whenComplete((exportResult, throwable) -> {
-                if (throwable != null) {
-                    MessageDispatcher.reply(ClientMessages.trainingCasesExportFailed(rootCauseMessage(throwable)));
-                    return;
-                }
-
-                MessageDispatcher.reply(ClientMessages.trainingCasesExported(exportResult));
-            });
-    }
-
     private void contributeTrainingData() {
-        exportTrainingCases();
         openTrainingHub();
     }
 
     private void openTrainingHub() {
-        if (this.client == null) {
-            MessageDispatcher.reply(ClientMessages.trainingHubOpenFailed("Client unavailable."));
-            return;
+        if (this.client != null) {
+            this.client.setScreen(new TrainingHubScreen(this));
         }
-
-        this.client.setScreen(new ConfirmLinkScreen(open -> {
-            if (open) {
-                try {
-                    Util.getOperatingSystem().open(TRAINING_HUB_URL);
-                } catch (Exception exception) {
-                    MessageDispatcher.reply(ClientMessages.trainingHubOpenFailed(exception.getMessage()));
-                }
-            }
-            this.client.setScreen(this);
-        }, TRAINING_HUB_URL, true));
     }
 
     private void refreshButtons() {
@@ -250,17 +216,7 @@ public final class ScamScreenerMainScreen extends BaseScreen {
             muteFilterButton.setMessage(toggleText("Mute Filter: ", ScamScreenerRuntime.getInstance().mutePatternManager().isEnabled()));
         }
         if (contributeTrainingButton != null) {
-            contributeTrainingButton.active = false;
+            contributeTrainingButton.active = true;
         }
-    }
-
-    private static String rootCauseMessage(Throwable throwable) {
-        Throwable rootCause = throwable;
-        while (rootCause instanceof CompletionException && rootCause.getCause() != null) {
-            rootCause = rootCause.getCause();
-        }
-
-        String message = rootCause == null ? null : rootCause.getMessage();
-        return message == null || message.isBlank() ? "unknown error" : message;
     }
 }

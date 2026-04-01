@@ -15,8 +15,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -26,6 +28,19 @@ public final class TrainingCaseExportService {
     private static final Gson GSON = new GsonBuilder()
         .disableHtmlEscaping()
         .create();
+    private volatile String trainingClientId;
+
+    public TrainingCaseExportService() {
+        this("local");
+    }
+
+    public TrainingCaseExportService(String trainingClientId) {
+        setTrainingClientId(trainingClientId);
+    }
+
+    public void setTrainingClientId(String trainingClientId) {
+        this.trainingClientId = normalizeTrainingClientId(trainingClientId);
+    }
 
     /**
      * Exports the provided review entries into the default training export file.
@@ -81,21 +96,19 @@ public final class TrainingCaseExportService {
         Path trainingCasesFile
     ) {
         List<ReviewEntry> exportableEntries = exportableEntries(entries);
-        List<TrainingCaseV2> trainingCases = new ArrayList<>(exportableEntries.size());
+        Map<String, TrainingCaseV2> trainingCasesById = new LinkedHashMap<>(exportableEntries.size());
 
-        for (int index = 0; index < exportableEntries.size(); index++) {
-            ReviewEntry entry = exportableEntries.get(index);
-            String caseId = String.format(Locale.ROOT, "case_%06d", index + 1);
-            TrainingCaseV2 trainingCase = TrainingCaseV2Mapper.fromReviewEntry(entry, caseId);
-            if (trainingCase == null) {
+        for (ReviewEntry entry : exportableEntries) {
+            TrainingCaseV2 trainingCase = TrainingCaseV2Mapper.fromReviewEntry(entry, buildCaseId(entry));
+            if (trainingCase == null || trainingCase.caseId() == null || trainingCase.caseId().isBlank()) {
                 continue;
             }
 
-            trainingCases.add(trainingCase);
+            trainingCasesById.put(trainingCase.caseId(), trainingCase);
         }
 
-        writeJsonLines(trainingCasesFile, trainingCases);
-        return new TrainingCaseExportResult(trainingCases.size(), trainingCasesFile);
+        writeJsonLines(trainingCasesFile, List.copyOf(trainingCasesById.values()));
+        return new TrainingCaseExportResult(trainingCasesById.size(), trainingCasesFile);
     }
 
     private static List<ReviewEntry> snapshotEntries(Iterable<ReviewEntry> entries) {
@@ -198,7 +211,7 @@ public final class TrainingCaseExportService {
                     continue;
                 }
                 if (content.length() > 0) {
-                    content.append(System.lineSeparator());
+                    content.append('\n');
                 }
                 content.append(GSON.toJson(row));
             }
@@ -213,6 +226,23 @@ public final class TrainingCaseExportService {
         } catch (IOException exception) {
             throw new IllegalStateException("Failed to export training cases to " + path, exception);
         }
+    }
+
+    private String buildCaseId(ReviewEntry entry) {
+        String reviewEntryId = entry == null || entry.getId() == null ? "" : entry.getId().trim();
+        if (reviewEntryId.isBlank()) {
+            return trainingClientId;
+        }
+
+        return trainingClientId + "." + reviewEntryId;
+    }
+
+    private static String normalizeTrainingClientId(String trainingClientId) {
+        if (trainingClientId == null || trainingClientId.isBlank()) {
+            return "local";
+        }
+
+        return trainingClientId.trim().toLowerCase(Locale.ROOT);
     }
 
     /**

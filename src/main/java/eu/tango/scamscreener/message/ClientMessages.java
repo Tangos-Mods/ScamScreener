@@ -4,6 +4,7 @@ import eu.tango.scamscreener.ScamScreenerMod;
 import eu.tango.scamscreener.config.data.AlertRiskLevel;
 import eu.tango.scamscreener.review.ReviewVerdict;
 import eu.tango.scamscreener.training.TrainingCaseExportService;
+import eu.tango.scamscreener.training.ScamScreenerClientSession;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.HoverEvent;
 import net.minecraft.text.MutableText;
@@ -19,6 +20,7 @@ import java.util.Map;
  */
 public final class ClientMessages {
     private static final String PREFIX = "[ScamScreener] ";
+    private static final String FANDOM_WEBSITE_URL_SCAM = "https://hypixel-skyblock.fandom.com/wiki/Scams";
 
     private ClientMessages() {
     }
@@ -275,8 +277,114 @@ public final class ClientMessages {
 
     public static MutableText commandHelp() {
         return prefixed().append(Text.literal(
-            "Commands: enable, disable, whitelist, blacklist, review, review export, alertlevel, autoleave, mute, unmute, debug, metrics, profiler, rules, runtime, messages, settings."
+            "Commands: enable, disable, whitelist, blacklist, review, review export, alertlevel, autoleave, mute, unmute, edu disable, debug, metrics, profiler, rules, runtime, messages, settings."
         ).formatted(Formatting.GRAY));
+    }
+
+    public static MutableText educationCommandHelp() {
+        return prefixed()
+            .append(Text.literal("Education command usage:").formatted(Formatting.GRAY))
+            .append(Text.literal("\n- /scamscreener edu disable <messageId>").formatted(Formatting.GRAY));
+    }
+
+    public static MutableText educationExternalPlatformWarning(String disableCommand) {
+        return educationWarning(
+            disableCommand,
+            "The user is trying to move you over to an external platform. ",
+            "Scammers often do this, so proceed with caution. ",
+            "If you're unsure whether it's a scam, treat it as one until proven otherwise. "
+        );
+    }
+
+    public static MutableText educationSuspiciousLinkWarning(String disableCommand) {
+        return educationWarning(
+            disableCommand,
+            "The message contains a suspicious link. ",
+            "Never log into websites opened directly from chat links. ",
+            "Open trusted sites manually and double-check the exact domain first. "
+        );
+    }
+
+    public static MutableText educationUpfrontPaymentWarning(String disableCommand) {
+        return educationWarning(
+            disableCommand,
+            "The user asks for payment before proof or delivery. ",
+            "This is a common scam setup in trading chats. ",
+            "Only trade with verified middlemen and never pay first without strong proof. "
+        );
+    }
+
+    public static MutableText educationAccountDataWarning(String disableCommand) {
+        return educationWarning(
+            disableCommand,
+            "The user asks for account or personal login data. ",
+            "Never share your Microsoft login, email codes, or recovery information. ",
+            "Legitimate players and staff do not need your credentials. "
+        );
+    }
+
+    public static MutableText educationFakeMiddlemanWarning(String disableCommand) {
+        return educationWarning(
+            disableCommand,
+            "The user claims a trusted middleman without reliable proof. ",
+            "Scammers often fake middleman identities with screenshots or name lookalikes. ",
+            "Verify middlemen only through official server channels before trading. "
+        );
+    }
+
+    public static MutableText educationUrgencyWarning(String disableCommand) {
+        return educationWarning(
+            disableCommand,
+            "The user is creating pressure and urgency. ",
+            "Scammers rush decisions to prevent verification. ",
+            "Slow down, verify details, and walk away if they keep pushing. "
+        );
+    }
+
+    public static MutableText educationTrustManipulationWarning(String disableCommand) {
+        return educationWarning(
+            disableCommand,
+            "The user is trying to force trust quickly. ",
+            "Claims like 'trusted', 'friend of admin', or 'many vouches' can be faked. ",
+            "Always verify reputation independently before sending anything. "
+        );
+    }
+
+    public static MutableText educationTooGoodToBeTrueWarning(String disableCommand) {
+        return educationWarning(
+            disableCommand,
+            "The offer looks too good to be true. ",
+            "Unreal discounts, huge profit promises, or free rare items are common bait. ",
+            "If the deal makes no sense economically, treat it as high risk. "
+        );
+    }
+
+    public static MutableText educationDiscordHandleWarning(String disableCommand) {
+        return educationWarning(
+            disableCommand,
+            "The chat contains a Discord handle in suspicious context. ",
+            "Scammers often move victims to DMs where logs and moderation are weaker. ",
+            "Verify identity via official communities before continuing outside Minecraft. "
+        );
+    }
+
+    public static MutableText educationFunnelSequenceWarning(String disableCommand) {
+        return educationWarning(
+            disableCommand,
+            "The conversation matches a staged scam funnel pattern. ",
+            "These chats usually start harmless, then build trust, then ask for risky actions. ",
+            "Stop at the first request for payment, account access, or off-platform contact. "
+        );
+    }
+
+    public static MutableText educationMessageDisabled(String messageId) {
+        return prefixed()
+            .append(Text.literal("Education message disabled: ").formatted(Formatting.GRAY))
+            .append(Text.literal(displayValue(messageId)).formatted(Formatting.GOLD, Formatting.BOLD));
+    }
+
+    public static MutableText educationMessageUnknown(String messageId) {
+        return error("Unknown education message id: " + displayValue(messageId) + ".");
     }
 
     public static MutableText trainingCasesExported(TrainingCaseExportService.TrainingCaseExportResult result) {
@@ -304,6 +412,54 @@ public final class ClientMessages {
 
     public static MutableText trainingHubOpenFailed(String message) {
         return error("Could not open Training Hub: " + displayValue(message) + ".");
+    }
+
+    public static MutableText trainingUploadStarted(int caseCount) {
+        return prefixed()
+            .append(Text.literal("Training upload started in the background for ").formatted(Formatting.GRAY))
+            .append(Text.literal(String.valueOf(Math.max(0, caseCount))).formatted(Formatting.AQUA, Formatting.BOLD))
+            .append(Text.literal(" reviewed cases.").formatted(Formatting.GRAY));
+    }
+
+    public static MutableText trainingUploadRetryScheduled(String message, int retriesRemaining, int retryDelaySeconds) {
+        String retrySuffix = retriesRemaining == 1 ? " time" : " times";
+        return prefixed()
+            .append(Text.literal("Training upload failed: ").formatted(Formatting.RED))
+            .append(Text.literal(displayValue(message)).formatted(Formatting.YELLOW))
+            .append(Text.literal(". Retrying automatically ").formatted(Formatting.GRAY))
+            .append(Text.literal(String.valueOf(Math.max(0, retriesRemaining))).formatted(Formatting.GOLD, Formatting.BOLD))
+            .append(Text.literal(" more" + retrySuffix + " with ").formatted(Formatting.GRAY))
+            .append(Text.literal(String.valueOf(Math.max(1, retryDelaySeconds)) + "s").formatted(Formatting.GOLD, Formatting.BOLD))
+            .append(Text.literal(" between attempts.").formatted(Formatting.GRAY));
+    }
+
+    public static MutableText trainingUploadAborted(String message) {
+        return error("Training upload aborted: " + displayValue(message) + ".");
+    }
+
+    public static MutableText trainingUploadCompleted(ScamScreenerClientSession.UploadResult result) {
+        if (result == null) {
+            return prefixed().append(Text.literal("Training upload finished.").formatted(Formatting.GRAY));
+        }
+
+        return switch (result.status() == null ? "" : result.status()) {
+            case "accepted" -> prefixed()
+                .append(Text.literal("Training upload accepted: ").formatted(Formatting.GRAY))
+                .append(Text.literal(String.valueOf(Math.max(0, result.caseCount()))).formatted(Formatting.AQUA, Formatting.BOLD))
+                .append(Text.literal(" cases (").formatted(Formatting.GRAY))
+                .append(Text.literal(String.valueOf(Math.max(0, result.insertedCases()))).formatted(Formatting.GREEN, Formatting.BOLD))
+                .append(Text.literal(" inserted, ").formatted(Formatting.GRAY))
+                .append(Text.literal(String.valueOf(Math.max(0, result.updatedCases()))).formatted(Formatting.YELLOW, Formatting.BOLD))
+                .append(Text.literal(" updated).").formatted(Formatting.GRAY));
+            case "duplicate" -> prefixed()
+                .append(Text.literal("Training upload duplicate: ").formatted(Formatting.GRAY))
+                .append(Text.literal(String.valueOf(Math.max(0, result.caseCount()))).formatted(Formatting.AQUA, Formatting.BOLD))
+                .append(Text.literal(" cases already existed on the server.").formatted(Formatting.GRAY));
+            case "quota-exceeded" -> prefixed()
+                .append(Text.literal("Training upload stopped: ").formatted(Formatting.RED))
+                .append(Text.literal(displayValue(result.detail())).formatted(Formatting.YELLOW));
+            default -> prefixed().append(Text.literal("Training upload finished.").formatted(Formatting.GRAY));
+        };
     }
 
     public static MutableText reviewSelectionRequired() {
@@ -344,6 +500,34 @@ public final class ClientMessages {
 
     private static MutableText prefixed() {
         return Text.literal(PREFIX).formatted(Formatting.DARK_RED);
+    }
+
+    private static MutableText educationWarning(String disableCommand, String... guidanceParts) {
+        MutableText line = prefixed();
+        if (guidanceParts != null) {
+            for (String guidancePart : guidanceParts) {
+                if (guidancePart == null || guidancePart.isBlank()) {
+                    continue;
+                }
+                line.append(Text.literal(guidancePart).formatted(Formatting.GRAY));
+            }
+        }
+
+        line.append(Text.literal("More info and help can be found ").formatted(Formatting.GRAY))
+            .append(urlActionTag(
+                "here",
+                Formatting.YELLOW,
+                Text.literal("Open Fandom Website to learn more about Scams").formatted(Formatting.GRAY),
+                FANDOM_WEBSITE_URL_SCAM
+            ))
+            .append(Text.literal(". ").formatted(Formatting.GRAY))
+            .append(actionTag(
+                "disable info message",
+                Formatting.DARK_GRAY,
+                "Disable this message.",
+                disableCommand
+            ));
+        return line;
     }
 
     private static MutableText actionTag(String label, Formatting color, String hover, String command) {

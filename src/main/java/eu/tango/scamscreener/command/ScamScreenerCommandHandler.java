@@ -27,6 +27,7 @@ import eu.tango.scamscreener.lists.BlacklistEntry;
 import eu.tango.scamscreener.lists.WhitelistEntry;
 import eu.tango.scamscreener.message.AlertContextRegistry;
 import eu.tango.scamscreener.message.ClientMessages;
+import eu.tango.scamscreener.message.EducationMessages;
 import eu.tango.scamscreener.debug.DebugKeys;
 import eu.tango.scamscreener.profiler.ScamScreenerProfiler;
 import eu.tango.scamscreener.profiler.web.ProfilerWebOpenResult;
@@ -87,6 +88,7 @@ public final class ScamScreenerCommandHandler {
             .then(buildAutoLeaveCommand())
             .then(buildMuteCommand())
             .then(buildUnmuteCommand())
+            .then(buildEducationCommand())
             .then(buildDebugCommand())
             .then(literal("metrics").executes(context -> openMetrics(context.getSource())))
             .then(buildProfilerCommand())
@@ -145,6 +147,16 @@ public final class ScamScreenerCommandHandler {
             .then(argument("pattern", StringArgumentType.greedyString())
                 .suggests((context, builder) -> suggestMutePatterns(builder))
                 .executes(context -> removeMutePattern(context.getSource(), StringArgumentType.getString(context, "pattern"))));
+    }
+
+    private static LiteralArgumentBuilder<FabricClientCommandSource> buildEducationCommand() {
+        return literal("edu")
+            .executes(context -> showEducationHelp(context.getSource()))
+            .then(literal("disable")
+                .executes(context -> showEducationHelp(context.getSource()))
+                .then(argument("messageId", StringArgumentType.word())
+                    .suggests((context, builder) -> suggestEducationMessageIds(builder))
+                    .executes(context -> disableEducationMessage(context.getSource(), StringArgumentType.getString(context, "messageId")))));
     }
 
     private static LiteralArgumentBuilder<FabricClientCommandSource> buildDebugCommand() {
@@ -287,6 +299,11 @@ public final class ScamScreenerCommandHandler {
         return 1;
     }
 
+    private static int showEducationHelp(FabricClientCommandSource source) {
+        source.sendFeedback(ClientMessages.educationCommandHelp());
+        return 1;
+    }
+
     private static int setScamScreenerEnabled(FabricClientCommandSource source, boolean enabled) {
         ScamScreenerRuntime.getInstance().setEnabled(enabled);
         source.sendFeedback(enabled ? ClientMessages.scamScreenerEnabled() : ClientMessages.scamScreenerDisabled());
@@ -358,6 +375,16 @@ public final class ScamScreenerCommandHandler {
         }
 
         source.sendFeedback(ClientMessages.mutePatternRemoved(pattern));
+        return 1;
+    }
+
+    private static int disableEducationMessage(FabricClientCommandSource source, String messageId) {
+        if (!EducationMessages.disable(messageId)) {
+            source.sendError(ClientMessages.educationMessageUnknown(messageId));
+            return 0;
+        }
+
+        source.sendFeedback(ClientMessages.educationMessageDisabled(messageId == null ? "" : messageId.trim().toLowerCase(Locale.ROOT)));
         return 1;
     }
 
@@ -647,6 +674,14 @@ public final class ScamScreenerCommandHandler {
     private static CompletableFuture<Suggestions> suggestMutePatterns(SuggestionsBuilder builder) {
         for (String pattern : ScamScreenerRuntime.getInstance().mutePatternManager().allPatterns()) {
             suggestValue(builder, pattern);
+        }
+
+        return builder.buildFuture();
+    }
+
+    private static CompletableFuture<Suggestions> suggestEducationMessageIds(SuggestionsBuilder builder) {
+        for (String messageId : EducationMessages.knownMessageIds()) {
+            suggestValue(builder, messageId);
         }
 
         return builder.buildFuture();

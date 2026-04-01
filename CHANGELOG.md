@@ -2,6 +2,26 @@
 
 All notable changes to this project are documented in this file.
 
+## 2.2.1 - 2026-03-30
+
+### Added
+- Integrated the Training Hub directly into the main screen and review screen.
+- In-game ScamScreener account login and upload flow for reviewed `SAFE` and `RISK` cases.
+- Stable per-installation `trainingClientId` handling for deterministic exported case IDs.
+- Restored education follow-up messages and the `/scamscreener edu disable <messageId>` command.
+- Added tests for Training Hub session parsing, education follow-up handling, and deterministic training export IDs.
+
+### Changed
+- Training export now writes canonical LF-based JSONL output so duplicate detection stays consistent across systems.
+- Training Hub now explains in-game data handling more clearly, including password, session, and local reviewed-case behavior.
+- Main and review contribution actions now open the in-game Training Hub instead of the old external-link flow.
+- Training Hub version display now resolves from the actual Fabric mod metadata.
+
+### Fixed
+- Training Hub form labels and inputs no longer overlap.
+- Placeholder text in Training Hub fields no longer stays on top of typed input.
+- The warning about Minecraft credentials is now highlighted in red.
+
 ## 2.1.3 - 2026-03-26
 
 ### Added
