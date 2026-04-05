@@ -5,10 +5,14 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="149ec1db-0155-4512-9f54-12439716da78" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.github/workflows/publish.yml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/stonecutter.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/stonecutter.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CHANGELOG.md" beforeDir="false" afterPath="$PROJECT_DIR$/CHANGELOG.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MODRINTH.md" beforeDir="false" afterPath="$PROJECT_DIR$/MODRINTH.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gradle.properties" beforeDir="false" afterPath="$PROJECT_DIR$/gradle.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/fabric.mod.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/fabric.mod.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/versions/1.21.10/gradle.properties" beforeDir="false" afterPath="$PROJECT_DIR$/versions/1.21.10/gradle.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/versions/1.21.11/gradle.properties" beforeDir="false" afterPath="$PROJECT_DIR$/versions/1.21.11/gradle.properties" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -16,7 +20,7 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="EmbeddingIndexingInfo">
-    <option name="cachedIndexableFilesCount" value="1119" />
+    <option name="cachedIndexableFilesCount" value="1145" />
   </component>
   <component name="ExternalProjectsData">
     <projectState path="$PROJECT_DIR$">
@@ -66,40 +70,43 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Gradle.Message Test.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.Publish All Versions - CurseForge.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.Publish All Versions - Modrinth.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ScamScreener [build].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ScamScreener: Publish CurseForge (all StoneCutter versions).executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ScamScreener: Publish Modrinth (all StoneCutter versions).executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ScamScreener: Train + Update AI Model.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.build all.executor&quot;: &quot;Run&quot;,
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.MCP Project settings loaded&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;v2&quot;,
-    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
-    &quot;jdk.selected.JDK&quot;: &quot;21&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/mine6/Documents/GitHub/ScamScreener&quot;,
-    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
-    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
-    &quot;project.structure.side.proportion&quot;: &quot;0.0&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Gradle.Message Test.executor": "Run",
+    "Gradle.Publish 26.1 - CurseForge.executor": "Run",
+    "Gradle.Publish All - CurseForge.executor": "Run",
+    "Gradle.Publish All - Modrinth + CurseForge.executor": "Run",
+    "Gradle.Publish All Versions - CurseForge.executor": "Run",
+    "Gradle.Publish All Versions - Modrinth.executor": "Run",
+    "Gradle.ScamScreener [build].executor": "Run",
+    "Gradle.ScamScreener: Publish CurseForge (all StoneCutter versions).executor": "Run",
+    "Gradle.ScamScreener: Publish Modrinth (all StoneCutter versions).executor": "Run",
+    "Gradle.ScamScreener: Train + Update AI Model.executor": "Run",
+    "Gradle.build all.executor": "Run",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.MCP Project settings loaded": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "v2",
+    "ignore.virus.scanning.warn.message": "true",
+    "jdk.selected.JDK": "21",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "C:/Users/mine6/Documents/GitHub/ScamScreener",
+    "project.structure.last.edited": "Modules",
+    "project.structure.proportion": "0.0",
+    "project.structure.side.proportion": "0.0",
+    "settings.editor.selected.configurable": "preferences.pluginManager"
   },
-  &quot;keyToStringList&quot;: {
-    &quot;dev.kikugie.stonecutter.projects&quot;: [
-      &quot;C:/Users/mine6/Documents/GitHub/ScamScreener#:&quot;
+  "keyToStringList": {
+    "dev.kikugie.stonecutter.projects": [
+      "C:/Users/mine6/Documents/GitHub/ScamScreener#:"
     ],
-    &quot;jdk.preference.JDK&quot;: [
-      &quot;21=C:/Program Files/Java/jdk-21&quot;
+    "jdk.preference.JDK": [
+      "21=C:/Program Files/Java/jdk-21"
     ]
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\mine6\Documents\GitHub\ScamScreener" />
@@ -111,7 +118,7 @@
       <recent name="C:\Users\mine6\Documents\GitHub\ScamScreener\server\css" />
     </key>
   </component>
-  <component name="RunManager" selected="Gradle.build all">
+  <component name="RunManager" selected="Gradle.Publish All - CurseForge">
     <configuration name="Message Test" type="GradleRunConfiguration" factoryName="Gradle" folderName="Testing">
       <ExternalSystemSettings>
         <option name="executionName" />

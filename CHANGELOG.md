@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented in this file.
 
+## 2.3.0 - 2026-04-05
+
+### Added
+- `MarketGuard` is now declared as a required dependency for supported Fabric releases.
+
 ## 2.2.1 - 2026-03-30
 
 ### Added

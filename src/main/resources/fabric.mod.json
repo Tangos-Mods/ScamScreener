@@ -27,7 +27,8 @@
   "depends": {
     "fabricloader": ">=0.17",
     "minecraft": "${minecraft}",
-    "fabric-message-api-v1": "*"
+    "fabric-message-api-v1": "*",
+    "marketguard": "*"
   },
   "suggests": {
     "modmenu": "*",
