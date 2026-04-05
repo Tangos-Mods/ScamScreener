@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented in this file.
 
+## 2.2.2 - 2026-04-05
+
+### Changed
+- Added Minecraft `26.1.1` as active Stonecutter target.
+- Kept parallel build support for both `26.1` and `26.1.1` because no code-level compatibility changes were required between these patch versions.
+
 ## 2.2.1 - 2026-03-30
 
 ### Added

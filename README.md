@@ -19,7 +19,7 @@ ScamScreener is a client-side Fabric mod that analyzes incoming chat, highlights
 
 ## Supported Versions And Requirements
 
-- Minecraft: `26.1`
+- Minecraft: `26.1.1` (primär), `26.1` (parallel verfügbar)
 - Java: `25`
 - Mod loader: Fabric Loader `>= 0.18.5`
 - Dependency: Fabric API
