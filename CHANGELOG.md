@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented in this file.
 
+## 2.3.1 - 2026-04-09
+
+### Fixed
+- Removed the published `MarketGuard` dependency metadata again so `MarketGuard` can depend on `ScamScreener` without a circular Fabric dependency.
+
 ## 2.3.0 - 2026-04-05
 
 ### Added

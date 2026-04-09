@@ -109,7 +109,6 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.11.4")
     modImplementation("maven.modrinth:modmenu:${property("deps.modmenu_version")}")
-    modRuntimeOnly("maven.modrinth:marketguard:${property("deps.marketguard_version")}")
     modCompileOnly("maven.modrinth:tango-webapi:NU0SuChL")
 
     fapi(
@@ -214,9 +213,7 @@ publishMods {
         requires {
             slug = "fabric-api"
         }
-        requires {
-            slug = "marketguard"
-        }
+        optional("marketguard")
         optional("modmenu")
         optional("tango-webapi")
     }
@@ -228,9 +225,7 @@ publishMods {
         requires {
             slug = "fabric-api"
         }
-        requires {
-            slug = "marketguard-for-hypixel-skyblock"
-        }
+        // optional("marketguard-for-hypixel-skyblock")
         optional("modmenu")
     }
 }

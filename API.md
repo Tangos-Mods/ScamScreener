@@ -18,7 +18,7 @@ ScamScreener currently exposes two relevant entrypoints:
 - `scamscreener-pipeline`
   - a prepared contribution contract for custom stages
 
-Important: the `scamscreener-pipeline` contract already exists as an API type, but it is not currently wired into the runtime. For production integrations, you should treat `scamscreener-api` as the supported surface.
+Both entrypoints are active at runtime. Use `scamscreener-api` for stable settings, list access, and events. Use `scamscreener-pipeline` only when your mod actually needs to insert custom stages into the ScamScreener pipeline.
 
 ## What The API Currently Exposes
 
