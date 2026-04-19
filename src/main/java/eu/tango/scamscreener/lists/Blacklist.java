@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 /**
  * In-memory blacklist for explicitly blocked players.
@@ -20,6 +21,7 @@ public final class Blacklist implements BlacklistAccess {
     private final Map<UUID, BlacklistEntry> entriesByUuid = new LinkedHashMap<>();
     private final Map<String, BlacklistEntry> entriesByName = new LinkedHashMap<>();
     private final Runnable saveHook;
+    private final Consumer<String> nameOnlyEntryHook;
 
     /**
      * Creates an in-memory blacklist without persistence hooks.
@@ -35,8 +37,21 @@ public final class Blacklist implements BlacklistAccess {
      * @param saveHook callback triggered after mutating changes
      */
     public Blacklist(Runnable saveHook) {
+        this(saveHook, playerName -> {
+        });
+    }
+
+    /**
+     * Creates an in-memory blacklist with persistence and name-only entry hooks.
+     *
+     * @param saveHook callback triggered after mutating changes
+     * @param nameOnlyEntryHook callback triggered when an entry was added without a UUID
+     */
+    public Blacklist(Runnable saveHook, Consumer<String> nameOnlyEntryHook) {
         this.saveHook = saveHook == null ? () -> {
         } : saveHook;
+        this.nameOnlyEntryHook = nameOnlyEntryHook == null ? playerName -> {
+        } : nameOnlyEntryHook;
     }
 
     /**
@@ -69,6 +84,9 @@ public final class Blacklist implements BlacklistAccess {
         saveHook.run();
         PlayerListChangeType changeType = existing.isPresent() ? PlayerListChangeType.UPDATED : PlayerListChangeType.ADDED;
         BlacklistEvent.EVENT.invoker().onBlacklistChanged(changeType, entry);
+        if (entry.playerUuid() == null && !normalizedName.isEmpty()) {
+            nameOnlyEntryHook.accept(entry.playerName());
+        }
         return true;
     }
 

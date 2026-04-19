@@ -53,6 +53,19 @@ class PlayerListConfigStoreTest {
     }
 
     @Test
+    void blacklistConversionPersistsResolvedUuidsAfterNameOnlyInsert() {
+        UUID playerUuid = UUID.fromString("123e4567-e89b-12d3-a456-426614174001");
+        Blacklist blacklist = new Blacklist();
+        blacklist.add(null, "Alpha", 75, "manual", BlacklistSource.PLAYER);
+        blacklist.add(playerUuid, "Alpha", 75, "manual", BlacklistSource.PLAYER);
+
+        BlacklistConfig config = BlacklistConfigStore.fromBlacklist(blacklist);
+
+        assertEquals(playerUuid, config.entries().getFirst().playerUuid());
+        assertEquals("Alpha", config.entries().getFirst().playerName());
+    }
+
+    @Test
     void blacklistConfigLoadRestoresUuidEntries() {
         UUID playerUuid = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
         BlacklistConfig config = new BlacklistConfig();

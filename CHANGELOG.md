@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented in this file.
 
+## 2.3.2 - 2026-04-19
+
+### Added
+- Blacklist entries added by player name now resolve the player's UUID asynchronously in the background and persist it once the lookup succeeds.
+
+### Changed
+- Runtime-backed API queries now return the current state when called again instead of exposing only the initialization state.
+- Returned API list and entry values remain snapshots, so companion mods must query again to observe later changes.
+
 ## 2.3.1 - 2026-04-09
 
 ### Fixed
