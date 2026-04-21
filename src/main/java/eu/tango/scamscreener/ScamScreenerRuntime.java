@@ -10,6 +10,8 @@ import eu.tango.scamscreener.chat.mute.MutePatternManager;
 import eu.tango.scamscreener.config.data.RulesConfig;
 import eu.tango.scamscreener.config.data.RuntimeConfig;
 import eu.tango.scamscreener.lists.Blacklist;
+import eu.tango.scamscreener.lists.BlacklistEntry;
+import eu.tango.scamscreener.lists.PlayerUuidLookup;
 import eu.tango.scamscreener.lists.Whitelist;
 import eu.tango.scamscreener.config.store.BlacklistConfigStore;
 import eu.tango.scamscreener.config.migration.LegacyV1ConfigMigration;
@@ -30,11 +32,15 @@ import eu.tango.scamscreener.training.TrainingHubUploadWorker;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.client.Minecraft;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Central runtime container for shared ScamScreener services.
@@ -81,6 +87,7 @@ public final class ScamScreenerRuntime {
     @Accessors(fluent = true)
     private final TrainingHubUploadWorker trainingHubUploadWorker;
     private final List<StageContribution> stageContributions;
+    private final Set<String> blacklistUuidLookupsInFlight;
     private volatile RuntimeConfig runtimeConfig;
     private volatile RulesConfig rulesConfig;
     private volatile ScamScreenerClientSession trainingHubSession;
@@ -98,8 +105,9 @@ public final class ScamScreenerRuntime {
         runtimeConfig = runtimeConfigStore.loadOrCreate();
         rulesConfig = rulesConfigStore.loadOrCreate();
         String trainingClientId = ensureTrainingClientId();
+        blacklistUuidLookupsInFlight = ConcurrentHashMap.newKeySet();
         whitelist = new Whitelist(this::saveWhitelist);
-        blacklist = new Blacklist(this::saveBlacklist);
+        blacklist = new Blacklist(this::saveBlacklist, this::queueBlacklistUuidLookup);
         reviewStore = new ReviewStore(this::saveReviewStore);
         reviewStore.setMaxEntries(runtimeConfig.review().maxEntries());
         behaviorStore = new BehaviorStore();
@@ -120,6 +128,7 @@ public final class ScamScreenerRuntime {
         applyRuleStoreSettings();
         whitelistConfigStore.loadInto(whitelist);
         blacklistConfigStore.loadInto(blacklist);
+        queueBlacklistUuidLookupsForMissingEntries();
         reviewConfigStore.loadInto(reviewStore);
         pipelineEngine = ScamScreenerPipelineFactory.createDefaultEngine(
             whitelist,
@@ -230,6 +239,7 @@ public final class ScamScreenerRuntime {
         blacklistConfigStore.reload();
         blacklistConfigStore.loadInto(blacklist);
         BlacklistEvent.EVENT.invoker().onBlacklistChanged(PlayerListChangeType.RELOADED, null);
+        queueBlacklistUuidLookupsForMissingEntries();
 
         reviewConfigStore.reload();
         reviewConfigStore.loadInto(reviewStore);
@@ -278,6 +288,43 @@ public final class ScamScreenerRuntime {
 
     private void saveReviewStore() {
         reviewConfigStore.saveFromAsync(reviewStore);
+    }
+
+    private void queueBlacklistUuidLookupsForMissingEntries() {
+        for (BlacklistEntry entry : blacklist.allEntries()) {
+            if (entry != null && entry.playerUuid() == null && !entry.playerName().isBlank()) {
+                queueBlacklistUuidLookup(entry.playerName());
+            }
+        }
+    }
+
+    private void queueBlacklistUuidLookup(String playerName) {
+        String normalizedName = normalizeLookupName(playerName);
+        if (normalizedName.isEmpty() || !blacklistUuidLookupsInFlight.add(normalizedName)) {
+            return;
+        }
+
+        PlayerUuidLookup.resolveByNameAsync(playerName).whenComplete((playerUuid, throwable) -> {
+            blacklistUuidLookupsInFlight.remove(normalizedName);
+            if (throwable != null || playerUuid == null) {
+                return;
+            }
+
+            Minecraft client = Minecraft.getInstance();
+            Runnable updateAction = () -> applyResolvedBlacklistUuid(playerName, playerUuid);
+            if (client != null) {
+                client.execute(updateAction);
+                return;
+            }
+
+            updateAction.run();
+        });
+    }
+
+    private void applyResolvedBlacklistUuid(String playerName, UUID playerUuid) {
+        blacklist.findByName(playerName)
+            .filter(entry -> entry.playerUuid() == null)
+            .ifPresent(entry -> blacklist.add(playerUuid, entry.playerName(), entry.score(), entry.reason(), entry.source()));
     }
 
     private void applyRuleStoreSettings() {
@@ -340,5 +387,13 @@ public final class ScamScreenerRuntime {
             ScamScreenerMod.LOGGER.info("Loaded {} external ScamScreener pipeline contributions.", contributions.size());
         }
         return List.copyOf(contributions);
+    }
+
+    private static String normalizeLookupName(String playerName) {
+        if (playerName == null) {
+            return "";
+        }
+
+        return playerName.trim().toLowerCase(Locale.ROOT);
     }
 }

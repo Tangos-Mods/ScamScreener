@@ -297,6 +297,17 @@ A `BlacklistEntry` contains:
 - `reason()`
 - `source()`
 
+### UUID Enrichment For Name-Only Entries
+
+If a blacklist entry is added with only a player name, ScamScreener keeps the entry immediately available and then resolves the UUID asynchronously in the background.
+
+When the lookup succeeds:
+
+- the existing blacklist entry is updated in place
+- the updated UUID is persisted to `blacklist.json`
+- later API reads return the current entry with the resolved UUID
+- `BlacklistEvent` is fired again with `PlayerListChangeType.UPDATED`
+
 ## 6. Reacting To Events
 
 ScamScreener exposes three main events:
