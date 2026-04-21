@@ -5,17 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="149ec1db-0155-4512-9f54-12439716da78" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/lists/PlayerUuidLookup.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/eu/tango/scamscreener/lists/PlayerUuidLookupTest.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/API.md" beforeDir="false" afterPath="$PROJECT_DIR$/API.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/CHANGELOG.md" beforeDir="false" afterPath="$PROJECT_DIR$/CHANGELOG.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/MODRINTH.md" beforeDir="false" afterPath="$PROJECT_DIR$/MODRINTH.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/gradle.properties" beforeDir="false" afterPath="$PROJECT_DIR$/gradle.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/ScamScreenerRuntime.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/ScamScreenerRuntime.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/lists/Blacklist.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/lists/Blacklist.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/eu/tango/scamscreener/config/store/PlayerListConfigStoreTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/eu/tango/scamscreener/config/store/PlayerListConfigStoreTest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/eu/tango/scamscreener/lists/PlayerListApiTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/eu/tango/scamscreener/lists/PlayerListApiTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/message/ClientMessages.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/message/ClientMessages.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/eu/tango/scamscreener/message/EducationMessagesTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/eu/tango/scamscreener/message/EducationMessagesTest.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -256,6 +251,10 @@
       <method v="2" />
     </configuration>
     <list>
+      <item itemvalue="Application.Minecraft Client (:26.1.1)" />
+      <item itemvalue="Application.Minecraft Client (:26.1.2)" />
+      <item itemvalue="Application.Minecraft Server (:26.1.1)" />
+      <item itemvalue="Application.Minecraft Server (:26.1.2)" />
       <item itemvalue="Application.Minecraft Client" />
       <item itemvalue="Application.Minecraft Client (:26.1)" />
       <item itemvalue="Application.Minecraft Server" />
@@ -266,13 +265,14 @@
       <item itemvalue="Application.Minecraft Server (:1.21.10)" />
       <item itemvalue="Application.Minecraft Server (:1.21.11)" />
       <item itemvalue="Application.Minecraft Server (:1.21.9)" />
+      <item itemvalue="Gradle.Publish 26.1.x - CurseForge" />
+      <item itemvalue="Gradle.Publish 26.1.x - Modrinth" />
       <item itemvalue="Gradle.Publish All - CurseForge" />
       <item itemvalue="Gradle.Publish All - Modrinth" />
       <item itemvalue="Gradle.Publish All - Modrinth + CurseForge" />
-      <item itemvalue="Gradle.Publish 26.1 - CurseForge" />
-      <item itemvalue="Gradle.Publish 26.1 - Modrinth" />
-      <item itemvalue="Gradle.Switch to 1.21.10" />
-      <item itemvalue="Gradle.Switch to 1.21.11" />
+      <item itemvalue="Gradle.Switch to 26.1" />
+      <item itemvalue="Gradle.Switch to 26.1.1" />
+      <item itemvalue="Gradle.Switch to 26.1.2" />
       <item itemvalue="Gradle.Test All" />
       <item itemvalue="Gradle.Message Test" />
       <item itemvalue="Gradle.build all" />

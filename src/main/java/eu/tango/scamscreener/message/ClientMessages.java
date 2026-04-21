@@ -20,7 +20,7 @@ import java.util.Map;
  */
 public final class ClientMessages {
     private static final String PREFIX = "[ScamScreener] ";
-    private static final String FANDOM_WEBSITE_URL_SCAM = "https://hypixel-skyblock.fandom.com/wiki/Scams";
+    private static final String COMMUNITY_WIKI_URL_SCAM = "https://hypixelskyblock.minecraft.wiki/w/Scams";
 
     private ClientMessages() {
     }
@@ -517,8 +517,8 @@ public final class ClientMessages {
             .append(urlActionTag(
                 "here",
                 Formatting.YELLOW,
-                Text.literal("Open Fandom Website to learn more about Scams").formatted(Formatting.GRAY),
-                FANDOM_WEBSITE_URL_SCAM
+                Text.literal("Open Community Wiki to learn more about Scams").formatted(Formatting.GRAY),
+                COMMUNITY_WIKI_URL_SCAM
             ))
             .append(Text.literal(". ").formatted(Formatting.GRAY))
             .append(actionTag(

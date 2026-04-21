@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented in this file.
 
+## 2.3.3 - 2026-04-21
+
+### Fixed
+- Education follow-up messages now link to the moved Community Wiki scams page at `https://hypixelskyblock.minecraft.wiki/w/Scams`.
+- The education help hover text no longer references Fandom and now labels the destination as `Community Wiki`.
+
 ## 2.3.2 - 2026-04-19
 
 ### Added

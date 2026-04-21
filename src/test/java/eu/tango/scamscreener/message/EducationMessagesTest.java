@@ -65,7 +65,7 @@ class EducationMessagesTest {
 
         assertTrue(warning.getString().contains("The user is trying to move you over to an external platform."));
         assertTrue(hasClickValue(warning, disableCommand));
-        assertTrue(hasClickValue(warning, "https://hypixel-skyblock.fandom.com/wiki/Scams"));
+        assertTrue(hasClickValue(warning, "https://hypixelskyblock.minecraft.wiki/w/Scams"));
     }
 
     private static boolean hasClickValue(Text root, String expected) {
