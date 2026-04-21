@@ -5,20 +5,18 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="149ec1db-0155-4512-9f54-12439716da78" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/lists/PlayerUuidLookup.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/eu/tango/scamscreener/lists/PlayerUuidLookupTest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/versions/26.1.1/gradle.properties" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/versions/26.1.2/gradle.properties" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/API.md" beforeDir="false" afterPath="$PROJECT_DIR$/API.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CHANGELOG.md" beforeDir="false" afterPath="$PROJECT_DIR$/CHANGELOG.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MODRINTH.md" beforeDir="false" afterPath="$PROJECT_DIR$/MODRINTH.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/gradle.properties" beforeDir="false" afterPath="$PROJECT_DIR$/gradle.properties" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/settings.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/settings.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/ScamScreenerRuntime.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/ScamScreenerRuntime.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/lists/Blacklist.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/lists/Blacklist.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/eu/tango/scamscreener/config/store/PlayerListConfigStoreTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/eu/tango/scamscreener/config/store/PlayerListConfigStoreTest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/eu/tango/scamscreener/lists/PlayerListApiTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/eu/tango/scamscreener/lists/PlayerListApiTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/message/ClientMessages.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/message/ClientMessages.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/eu/tango/scamscreener/message/EducationMessagesTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/eu/tango/scamscreener/message/EducationMessagesTest.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/stonecutter.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/stonecutter.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/versions/26.1.1/gradle.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/versions/26.1.2/gradle.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/versions/26.1/gradle.properties" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -135,7 +133,7 @@
       <recent name="C:\Users\mine6\Documents\GitHub\ScamScreener\server\css" />
     </key>
   </component>
-  <component name="RunManager" selected="Gradle.Publish All - Modrinth + CurseForge">
+  <component name="RunManager">
     <configuration name="Message Test" type="GradleRunConfiguration" factoryName="Gradle" folderName="Testing">
       <ExternalSystemSettings>
         <option name="executionName" />
@@ -276,8 +274,8 @@
       <item itemvalue="Gradle.Publish All - CurseForge" />
       <item itemvalue="Gradle.Publish All - Modrinth" />
       <item itemvalue="Gradle.Publish All - Modrinth + CurseForge" />
-      <item itemvalue="Gradle.Publish 26.1 - CurseForge" />
-      <item itemvalue="Gradle.Publish 26.1 - Modrinth" />
+      <item itemvalue="Gradle.Publish 26.1.x - CurseForge" />
+      <item itemvalue="Gradle.Publish 26.1.x - Modrinth" />
       <item itemvalue="Gradle.Switch to 26.1.1" />
       <item itemvalue="Gradle.Switch to 26.1.2" />
       <item itemvalue="Gradle.Switch to 26.1" />
@@ -308,6 +306,7 @@
       <updated>1771885473742</updated>
       <workItem from="1776562259983" duration="1462000" />
       <workItem from="1776637068847" duration="27000" />
+      <workItem from="1776730958990" duration="1047000" />
     </task>
     <servers />
   </component>

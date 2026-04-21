@@ -2,6 +2,29 @@
 
 All notable changes to this project are documented in this file.
 
+## 2.3.3 - 2026-04-21
+
+### Changed
+- Minecraft `26.1`, `26.1.1`, and `26.1.2` now use one shared `26.1.x` build configuration instead of separate per-patch property files and artifacts.
+
+### Fixed
+- Education follow-up messages now link to the moved Community Wiki scams page at `https://hypixelskyblock.minecraft.wiki/w/Scams`.
+- The education help hover text no longer references Fandom and now labels the destination as `Community Wiki`.
+
+## 2.3.2 - 2026-04-21
+
+### Added
+- Background Mojang profile lookup support for resolving missing UUIDs on blacklist entries.
+- Tests covering UUID lookup parsing and player-list API behavior with the new lookup flow.
+- Stonecutter version properties for Minecraft `26.1.1` and `26.1.2`.
+
+### Changed
+- ScamScreener now targets Minecraft `26.1`, `26.1.1`, and `26.1.2` on this branch.
+- API and project metadata were refreshed to document the expanded `26.1.x` support.
+
+### Fixed
+- Blacklist entries added without a UUID can now backfill their UUID asynchronously instead of staying name-only indefinitely.
+
 ## 2.2.1 - 2026-03-30
 
 ### Added

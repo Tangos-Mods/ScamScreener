@@ -4,7 +4,7 @@ plugins {
     id("me.modmuss50.mod-publish-plugin") version "1.0.+" apply false
 }
 
-val publishedVersions = listOf("26.1", "26.1.1", "26.1.2")
+val publishedVersions = listOf("26.1.2")
 
 stonecutter active "26.1.2"
 
