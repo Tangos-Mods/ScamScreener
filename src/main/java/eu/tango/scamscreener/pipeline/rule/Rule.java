@@ -1,5 +1,6 @@
 package eu.tango.scamscreener.pipeline.rule;
 
+import eu.tango.scamscreener.pipeline.data.ChatEvent;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
@@ -136,6 +137,20 @@ public final class Rule {
     }
 
     /**
+     * Returns the first regex match for one chat event, caching the result per event.
+     *
+     * @param chatEvent the event whose normalized message should be inspected
+     * @return the first regex match, or {@code null} when none matched
+     */
+    public String firstPatternMatch(ChatEvent chatEvent) {
+        if (chatEvent == null) {
+            return null;
+        }
+
+        return chatEvent.cachedPatternMatch("pattern:" + id, () -> firstPatternMatch(chatEvent.getNormalizedMessage()));
+    }
+
+    /**
      * Indicates whether the regex-backed rule matched the message.
      *
      * @param message the normalized message to inspect
@@ -143,6 +158,16 @@ public final class Rule {
      */
     public boolean patternMatches(String message) {
         return firstPatternMatch(message) != null;
+    }
+
+    /**
+     * Indicates whether the regex-backed rule matched the event message.
+     *
+     * @param chatEvent the event whose normalized message should be inspected
+     * @return {@code true} when the regex rule matched
+     */
+    public boolean patternMatches(ChatEvent chatEvent) {
+        return firstPatternMatch(chatEvent) != null;
     }
 
     /**

@@ -74,3 +74,4 @@ server/.pytest_cache/
 
 server/
 server/*
+.codex

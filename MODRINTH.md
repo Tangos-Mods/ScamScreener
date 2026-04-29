@@ -1,5 +1,6 @@
-# ScamScreener 2.3.3
+# ScamScreener 2.3.4
 
-This patch updates the education help link after the scam reference page moved away from Fandom.
+This patch fixes sender-backed chat classification and avoids repeating the same regex work across rule checks.
 
-- Education follow-up messages now open the new Community Wiki page at `https://hypixelskyblock.minecraft.wiki/w/Scams`.
+- Chat callbacks that only expose the sender through Fabric message params now still enter the pipeline as player chat.
+- Rule and funnel regex checks now reuse cached per-message matches instead of running the same pattern repeatedly.

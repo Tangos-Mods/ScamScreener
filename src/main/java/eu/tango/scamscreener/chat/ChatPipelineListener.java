@@ -191,16 +191,11 @@ public final class ChatPipelineListener {
             params,
             receptionTimestamp,
             maxChatLength,
-            ChatSourceType.UNKNOWN
+            ChatSourceType.UNKNOWN,
+            true
         );
         if (inboundEvent.hasSender()) {
-            return new ChatEvent(
-                inboundEvent.getRawMessage(),
-                inboundEvent.getSenderUuid(),
-                inboundEvent.getSenderName(),
-                inboundEvent.getTimestampMs(),
-                ChatSourceType.PLAYER
-            );
+            return inboundEvent;
         }
 
         return classifyVisibleLine(inboundEvent.getRawMessage(), inboundEvent.getTimestampMs());

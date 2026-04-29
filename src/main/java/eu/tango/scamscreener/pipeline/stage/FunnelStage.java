@@ -83,7 +83,7 @@ public final class FunnelStage extends Stage {
             return pass();
         }
 
-        FunnelStore.FunnelStep currentStep = classifyStep(chatEvent.getNormalizedMessage());
+        FunnelStore.FunnelStep currentStep = classifyStep(chatEvent);
         List<FunnelStore.FunnelStep> previousSteps = snapshot.recentSteps();
         boolean hasPriorContact = !previousSteps.isEmpty();
         boolean hasTrust = previousSteps.contains(FunnelStore.FunnelStep.TRUST);
@@ -147,22 +147,22 @@ public final class FunnelStage extends Stage {
         return score(totalScore, reasonIds, String.join("; ", reasonParts));
     }
 
-    private FunnelStore.FunnelStep classifyStep(String message) {
-        String safeMessage = message == null ? "" : message;
+    private FunnelStore.FunnelStep classifyStep(ChatEvent chatEvent) {
+        String safeMessage = chatEvent == null ? "" : chatEvent.getNormalizedMessage();
         if (safeMessage.isBlank()) {
             return FunnelStore.FunnelStep.MESSAGE;
         }
 
-        if (rules.accountData().patternMatches(safeMessage)) {
+        if (rules.accountData().patternMatches(chatEvent)) {
             return FunnelStore.FunnelStep.ACCOUNT_DATA;
         }
-        if (rules.upfrontPayment().patternMatches(safeMessage)) {
+        if (rules.upfrontPayment().patternMatches(chatEvent)) {
             return FunnelStore.FunnelStep.PAYMENT;
         }
-        if (rules.externalPlatform().patternMatches(safeMessage)) {
+        if (rules.externalPlatform().patternMatches(chatEvent)) {
             return FunnelStore.FunnelStep.EXTERNAL_PLATFORM;
         }
-        if (rules.trustSignal().patternMatches(safeMessage)) {
+        if (rules.trustSignal().patternMatches(chatEvent)) {
             return FunnelStore.FunnelStep.TRUST;
         }
 

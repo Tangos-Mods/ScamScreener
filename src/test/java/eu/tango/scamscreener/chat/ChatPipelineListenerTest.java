@@ -12,7 +12,13 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-class ChatPipelineListenerTest {
+public class ChatPipelineListenerTest {
+    public static final class SenderNameParams {
+        public String getName() {
+            return "Pankraz01";
+        }
+    }
+
     @Test
     void classifiesGameMessagesIntoPlayerSystemAndUnknown() {
         ChatEvent playerEvent = ChatPipelineListener.classifyGameMessage(
@@ -121,6 +127,21 @@ class ChatPipelineListenerTest {
             new GameProfile(UUID.fromString("123e4567-e89b-12d3-a456-426614174000"), "Pankraz01"),
             null,
             Instant.ofEpochMilli(3_000L),
+            32767
+        );
+
+        assertEquals(ChatSourceType.PLAYER, playerEvent.getSourceType());
+        assertEquals("Pankraz01", playerEvent.getSenderName());
+        assertEquals("add me on discord", playerEvent.getRawMessage());
+    }
+
+    @Test
+    void paramBackedChatMessagesStillEnterAsPlayerMessages() {
+        ChatEvent playerEvent = ChatPipelineListener.classifyChatMessage(
+            Text.literal("add me on discord"),
+            null,
+            new SenderNameParams(),
+            Instant.ofEpochMilli(4_000L),
             32767
         );
 
