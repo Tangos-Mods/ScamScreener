@@ -2,11 +2,17 @@ package eu.tango.scamscreener.pipeline.data;
 
 import com.mojang.authlib.GameProfile;
 import eu.tango.scamscreener.chat.TextNormalization;
+import lombok.AccessLevel;
 import lombok.Getter;
 import net.minecraft.network.chat.Component;
+
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 /**
  * Immutable pipeline input for a single inbound chat message.
@@ -25,6 +31,8 @@ public final class ChatEvent {
     private final String senderKey;
     private final long timestampMs;
     private final ChatSourceType sourceType;
+    @Getter(AccessLevel.NONE)
+    private final Map<String, Optional<String>> cachedPatternMatches = new HashMap<>();
 
     /**
      * Creates a chat event with normalized text and sender metadata.
@@ -139,6 +147,30 @@ public final class ChatEvent {
         int maxChatLength,
         ChatSourceType sourceType
     ) {
+        return fromInboundChat(message, sender, params, receptionTimestamp, maxChatLength, sourceType, false);
+    }
+
+    /**
+     * Creates a chat event directly from the inbound Fabric chat callback values.
+     *
+     * @param message the inbound chat message text component
+     * @param sender the sender profile, if available
+     * @param params the Fabric message parameter object, if available
+     * @param receptionTimestamp the receive timestamp
+     * @param maxChatLength the maximum message length to extract
+     * @param sourceType the detected source type of the message
+     * @param classifyPlayerFromSender when {@code true}, sender metadata promotes the event to player chat
+     * @return a normalized chat event for pipeline processing
+     */
+    public static ChatEvent fromInboundChat(
+        Component message,
+        GameProfile sender,
+        Object params,
+        Instant receptionTimestamp,
+        int maxChatLength,
+        ChatSourceType sourceType,
+        boolean classifyPlayerFromSender
+    ) {
         String rawMessage = message == null ? "" : message.getString(maxChatLength);
         UUID senderUuid = sender == null ? null : sender.id();
         String senderName = sender == null || sender.name() == null ? "" : sender.name();
@@ -146,9 +178,13 @@ public final class ChatEvent {
             senderName = extractSenderNameFromParams(params, maxChatLength);
         }
         long timestampMs = receptionTimestamp == null ? System.currentTimeMillis() : receptionTimestamp.toEpochMilli();
+        ChatSourceType resolvedSourceType = sourceType == null ? ChatSourceType.UNKNOWN : sourceType;
+        if (classifyPlayerFromSender && (senderUuid != null || !senderName.isBlank())) {
+            resolvedSourceType = ChatSourceType.PLAYER;
+        }
 
         // Centralize callback-to-event conversion so the listener stays lean.
-        return new ChatEvent(rawMessage, senderUuid, senderName, timestampMs, sourceType);
+        return new ChatEvent(rawMessage, senderUuid, senderName, timestampMs, resolvedSourceType);
     }
 
     /**
@@ -204,6 +240,31 @@ public final class ChatEvent {
      */
     public boolean isSystemSource() {
         return sourceType == ChatSourceType.SYSTEM;
+    }
+
+    /**
+     * Returns one cached regex match for this event.
+     *
+     * @param cacheKey the stable cache key for the compiled rule
+     * @param resolver the regex work to run on a cache miss
+     * @return the first matching substring, or {@code null} when none matched
+     */
+    public synchronized String cachedPatternMatch(String cacheKey, Supplier<String> resolver) {
+        if (resolver == null) {
+            return null;
+        }
+        if (cacheKey == null || cacheKey.isBlank()) {
+            return resolver.get();
+        }
+
+        Optional<String> cachedMatch = cachedPatternMatches.get(cacheKey);
+        if (cachedMatch != null) {
+            return cachedMatch.orElse(null);
+        }
+
+        String resolvedMatch = resolver.get();
+        cachedPatternMatches.put(cacheKey, Optional.ofNullable(resolvedMatch));
+        return resolvedMatch;
     }
 
     private static String buildSenderKey(UUID senderUuid, String senderName, ChatSourceType sourceType) {

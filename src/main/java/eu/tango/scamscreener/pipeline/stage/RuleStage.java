@@ -66,57 +66,57 @@ public final class RuleStage extends Stage {
         List<String> reasonParts = new ArrayList<>();
         List<String> reasonIds = new ArrayList<>();
 
-        String linkMatch = rules.suspiciousLink().firstPatternMatch(message);
+        String linkMatch = rules.suspiciousLink().firstPatternMatch(chatEvent);
         if (linkMatch != null) {
             totalScore += rules.suspiciousLink().score();
             reasonParts.add(rules.suspiciousLink().reason(linkMatch));
             reasonIds.add("rule.suspicious_link");
         }
 
-        String externalPlatformMatch = rules.externalPlatform().firstPatternMatch(message);
+        String externalPlatformMatch = rules.externalPlatform().firstPatternMatch(chatEvent);
         if (externalPlatformMatch != null) {
             totalScore += rules.externalPlatform().score();
             reasonParts.add(rules.externalPlatform().reason(externalPlatformMatch));
             reasonIds.add("rule.external_platform");
         }
 
-        String paymentMatch = rules.upfrontPayment().firstPatternMatch(message);
+        String paymentMatch = rules.upfrontPayment().firstPatternMatch(chatEvent);
         if (paymentMatch != null) {
             totalScore += rules.upfrontPayment().score();
             reasonParts.add(rules.upfrontPayment().reason(paymentMatch));
             reasonIds.add("rule.upfront_payment");
         }
 
-        String accountMatch = rules.accountData().firstPatternMatch(message);
+        String accountMatch = rules.accountData().firstPatternMatch(chatEvent);
         if (accountMatch != null) {
             totalScore += rules.accountData().score();
             reasonParts.add(rules.accountData().reason(accountMatch));
             reasonIds.add("rule.account_data");
         }
 
-        String tooGoodMatch = rules.tooGood().firstPatternMatch(message);
+        String tooGoodMatch = rules.tooGood().firstPatternMatch(chatEvent);
         if (tooGoodMatch != null) {
             totalScore += rules.tooGood().score();
             reasonParts.add(rules.tooGood().reason(tooGoodMatch));
             reasonIds.add("rule.too_good");
         }
 
-        String coercionThreatMatch = rules.coercionThreat().firstPatternMatch(message);
+        String coercionThreatMatch = rules.coercionThreat().firstPatternMatch(chatEvent);
         if (coercionThreatMatch != null) {
             totalScore += rules.coercionThreat().score();
             reasonParts.add(rules.coercionThreat().reason(coercionThreatMatch));
             reasonIds.add("rule.coercion_threat");
         }
 
-        String middlemanMatch = rules.middleman().firstPatternMatch(message);
-        String middlemanClaimMatch = rules.middlemanClaim().firstPatternMatch(message);
+        String middlemanMatch = rules.middleman().firstPatternMatch(chatEvent);
+        String middlemanClaimMatch = rules.middlemanClaim().firstPatternMatch(chatEvent);
         if (middlemanClaimMatch != null) {
             totalScore += rules.middlemanClaim().score();
             reasonParts.add(rules.middlemanClaim().reason(middlemanClaimMatch));
             reasonIds.add("rule.middleman_claim");
         }
 
-        String proofBaitMatch = rules.proofBait().firstPatternMatch(message);
+        String proofBaitMatch = rules.proofBait().firstPatternMatch(chatEvent);
         if (proofBaitMatch != null) {
             totalScore += rules.proofBait().score();
             reasonParts.add(rules.proofBait().reason(proofBaitMatch));
@@ -134,8 +134,8 @@ public final class RuleStage extends Stage {
             || proofBaitMatch != null;
 
         Rule.PhraseScore urgency = rules.urgency().phraseMatch(message);
-        boolean urgencyAllowlisted = rules.urgencyAllowlist().patternMatches(message);
-        boolean tradeContextAllowlisted = rules.tradeContextAllowlist().patternMatches(message);
+        boolean urgencyAllowlisted = rules.urgencyAllowlist().patternMatches(chatEvent);
+        boolean tradeContextAllowlisted = rules.tradeContextAllowlist().patternMatches(chatEvent);
         boolean urgencyTriggered = false;
         if (riskContext
             && coercionThreatMatch == null
@@ -150,7 +150,7 @@ public final class RuleStage extends Stage {
         }
 
         Rule.PhraseScore trust = rules.trust().phraseMatch(message);
-        boolean trustAllowlisted = rules.trustAllowlist().patternMatches(message);
+        boolean trustAllowlisted = rules.trustAllowlist().patternMatches(chatEvent);
         boolean trustTriggered = false;
         if (trust.score() >= rules.trust().threshold()
             && !(trustAllowlisted && !riskContext)) {
@@ -160,7 +160,7 @@ public final class RuleStage extends Stage {
             reasonIds.add("rule.trust");
         }
 
-        String discordHandleMatch = rules.discordHandle().firstPatternMatch(message);
+        String discordHandleMatch = rules.discordHandle().firstPatternMatch(chatEvent);
         if (externalPlatformMatch != null && discordHandleMatch != null) {
             totalScore += rules.discordHandle().score();
             reasonParts.add(rules.discordHandle().reason(discordHandleMatch));

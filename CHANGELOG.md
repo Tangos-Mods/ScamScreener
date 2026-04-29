@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented in this file.
 
+## 2.3.4 - 2026-04-29
+
+### Changed
+- Rule and funnel regex checks now reuse cached pattern matches per chat event instead of repeating the same regex work across stages.
+
+### Fixed
+- Inbound chat callbacks that only expose the sender through Fabric message params now still enter the scam pipeline as `PLAYER` chat messages.
+
 ## 2.3.3 - 2026-04-21
 
 ### Changed
