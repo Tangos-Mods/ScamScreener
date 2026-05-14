@@ -140,7 +140,7 @@ Legacy-Strings werden beim Laden normalisiert, damit alte Reviews weiter nutzbar
 ## Dev-Workflow im IDE
 
 1. Spieler exportiert Cases (`Export for Dev` oder `/scamscreener review export`).
-2. Spieler meldet sich im Training Hub an und laedt `training-cases-v2.jsonl` hoch.
+2. Spieler oeffnet den Training Hub im Mod und laedt `training-cases-v2.jsonl` anonym ueber die lokale `clientId` hoch.
 3. Dev legt die final geprueften Exporte in `trainingdata/` (rekursiv, beliebige Unterordner).
 4. Dev startet den Autotuner:
    - Dry run:
@@ -150,6 +150,13 @@ Legacy-Strings werden beim Laden normalisiert, damit alte Reviews weiter nutzbar
 5. Dev validiert das Ergebnis in Tests und Ingame.
 6. Dev trainiert/entwickelt ContextStage optional weiter direkt aus `training-cases-v2.jsonl`.
 7. Dev liefert neue Mod-Version.
+
+## Training Hub Verknuepfung
+
+- Der Mod nutzt fuer Uploads nur die lokale `trainingClientId`.
+- Der Upload enthaelt zusaetzlich einen SHA-256 Payload- und Handshake-Hash fuer Server-Pruefung.
+- Keine Account-Anmeldung findet im Mod statt.
+- Die Zuordnung dieser `clientId` zu einem Web-Account passiert spaeter im Training Hub.
 
 ## Was der Autotuner macht
 

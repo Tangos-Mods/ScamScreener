@@ -62,11 +62,11 @@ Diese Datei laedst du im Training Hub hoch (`server/`).
 
 ## Training Hub Upload
 
-1. Export im Spiel ausfuehren (`Export for Dev` oder `/scamscreener review export`).
-2. Webseite im Browser oeffnen (`server` Deployment).
-3. Registrieren/Anmelden.
-4. `training-cases-v2.jsonl` im Upload-Fenster hochladen.
-5. Im Dashboard siehst du deine eigenen Beitraege.
+1. Export im Spiel ausfuehren oder direkt `Contribute Training Data` nutzen.
+2. Im Mod den anonymen Upload mit der lokalen `clientId` starten.
+3. Optional die Webseite im Browser oeffnen.
+4. Die `clientId` spaeter im Training Hub mit deinem Account verknuepfen.
+5. Im Dashboard siehst du nach der Verknuepfung die zugeordneten Beitraege.
 
 ## Typische Fehler
 

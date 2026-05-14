@@ -4,7 +4,7 @@ import eu.tango.scamscreener.ScamScreenerMod;
 import eu.tango.scamscreener.config.data.AlertRiskLevel;
 import eu.tango.scamscreener.review.ReviewVerdict;
 import eu.tango.scamscreener.training.TrainingCaseExportService;
-import eu.tango.scamscreener.training.ScamScreenerClientSession;
+import eu.tango.scamscreener.training.TrainingHubClient;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.HoverEvent;
 import net.minecraft.text.MutableText;
@@ -437,7 +437,7 @@ public final class ClientMessages {
         return error("Training upload aborted: " + displayValue(message) + ".");
     }
 
-    public static MutableText trainingUploadCompleted(ScamScreenerClientSession.UploadResult result) {
+    public static MutableText trainingUploadCompleted(TrainingHubClient.UploadResult result) {
         if (result == null) {
             return prefixed().append(Text.literal("Training upload finished.").formatted(Formatting.GRAY));
         }

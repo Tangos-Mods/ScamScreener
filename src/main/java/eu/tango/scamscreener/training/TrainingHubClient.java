@@ -1,6 +1,5 @@
 package eu.tango.scamscreener.training;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -15,168 +14,61 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
-import java.time.Instant;
+import java.util.HexFormat;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Minimal authenticated client session for the ScamScreener Training Hub API.
+ * Minimal anonymous Training Hub upload client.
  */
-public final class ScamScreenerClientSession {
+public final class TrainingHubClient {
     private static final URI DEFAULT_BASE_URI = URI.create("https://scamscreener.creepans.net");
     private static final String TRAINING_UPLOAD_FILENAME = "training-cases-v2.jsonl";
+    private static final String PAYLOAD_SHA256_HEADER = "X-ScamScreener-Payload-Sha256";
+    private static final String HANDSHAKE_SHA256_HEADER = "X-ScamScreener-Handshake-Sha256";
     private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(5);
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(15);
     private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
         .connectTimeout(CONNECT_TIMEOUT)
         .build();
-    private static final Gson GSON = new Gson();
 
-    private final URI baseUri;
-    private final HttpClient httpClient;
-    private final String sessionToken;
-    private final Instant expiresAt;
-    private final String username;
-
-    private ScamScreenerClientSession(
-        URI baseUri,
-        HttpClient httpClient,
-        String sessionToken,
-        Instant expiresAt,
-        String username
-    ) {
-        this.baseUri = baseUri;
-        this.httpClient = httpClient;
-        this.sessionToken = sessionToken;
-        this.expiresAt = expiresAt;
-        this.username = username;
+    private TrainingHubClient() {
     }
 
-    public static CompletableFuture<ScamScreenerClientSession> loginAsync(String usernameOrEmail, String password) {
-        String normalizedUsernameOrEmail = usernameOrEmail == null ? "" : usernameOrEmail.trim();
-        String submittedPassword = password == null ? "" : password;
-        if (normalizedUsernameOrEmail.isBlank() || submittedPassword.isBlank()) {
-            return CompletableFuture.failedFuture(new IllegalStateException("Enter your ScamScreener username/email and password."));
+    public static CompletableFuture<UploadResult> uploadTrainingDataAsync(String trainingClientId, Path trainingCasesFile) {
+        return uploadTrainingDataAsync(DEFAULT_BASE_URI, trainingClientId, trainingCasesFile);
+    }
+
+    static CompletableFuture<UploadResult> uploadTrainingDataAsync(URI baseUri, String trainingClientId, Path trainingCasesFile) {
+        String normalizedTrainingClientId = normalizeTrainingClientId(trainingClientId);
+        if (normalizedTrainingClientId.isBlank()) {
+            return CompletableFuture.failedFuture(new IllegalStateException("Training client ID is unavailable."));
         }
-
-        HttpRequest request = HttpRequest.newBuilder(DEFAULT_BASE_URI.resolve("/api/v1/client/auth/login"))
-            .header("Accept", "application/json")
-            .header("Content-Type", "application/json")
-            .header("User-Agent", userAgent())
-            .timeout(REQUEST_TIMEOUT)
-            .POST(HttpRequest.BodyPublishers.ofString(
-                GSON.toJson(new LoginRequest(normalizedUsernameOrEmail, submittedPassword)),
-                StandardCharsets.UTF_8
-            ))
-            .build();
-
-        return HTTP_CLIENT.sendAsync(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8))
-            .thenApply(response -> parseLoginResponse(response.statusCode(), response.body(), normalizedUsernameOrEmail));
-    }
-
-    public CompletableFuture<UploadResult> uploadTrainingDataAsync(Path trainingCasesFile) {
         if (trainingCasesFile == null) {
             return CompletableFuture.failedFuture(new IllegalStateException("Training export file is unavailable."));
-        }
-        if (isExpired()) {
-            return CompletableFuture.failedFuture(new SessionExpiredException("Session expired. Please log in again."));
         }
 
         return AsyncFileWorkQueue.submitTask(() -> readTrainingPayload(trainingCasesFile))
             .thenCompose(payload -> {
-                HttpRequest request = HttpRequest.newBuilder(baseUri.resolve("/api/v1/client/uploads"))
+                UploadHandshake handshake = createUploadHandshake(normalizedTrainingClientId, payload);
+                HttpRequest request = HttpRequest.newBuilder(baseUri.resolve("/api/v1/client/uploads/anonymous"))
                     .header("Accept", "application/json")
-                    .header("Authorization", "Bearer " + sessionToken)
                     .header("Content-Type", "application/x-ndjson")
                     .header("X-ScamScreener-Filename", TRAINING_UPLOAD_FILENAME)
+                    .header("X-ScamScreener-Client-Id", normalizedTrainingClientId)
+                    .header(PAYLOAD_SHA256_HEADER, handshake.payloadSha256())
+                    .header(HANDSHAKE_SHA256_HEADER, handshake.handshakeSha256())
                     .header("User-Agent", userAgent())
                     .timeout(REQUEST_TIMEOUT)
                     .POST(HttpRequest.BodyPublishers.ofString(payload, StandardCharsets.UTF_8))
                     .build();
 
-                return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+                return HTTP_CLIENT.sendAsync(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
             })
             .thenApply(response -> parseUploadResponse(response.statusCode(), response.body()));
-    }
-
-    public CompletableFuture<Void> logoutAsync() {
-        HttpRequest request = HttpRequest.newBuilder(baseUri.resolve("/api/v1/client/auth/logout"))
-            .header("Accept", "application/json")
-            .header("Authorization", "Bearer " + sessionToken)
-            .header("User-Agent", userAgent())
-            .timeout(REQUEST_TIMEOUT)
-            .POST(HttpRequest.BodyPublishers.noBody())
-            .build();
-
-        return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8))
-            .thenApply(response -> {
-                parseLogoutResponse(response.statusCode(), response.body());
-                return null;
-            });
-    }
-
-    public boolean isExpired() {
-        return !expiresAt.isAfter(Instant.now());
-    }
-
-    public Instant expiresAt() {
-        return expiresAt;
-    }
-
-    public String username() {
-        return username;
-    }
-
-    static ScamScreenerClientSession parseLoginResponse(int statusCode, String body, String fallbackUsername) {
-        JsonObject json = parseJsonObject(body);
-        if (statusCode == 200) {
-            String responseStatus = stringValue(json, "status");
-            if (!responseStatus.isBlank() && !"ok".equalsIgnoreCase(responseStatus)) {
-                throw new IllegalStateException(responseMessage(json, "Login failed."));
-            }
-
-            String sessionToken = stringValue(json, "sessionToken");
-            String expiresAtText = stringValue(json, "expiresAt");
-            if (sessionToken.isBlank() || expiresAtText.isBlank()) {
-                throw new IllegalStateException("Login response was incomplete.");
-            }
-
-            Instant expiresAt;
-            try {
-                expiresAt = Instant.parse(expiresAtText);
-            } catch (RuntimeException exception) {
-                throw new IllegalStateException("Login response did not contain a valid expiry.", exception);
-            }
-
-            JsonObject user = objectValue(json, "user");
-            String username = stringValue(user, "username");
-            if (username.isBlank()) {
-                username = fallbackUsername == null ? "" : fallbackUsername.trim();
-            }
-
-            return new ScamScreenerClientSession(
-                DEFAULT_BASE_URI,
-                HTTP_CLIENT,
-                sessionToken,
-                expiresAt,
-                username
-            );
-        }
-        if (statusCode == 401) {
-            throw new IllegalStateException(responseMessage(json, "Invalid credentials."));
-        }
-        if (statusCode == 403) {
-            throw new IllegalStateException(responseMessage(json, "Admin accounts with required web MFA cannot use the mod upload flow."));
-        }
-        if (statusCode == 429) {
-            throw new IllegalStateException(rateLimitMessage(json, "Too many failed login attempts. Please try again later."));
-        }
-        if (statusCode == 415) {
-            throw new IllegalStateException(responseMessage(json, "Login request rejected by the server."));
-        }
-
-        throw new IllegalStateException(responseMessage(json, "Login failed (" + statusCode + ")."));
     }
 
     static UploadResult parseUploadResponse(int statusCode, String body) {
@@ -194,14 +86,11 @@ public final class ScamScreenerClientSession {
                 stringValue(json, "sha256")
             );
         }
-        if (statusCode == 401) {
-            throw new SessionExpiredException("Session expired. Please log in again.");
-        }
         if (statusCode == 400) {
             throw new UploadRejectedException(responseMessage(json, "Upload rejected by the server."));
         }
-        if (statusCode == 403) {
-            throw new UploadRejectedException(responseMessage(json, "This account cannot upload through the mod."));
+        if (statusCode == 401 || statusCode == 403) {
+            throw new UploadRejectedException(responseMessage(json, "Anonymous upload is not available."));
         }
         if (statusCode == 413) {
             throw new UploadRejectedException("Upload rejected because the file is too large.");
@@ -216,15 +105,6 @@ public final class ScamScreenerClientSession {
         throw new IllegalStateException(responseMessage(json, "Upload failed (" + statusCode + ")."));
     }
 
-    static void parseLogoutResponse(int statusCode, String body) {
-        JsonObject json = parseJsonObject(body);
-        if (statusCode == 200 || statusCode == 401) {
-            return;
-        }
-
-        throw new IllegalStateException(responseMessage(json, "Logout failed (" + statusCode + ")."));
-    }
-
     private static String readTrainingPayload(Path trainingCasesFile) {
         try {
             String payload = Files.readString(trainingCasesFile, StandardCharsets.UTF_8);
@@ -236,6 +116,27 @@ public final class ScamScreenerClientSession {
         } catch (IOException exception) {
             throw new IllegalStateException("Could not read training export from " + trainingCasesFile + ".", exception);
         }
+    }
+
+    static UploadHandshake createUploadHandshake(String normalizedTrainingClientId, String payload) {
+        if (normalizedTrainingClientId == null || normalizedTrainingClientId.isBlank()) {
+            throw new IllegalStateException("Training client ID is unavailable.");
+        }
+        if (payload == null || payload.isBlank()) {
+            throw new IllegalStateException("Training payload is unavailable.");
+        }
+
+        String payloadSha256 = sha256Hex(payload);
+        String handshakeSha256 = sha256Hex(normalizedTrainingClientId + ":" + payloadSha256);
+        return new UploadHandshake(payloadSha256, handshakeSha256);
+    }
+
+    private static String normalizeTrainingClientId(String trainingClientId) {
+        if (trainingClientId == null) {
+            return "";
+        }
+
+        return trainingClientId.trim().toLowerCase(Locale.ROOT);
     }
 
     private static String responseMessage(JsonObject json, String fallback) {
@@ -278,15 +179,6 @@ public final class ScamScreenerClientSession {
         } catch (RuntimeException ignored) {
             return new JsonObject();
         }
-    }
-
-    private static JsonObject objectValue(JsonObject json, String key) {
-        if (json == null || key == null || key.isBlank() || !json.has(key)) {
-            return new JsonObject();
-        }
-
-        JsonElement element = json.get(key);
-        return element != null && element.isJsonObject() ? element.getAsJsonObject() : new JsonObject();
     }
 
     private static String stringValue(JsonObject json, String key) {
@@ -339,6 +231,15 @@ public final class ScamScreenerClientSession {
         return "ScamScreener/" + ScamScreenerMod.VERSION + "+" + ScamScreenerMod.MINECRAFT;
     }
 
+    private static String sha256Hex(String value) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            return HexFormat.of().formatHex(digest.digest(value.getBytes(StandardCharsets.UTF_8)));
+        } catch (NoSuchAlgorithmException exception) {
+            throw new IllegalStateException("SHA-256 is unavailable.", exception);
+        }
+    }
+
     public record UploadResult(
         String status,
         long uploadId,
@@ -350,21 +251,15 @@ public final class ScamScreenerClientSession {
     ) {
     }
 
-    public static final class SessionExpiredException extends IllegalStateException {
-        public SessionExpiredException(String message) {
-            super(message);
-        }
-    }
-
     public static final class UploadRejectedException extends IllegalStateException {
         public UploadRejectedException(String message) {
             super(message);
         }
     }
 
-    private record LoginRequest(
-        String usernameOrEmail,
-        String password
+    record UploadHandshake(
+        String payloadSha256,
+        String handshakeSha256
     ) {
     }
 }

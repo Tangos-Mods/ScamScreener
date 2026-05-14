@@ -131,11 +131,13 @@ Export:
 - Runs in the background and reports completion back in chat
 - Format docs: [training_case_v2](docs/training_case_v2.md)
 
-Important status:
+Training Hub upload:
 
-- Training Hub is currently not live.
-- `Contribute Training Data` buttons are intentionally disabled in GUI for now.
-- Local export is still available and stable.
+- GUI: `Contribute Training Data`
+- The mod uploads anonymously with its local `trainingClientId`
+- Each upload includes a SHA-256 payload handshake for `clientId` + file integrity verification
+- No account login is required in the mod
+- Link the `trainingClientId` to your web account later in the Training Hub
 
 ## Configuration Files
 
@@ -146,12 +148,12 @@ ScamScreener stores its data in `config/scamscreener/`:
 - `review.json` (review queue state)
 - `whitelist.json` (trusted players)
 - `blacklist.json` (blocked players)
-- `training-cases-v2.jsonl` (manual export artifact)
+- `training-cases-v2.jsonl` (export + upload artifact)
 
 ## Privacy And Data Handling
 
 - ScamScreener runs client-side.
-- No automatic training upload is performed by the mod.
+- Training uploads start only when you trigger them in the GUI.
 - Review/training payloads are sanitized and do not persist sender UUID identity.
 - UUID-based persistence is intentionally limited to whitelist/blacklist management.
 

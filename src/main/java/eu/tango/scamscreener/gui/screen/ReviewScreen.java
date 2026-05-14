@@ -177,7 +177,7 @@ public final class ReviewScreen extends BaseScreen {
                 + " | Search " + searchSummary()
         );
         drawLine(context, left, CONTENT_TOP + 36, "Select a case or start a New Case, then use Review Case to annotate context and signals.");
-        drawLine(context, left, CONTENT_TOP + 48, "Training Hub uploads reviewed SAFE/RISK cases after ScamScreener login.");
+        drawLine(context, left, CONTENT_TOP + 48, "Training Hub uploads reviewed SAFE/RISK cases anonymously with your local client ID.");
 
         if (listWidget != null) {
             listWidget.render(context, this.textRenderer, mouseX, mouseY);

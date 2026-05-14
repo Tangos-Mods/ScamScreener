@@ -15,7 +15,7 @@ import net.minecraft.text.Text;
  */
 public final class ScamScreenerMainScreen extends BaseScreen {
     private static final Text AUTHOR_TEXT = Text.literal("Made by Pankraz01");
-    private static final Text TRAINING_HUB_NOTE_TEXT = Text.literal("ScamScreener login only. Never use Minecraft credentials.");
+    private static final Text TRAINING_HUB_NOTE_TEXT = Text.literal("Training Hub uploads use your local client ID. Link it later on the website.");
 
     private ButtonWidget alertLevelButton;
     private ButtonWidget autoCaptureButton;

@@ -2,6 +2,21 @@
 
 All notable changes to this project are documented in this file.
 
+## 2.4.0 - 2026-05-13
+
+### Added
+- Anonymous Training Hub upload integrity handshake via SHA-256 payload and client-id hash headers.
+- Optional local Training Hub integration test against `http://128.0.0.1/` that skips automatically when the local test site is unavailable.
+
+### Changed
+- Removed the old in-mod ScamScreener account login flow for Training Hub uploads.
+- Training Hub uploads now authenticate directly with the installation-local `trainingClientId` instead of an in-memory user session.
+- The in-game Training Hub screen is now a minimal anonymous upload UI that shows the local client ID, export file path, and reviewed case count.
+- Main-screen, review-screen, and documentation text now describe the anonymous `trainingClientId` upload flow and later web-side account linking.
+
+### Removed
+- Legacy Training Hub username/password inputs, login/logout buttons, and runtime upload session handling from the mod.
+
 ## 2.3.4 - 2026-04-29
 
 ### Changed
