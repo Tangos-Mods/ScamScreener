@@ -3,8 +3,8 @@ package eu.tango.scamscreener.message;
 import eu.tango.scamscreener.ScamScreenerMod;
 import eu.tango.scamscreener.config.data.AlertRiskLevel;
 import eu.tango.scamscreener.review.ReviewVerdict;
-import eu.tango.scamscreener.training.ScamScreenerClientSession;
 import eu.tango.scamscreener.training.TrainingCaseExportService;
+import eu.tango.scamscreener.training.TrainingHubClient;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
@@ -437,7 +437,7 @@ public final class ClientMessages {
         return error("Training upload aborted: " + displayValue(message) + ".");
     }
 
-    public static MutableComponent trainingUploadCompleted(ScamScreenerClientSession.UploadResult result) {
+    public static MutableComponent trainingUploadCompleted(TrainingHubClient.UploadResult result) {
         if (result == null) {
             return prefixed().append(Component.literal("Training upload finished.").withStyle(ChatFormatting.GRAY));
         }

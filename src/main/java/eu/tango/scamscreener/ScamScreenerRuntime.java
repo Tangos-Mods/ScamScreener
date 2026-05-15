@@ -26,7 +26,6 @@ import eu.tango.scamscreener.pipeline.state.BehaviorStore;
 import eu.tango.scamscreener.pipeline.state.FunnelStore;
 import eu.tango.scamscreener.pipeline.state.TrendStore;
 import eu.tango.scamscreener.review.ReviewStore;
-import eu.tango.scamscreener.training.ScamScreenerClientSession;
 import eu.tango.scamscreener.training.TrainingCaseExportService;
 import eu.tango.scamscreener.training.TrainingHubUploadWorker;
 import lombok.Getter;
@@ -90,7 +89,6 @@ public final class ScamScreenerRuntime {
     private final Set<String> blacklistUuidLookupsInFlight;
     private volatile RuntimeConfig runtimeConfig;
     private volatile RulesConfig rulesConfig;
-    private volatile ScamScreenerClientSession trainingHubSession;
     @Getter
     @Accessors(fluent = true)
     private volatile PipelineEngine pipelineEngine;
@@ -119,8 +117,6 @@ public final class ScamScreenerRuntime {
         trainingHubUploadWorker = new TrainingHubUploadWorker(
             trainingCaseExportService,
             reviewStore::entries,
-            this::trainingHubSession,
-            this::clearTrainingHubSession,
             this::config
         );
         stageContributions = loadStageContributions();
@@ -193,37 +189,6 @@ public final class ScamScreenerRuntime {
     }
 
     /**
-     * Returns the active in-memory Training Hub session, clearing it when expired.
-     *
-     * @return the active authenticated upload session, when still valid
-     */
-    public synchronized ScamScreenerClientSession trainingHubSession() {
-        ScamScreenerClientSession currentSession = trainingHubSession;
-        if (currentSession != null && currentSession.isExpired()) {
-            trainingHubSession = null;
-            return null;
-        }
-
-        return currentSession;
-    }
-
-    /**
-     * Stores the current in-memory Training Hub session.
-     *
-     * @param trainingHubSession the authenticated upload session to reuse
-     */
-    public synchronized void setTrainingHubSession(ScamScreenerClientSession trainingHubSession) {
-        this.trainingHubSession = trainingHubSession;
-    }
-
-    /**
-     * Clears the current in-memory Training Hub session.
-     */
-    public synchronized void clearTrainingHubSession() {
-        trainingHubSession = null;
-    }
-
-    /**
      * Reloads runtime config and persisted list contents from disk.
      */
     public synchronized void reload() {
@@ -276,6 +241,10 @@ public final class ScamScreenerRuntime {
         trendStore.reset();
         funnelStore.reset();
         recentChatCache.clear();
+    }
+
+    public synchronized String trainingClientId() {
+        return ensureTrainingClientId();
     }
 
     private void saveWhitelist() {

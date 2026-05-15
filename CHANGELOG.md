@@ -2,6 +2,21 @@
 
 All notable changes to this project are documented in this file.
 
+## 2.4.0 - 2026-05-13
+
+### Added
+- Anonymous Training Hub upload integrity handshake via SHA-256 payload and client-id hash headers.
+- Optional local Training Hub integration test against `http://128.0.0.1/` that skips automatically when the local test site is unavailable.
+
+### Changed
+- Removed the old in-mod ScamScreener account login flow for Training Hub uploads.
+- Training Hub uploads now authenticate directly with the installation-local `trainingClientId` instead of an in-memory user session.
+- The in-game Training Hub screen is now a minimal anonymous upload UI that shows the local client ID, export file path, and reviewed case count.
+- Main-screen, review-screen, and documentation text now describe the anonymous `trainingClientId` upload flow and later web-side account linking.
+
+### Removed
+- Legacy Training Hub username/password inputs, login/logout buttons, and runtime upload session handling from the mod.
+
 ## 2.3.4 - 2026-04-29
 
 ### Changed
@@ -12,26 +27,28 @@ All notable changes to this project are documented in this file.
 
 ## 2.3.3 - 2026-04-21
 
-### Changed
-- Minecraft `26.1`, `26.1.1`, and `26.1.2` now use one shared `26.1.x` build configuration instead of separate per-patch property files and artifacts.
-
 ### Fixed
 - Education follow-up messages now link to the moved Community Wiki scams page at `https://hypixelskyblock.minecraft.wiki/w/Scams`.
 - The education help hover text no longer references Fandom and now labels the destination as `Community Wiki`.
 
-## 2.3.2 - 2026-04-21
+## 2.3.2 - 2026-04-19
 
 ### Added
-- Background Mojang profile lookup support for resolving missing UUIDs on blacklist entries.
-- Tests covering UUID lookup parsing and player-list API behavior with the new lookup flow.
-- Stonecutter version properties for Minecraft `26.1.1` and `26.1.2`.
+- Blacklist entries added by player name now resolve the player's UUID asynchronously in the background and persist it once the lookup succeeds.
 
 ### Changed
-- ScamScreener now targets Minecraft `26.1`, `26.1.1`, and `26.1.2` on this branch.
-- API and project metadata were refreshed to document the expanded `26.1.x` support.
+- Runtime-backed API queries now return the current state when called again instead of exposing only the initialization state.
+- Returned API list and entry values remain snapshots, so companion mods must query again to observe later changes.
+
+## 2.3.1 - 2026-04-09
 
 ### Fixed
-- Blacklist entries added without a UUID can now backfill their UUID asynchronously instead of staying name-only indefinitely.
+- Removed the published `MarketGuard` dependency metadata again so `MarketGuard` can depend on `ScamScreener` without a circular Fabric dependency.
+
+## 2.3.0 - 2026-04-05
+
+### Added
+- `MarketGuard` is now declared as a required dependency for supported Fabric releases.
 
 ## 2.2.1 - 2026-03-30
 
@@ -53,14 +70,7 @@ All notable changes to this project are documented in this file.
 - Placeholder text in Training Hub fields no longer stays on top of typed input.
 - The warning about Minecraft credentials is now highlighted in red.
 
-## 2.2.0 - 2026-03-26
-
-### Changed
-- The branch now targets only Minecraft `26.1` and uses Mojang Official Mappings instead of Yarn.
-- Stonecutter versioning remains in place, but now only builds the single `26.1` target on this branch.
-- Build and CI now target Java `25` for Minecraft `26.1`.
-
-## 2.1.3 - 2026-03-26 END OF LIFE for 1.21.x (legacy Minecraft Versioning)
+## 2.1.3 - 2026-03-26
 
 ### Added
 - Runtime loading of external `PipelineContributor` stages from the `scamscreener-pipeline` Fabric entrypoint.
@@ -70,6 +80,7 @@ All notable changes to this project are documented in this file.
 - Risk warning action labels now show `[review]` instead of `[manage]` while keeping the existing `/scamscreener review manage <alertId>` command path for compatibility.
 - Versioned config loading now uses a smaller direct store implementation instead of the older generic migration wrapper.
 - Internal review, list, and pipeline-state code was simplified by removing unused wrappers and dead abstraction layers.
+- `1.21.10` release metadata now uses the `_EOL` suffix in the publish title.
 
 ### Fixed
 - The public pipeline extension API is now actually wired into runtime pipeline construction instead of existing only as an exposed contract.

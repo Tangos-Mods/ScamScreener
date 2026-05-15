@@ -15,7 +15,7 @@ import net.minecraft.network.chat.Component;
  */
 public final class ScamScreenerMainScreen extends BaseScreen {
     private static final Component AUTHOR_TEXT = Component.literal("Made by Pankraz01");
-    private static final Component TRAINING_HUB_NOTE_TEXT = Component.literal("ScamScreener login only. Never use Minecraft credentials.");
+    private static final Component TRAINING_HUB_NOTE_TEXT = Component.literal("Training Hub uploads use your local client ID. Link it later on the website.");
 
     private Button alertLevelButton;
     private Button autoCaptureButton;

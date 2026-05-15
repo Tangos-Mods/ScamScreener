@@ -42,6 +42,10 @@ public final class TrainingCaseExportService {
         this.trainingClientId = normalizeTrainingClientId(trainingClientId);
     }
 
+    public String trainingClientId() {
+        return trainingClientId;
+    }
+
     /**
      * Exports the provided review entries into the default training export file.
      *
