@@ -2,6 +2,18 @@
 
 All notable changes to this project are documented in this file.
 
+## 2.4.1 - 2026-05-19
+
+### Added
+- Periodic local Training Hub upload reminder that appears once more than 5 reviewed `SAFE`/`RISK` cases are saved and repeats every 30 minutes.
+- Clickable reminder actions for `[upload]` and `[don't show again]`.
+- Review-settings toggle for enabling or disabling the Training Hub upload reminder.
+
+### Changed
+- The in-game Training Hub screen now shows the full local client ID and lets the player copy it with one click.
+- Manual Training Hub uploads now postpone the next reminder window instead of allowing an immediate repeat reminder.
+- Client command help now includes the new `training upload` and `training reminder` actions.
+
 ## 2.4.0 - 2026-05-13
 
 ### Added

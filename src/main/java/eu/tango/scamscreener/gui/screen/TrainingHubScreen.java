@@ -5,6 +5,7 @@ import eu.tango.scamscreener.config.store.ConfigPaths;
 import eu.tango.scamscreener.gui.base.BaseScreen;
 import eu.tango.scamscreener.review.ReviewEntry;
 import eu.tango.scamscreener.review.ReviewVerdict;
+import eu.tango.scamscreener.training.TrainingUploadReminder;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ConfirmLinkScreen;
 import net.minecraft.client.gui.screen.Screen;
@@ -21,12 +22,19 @@ public final class TrainingHubScreen extends BaseScreen {
     private static final int STATUS_SUCCESS_COLOR = 0x99FF99;
     private static final int STATUS_WARNING_COLOR = 0xFFD27F;
     private static final int STATUS_ERROR_COLOR = 0xFF7F7F;
+    private static final int COPY_HINT_COLOR = 0xA8D8FF;
+    private static final int COPY_HINT_HOVER_COLOR = 0xD8EEFF;
     private static final int FORM_TOP = CONTENT_TOP + 106;
 
     private ButtonWidget uploadButton;
     private ButtonWidget openWebsiteButton;
     private volatile String statusText = "Upload reviewed SAFE/RISK cases anonymously with your local client ID.";
     private volatile int statusColor = STATUS_INFO_COLOR;
+    private int clientIdLineX;
+    private int clientIdLineY;
+    private int clientIdLineWidth;
+    private int clientIdLineHeight;
+    private boolean clientIdCopied;
 
     public TrainingHubScreen(Screen parent) {
         super(Text.literal("Training Hub"), parent);
@@ -66,10 +74,22 @@ public final class TrainingHubScreen extends BaseScreen {
         int contentWidth = Math.min(420, Math.max(280, this.width - 40));
         int left = centeredX(contentWidth);
         int y = CONTENT_TOP;
+        String clientIdText = "Client ID: " + ScamScreenerRuntime.getInstance().trainingClientId() + clientIdSuffix();
+        boolean clientIdHovered = isHoveringClientId(mouseX, mouseY);
 
         drawSectionTitle(context, left, y, "Anonymous Upload");
         y += 12;
-        drawLine(context, left, y, "Client ID: " + compactMiddle(ScamScreenerRuntime.getInstance().trainingClientId(), 48));
+        clientIdLineX = left;
+        clientIdLineY = y;
+        clientIdLineWidth = this.textRenderer.getWidth(clientIdText);
+        clientIdLineHeight = this.textRenderer.fontHeight;
+        context.drawTextWithShadow(
+            this.textRenderer,
+            Text.literal(clientIdText),
+            left,
+            y,
+            opaqueColor(clientIdHovered ? COPY_HINT_HOVER_COLOR : COPY_HINT_COLOR)
+        );
         y += 12;
         drawLine(context, left, y, "Reviewed SAFE/RISK cases: " + exportableReviewCount());
         y += 12;
@@ -95,6 +115,15 @@ public final class TrainingHubScreen extends BaseScreen {
         drawLine(context, left, dataInfoY, "Reviewed SAFE/RISK cases stay local until you upload them.");
     }
 
+    @Override
+    public boolean mouseClicked(net.minecraft.client.gui.Click event, boolean doubleClick) {
+        if (event != null && event.button() == 0 && isHoveringClientId(event.x(), event.y())) {
+            copyClientId();
+            return true;
+        }
+        return super.mouseClicked(event, doubleClick);
+    }
+
     private void exportAndUpload() {
         if (ScamScreenerRuntime.getInstance().trainingHubUploadWorker().isRunning()) {
             setStatus("An upload worker is already running.", STATUS_WARNING_COLOR);
@@ -114,6 +143,7 @@ public final class TrainingHubScreen extends BaseScreen {
             return;
         }
 
+        TrainingUploadReminder.postpone();
         setStatus("Anonymous upload started in the background. Retry updates appear in chat.", STATUS_SUCCESS_COLOR);
         refreshButtons();
     }
@@ -150,6 +180,27 @@ public final class TrainingHubScreen extends BaseScreen {
         if (openWebsiteButton != null) {
             openWebsiteButton.active = true;
         }
+    }
+
+    private void copyClientId() {
+        if (this.client == null) {
+            setStatus("Client unavailable.", STATUS_ERROR_COLOR);
+            return;
+        }
+
+        this.client.keyboard.setClipboard(ScamScreenerRuntime.getInstance().trainingClientId());
+        clientIdCopied = true;
+    }
+
+    private String clientIdSuffix() {
+        return clientIdCopied ? " (copied)" : " (click to copy)";
+    }
+
+    private boolean isHoveringClientId(double mouseX, double mouseY) {
+        return mouseX >= clientIdLineX
+            && mouseX < clientIdLineX + clientIdLineWidth
+            && mouseY >= clientIdLineY
+            && mouseY < clientIdLineY + clientIdLineHeight;
     }
 
     private int exportableReviewCount() {

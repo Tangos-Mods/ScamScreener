@@ -1,16 +1,18 @@
-## ScamScreener 2.4.0
+## ScamScreener 2.4.1
 
-This release replaces the old Training Hub account login inside the mod with a direct anonymous upload flow based on the local `trainingClientId`.
-
-### Changed
-- Removed the old in-mod Training Hub username/password login flow.
-- Training uploads now go directly through the installation-local `trainingClientId`.
-- The Training Hub screen inside Minecraft is now a simpler upload-only UI.
+This update improves the anonymous Training Hub flow inside Minecraft and adds a reminder when you have enough reviewed cases ready to upload.
 
 ### Added
-- SHA-256 upload handshake headers so the Training Hub can verify payload integrity together with the submitted client ID.
+- Automatic upload reminder once you have more than 5 saved `SAFE` or `RISK` cases.
+- Clickable `[upload]` and `[don't show again]` actions directly in the reminder chat message.
+- Review setting toggle to disable the Training Hub upload reminder completely.
+
+### Changed
+- The Training Hub screen now shows the full local client ID instead of a shortened preview.
+- Clicking the client ID in the Training Hub now copies it to the clipboard.
+- Manual uploads started from the reminder or Training Hub now postpone the next reminder for 30 minutes.
 
 ### Notes
-- No ScamScreener web account is needed inside the mod anymore.
-- Client/account linking is now intended to happen later inside the Training Hub website.
+- Upload reminders only appear locally on your client.
+- The reminder uses the same reviewed `SAFE` and `RISK` case count that the anonymous Training Hub upload exports.
 - No Microsoft Account Needed. STAY SAFE!

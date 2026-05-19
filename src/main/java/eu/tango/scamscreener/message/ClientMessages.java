@@ -277,7 +277,7 @@ public final class ClientMessages {
 
     public static MutableText commandHelp() {
         return prefixed().append(Text.literal(
-            "Commands: enable, disable, whitelist, blacklist, review, review export, alertlevel, autoleave, mute, unmute, edu disable, debug, metrics, profiler, rules, runtime, messages, settings."
+            "Commands: enable, disable, whitelist, blacklist, review, review export, training upload, training reminder, alertlevel, autoleave, mute, unmute, edu disable, debug, metrics, profiler, rules, runtime, messages, settings."
         ).formatted(Formatting.GRAY));
     }
 
@@ -421,6 +421,14 @@ public final class ClientMessages {
             .append(Text.literal(" reviewed cases.").formatted(Formatting.GRAY));
     }
 
+    public static MutableText trainingUploadAlreadyRunning() {
+        return prefixed().append(Text.literal("A training upload is already running.").formatted(Formatting.GRAY));
+    }
+
+    public static MutableText trainingUploadNoCasesAvailable() {
+        return error("No reviewed SAFE/RISK cases are available for upload.");
+    }
+
     public static MutableText trainingUploadRetryScheduled(String message, int retriesRemaining, int retryDelaySeconds) {
         String retrySuffix = retriesRemaining == 1 ? " time" : " times";
         return prefixed()
@@ -460,6 +468,34 @@ public final class ClientMessages {
                 .append(Text.literal(displayValue(result.detail())).formatted(Formatting.YELLOW));
             default -> prefixed().append(Text.literal("Training upload finished.").formatted(Formatting.GRAY));
         };
+    }
+
+    public static MutableText trainingUploadReminder(int caseCount) {
+        return prefixed()
+            .append(Text.literal("You have ").formatted(Formatting.GRAY))
+            .append(Text.literal(String.valueOf(Math.max(0, caseCount))).formatted(Formatting.AQUA, Formatting.BOLD))
+            .append(Text.literal(" saved cases. Upload them anonymously to help making this mod better ").formatted(Formatting.GRAY))
+            .append(actionTag(
+                "upload",
+                Formatting.GREEN,
+                "Start an anonymous Training Hub upload.",
+                "/ss training upload"
+            ))
+            .append(Text.literal(" ").formatted(Formatting.GRAY))
+            .append(actionTag(
+                "don't show again",
+                Formatting.GRAY,
+                "Disable future training upload reminders.",
+                "/ss training reminder off"
+            ));
+    }
+
+    public static MutableText trainingUploadReminderEnabled() {
+        return prefixed().append(Text.literal("Training upload reminder enabled.").formatted(Formatting.GRAY));
+    }
+
+    public static MutableText trainingUploadReminderDisabled() {
+        return prefixed().append(Text.literal("Training upload reminder disabled.").formatted(Formatting.GRAY));
     }
 
     public static MutableText reviewSelectionRequired() {

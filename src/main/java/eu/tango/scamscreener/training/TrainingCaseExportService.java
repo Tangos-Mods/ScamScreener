@@ -95,6 +95,26 @@ public final class TrainingCaseExportService {
         return AsyncFileWorkQueue.submitTask(() -> exportReviewedCasesSnapshot(entrySnapshots, trainingCasesFile));
     }
 
+    public static int countExportableReviewedCases(Iterable<ReviewEntry> entries) {
+        int count = 0;
+        if (entries == null) {
+            return 0;
+        }
+
+        for (ReviewEntry entry : entries) {
+            if (entry == null) {
+                continue;
+            }
+
+            ReviewVerdict verdict = entry.getVerdict();
+            if (verdict == ReviewVerdict.RISK || verdict == ReviewVerdict.SAFE) {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
     private TrainingCaseExportResult exportReviewedCasesSnapshot(
         List<ReviewEntry> entries,
         Path trainingCasesFile

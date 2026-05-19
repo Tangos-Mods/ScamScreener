@@ -1,10 +1,14 @@
 package eu.tango.scamscreener.message;
 
 import net.minecraft.text.MutableText;
+import net.minecraft.text.Style;
 import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Method;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ClientMessagesTest {
@@ -61,5 +65,42 @@ class ClientMessagesTest {
         assertTrue(message.contains("Training upload failed: network timeout."));
         assertTrue(message.contains("Retrying automatically 3 more times"));
         assertTrue(message.contains("30s between attempts"));
+    }
+
+    @Test
+    void trainingUploadReminderMatchesExpectedTextAndActions() {
+        MutableText message = ClientMessages.trainingUploadReminder(7);
+
+        assertEquals(
+            "[ScamScreener] You have 7 saved cases. Upload them anonymously to help making this mod better [upload] [don't show again]",
+            message.getString()
+        );
+
+        Style uploadStyle = message.getSiblings().get(3).getStyle();
+        Style disableStyle = message.getSiblings().get(5).getStyle();
+
+        assertNotNull(uploadStyle.getClickEvent());
+        assertEquals("/ss training upload", extractClickValue(uploadStyle));
+        assertNotNull(disableStyle.getClickEvent());
+        assertEquals("/ss training reminder off", extractClickValue(disableStyle));
+    }
+
+    private static String extractClickValue(Style style) {
+        if (style == null || style.getClickEvent() == null) {
+            return null;
+        }
+
+        for (String accessor : new String[]{"command", "value", "getValue", "uri", "url", "file", "path"}) {
+            try {
+                Method method = style.getClickEvent().getClass().getMethod(accessor);
+                Object value = method.invoke(style.getClickEvent());
+                if (value != null) {
+                    return value.toString();
+                }
+            } catch (Exception ignored) {
+            }
+        }
+
+        return null;
     }
 }

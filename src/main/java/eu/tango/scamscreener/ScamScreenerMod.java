@@ -9,6 +9,7 @@ import eu.tango.scamscreener.message.UpdateJoinNotifier;
 import eu.tango.scamscreener.profiler.ScamScreenerProfiler;
 import eu.tango.scamscreener.profiler.web.ProfilerWebService;
 import eu.tango.scamscreener.review.ReviewCaptureHandler;
+import eu.tango.scamscreener.training.TrainingUploadReminder;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.util.Identifier;
@@ -34,6 +35,7 @@ public class ScamScreenerMod implements ClientModInitializer {
         ReviewCaptureHandler.initialize();
         DecisionMessageHandler.initialize();
         ChatPipelineListener.initialize();
+        TrainingUploadReminder.initialize();
         DisabledJoinNotifier.initialize();
         UpdateJoinNotifier.initialize();
 
