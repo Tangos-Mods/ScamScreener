@@ -136,6 +136,22 @@ public class ChatPipelineListenerTest {
     }
 
     @Test
+    void senderBackedSystemPrefixDoesNotEnterAsPlayerMessage() {
+        ChatEvent systemEvent = ChatPipelineListener.classifyChatMessage(
+            Text.literal("[Skyblocker] BetterMap ready"),
+            new GameProfile(UUID.fromString("123e4567-e89b-12d3-a456-426614174001"), "Skyblocker"),
+            null,
+            Instant.ofEpochMilli(3_500L),
+            32767
+        );
+
+        assertEquals(ChatSourceType.SYSTEM, systemEvent.getSourceType());
+        assertEquals("", systemEvent.getSenderName());
+        assertEquals("[Skyblocker] BetterMap ready", systemEvent.getRawMessage());
+        assertEquals(false, ChatPipelineListener.shouldEnterPipeline(systemEvent));
+    }
+
+    @Test
     void paramBackedChatMessagesStillEnterAsPlayerMessages() {
         ChatEvent playerEvent = ChatPipelineListener.classifyChatMessage(
             Text.literal("add me on discord"),
@@ -148,5 +164,21 @@ public class ChatPipelineListenerTest {
         assertEquals(ChatSourceType.PLAYER, playerEvent.getSourceType());
         assertEquals("Pankraz01", playerEvent.getSenderName());
         assertEquals("add me on discord", playerEvent.getRawMessage());
+    }
+
+    @Test
+    void paramBackedSystemPrefixDoesNotEnterAsPlayerMessage() {
+        ChatEvent systemEvent = ChatPipelineListener.classifyChatMessage(
+            Text.literal("[Skyblocker] BetterMap ready"),
+            null,
+            new SenderNameParams(),
+            Instant.ofEpochMilli(4_500L),
+            32767
+        );
+
+        assertEquals(ChatSourceType.SYSTEM, systemEvent.getSourceType());
+        assertEquals("", systemEvent.getSenderName());
+        assertEquals("[Skyblocker] BetterMap ready", systemEvent.getRawMessage());
+        assertEquals(false, ChatPipelineListener.shouldEnterPipeline(systemEvent));
     }
 }

@@ -191,11 +191,24 @@ public final class ChatPipelineListener {
             params,
             receptionTimestamp,
             maxChatLength,
-            ChatSourceType.UNKNOWN,
-            true
+            ChatSourceType.UNKNOWN
         );
+
+        ChatLineClassifier.Analysis analysis = ChatLineClassifier.analyze(inboundEvent.getRawMessage());
+        if (analysis.type() == ChatLineClassifier.ChatLineType.SYSTEM) {
+            return new ChatEvent(analysis.cleanedLine(), null, "", inboundEvent.getTimestampMs(), ChatSourceType.SYSTEM);
+        }
+        if (analysis.type() == ChatLineClassifier.ChatLineType.IGNORED) {
+            return null;
+        }
         if (inboundEvent.hasSender()) {
-            return inboundEvent;
+            return new ChatEvent(
+                inboundEvent.getRawMessage(),
+                inboundEvent.getSenderUuid(),
+                inboundEvent.getSenderName(),
+                inboundEvent.getTimestampMs(),
+                ChatSourceType.PLAYER
+            );
         }
 
         return classifyVisibleLine(inboundEvent.getRawMessage(), inboundEvent.getTimestampMs());
