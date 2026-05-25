@@ -11,12 +11,23 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 /**
  * First pipeline stage reserved for mute and suppression logic.
  */
 public final class MuteStage extends Stage {
+    private static final Set<String> DROPPED_PLAYER_MESSAGES = Set.of(
+        "[skyblocker] 300 score reached!",
+        "[skyblocker] 270 score reached!",
+        "prince dead!",
+        "mimic dead!"
+    );
+    private static final Pattern SKYBLOCKER_CRYPTS_MESSAGE =
+        Pattern.compile("^\\[skyblocker\\] we only have [0-4] crypts out of 5, we need more!$");
+
     private final RuleCatalog rules;
     private final Map<String, Long> recentDuplicateKeys = new LinkedHashMap<>();
 
@@ -64,6 +75,10 @@ public final class MuteStage extends Stage {
         }
 
         String normalizedMessage = chatEvent.getNormalizedMessage();
+        if (chatEvent.isPlayerSource() && shouldDropPlayerMessage(normalizedMessage)) {
+            return allow("MUTE_DUNGEON_MOD_BYPASS", "mute.dungeon_mod_bypass");
+        }
+
         if (chatEvent.isPlayerSource() && mute.matchesHarmlessMessage(normalizedMessage)) {
             return allow(mute.harmlessBypassReason(), "mute.noise_bypass");
         }
@@ -135,5 +150,14 @@ public final class MuteStage extends Stage {
         }
 
         return "ANON|" + normalizedMessage;
+    }
+
+    private static boolean shouldDropPlayerMessage(String normalizedMessage) {
+        if (normalizedMessage == null || normalizedMessage.isBlank()) {
+            return false;
+        }
+
+        return DROPPED_PLAYER_MESSAGES.contains(normalizedMessage)
+            || SKYBLOCKER_CRYPTS_MESSAGE.matcher(normalizedMessage).matches();
     }
 }

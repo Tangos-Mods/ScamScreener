@@ -9,8 +9,9 @@
       <change beforePath="$PROJECT_DIR$/CHANGELOG.md" beforeDir="false" afterPath="$PROJECT_DIR$/CHANGELOG.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/MODRINTH.md" beforeDir="false" afterPath="$PROJECT_DIR$/MODRINTH.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/gradle.properties" beforeDir="false" afterPath="$PROJECT_DIR$/gradle.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/chat/ChatPipelineListener.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/chat/ChatPipelineListener.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/stage/MuteStage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/eu/tango/scamscreener/pipeline/stage/MuteStage.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/test/java/eu/tango/scamscreener/chat/ChatPipelineListenerTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/eu/tango/scamscreener/chat/ChatPipelineListenerTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/eu/tango/scamscreener/pipeline/stage/MuteStageTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/eu/tango/scamscreener/pipeline/stage/MuteStageTest.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -18,7 +19,7 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="EmbeddingIndexingInfo">
-    <option name="cachedIndexableFilesCount" value="2499" />
+    <option name="cachedIndexableFilesCount" value="2626" />
   </component>
   <component name="ExternalProjectsData">
     <projectState path="$PROJECT_DIR$">
@@ -265,8 +266,7 @@
       <item itemvalue="Application.Minecraft Server (:1.21.10)" />
       <item itemvalue="Application.Minecraft Server (:1.21.11)" />
       <item itemvalue="Application.Minecraft Server (:1.21.9)" />
-      <item itemvalue="Gradle.Switch to 1.21.10" />
-      <item itemvalue="Gradle.Switch to 1.21.11" />
+      <item itemvalue="Gradle.Switch to 26.1.2" />
       <item itemvalue="Gradle.Publish All - CurseForge" />
       <item itemvalue="Gradle.Publish All - Modrinth" />
       <item itemvalue="Gradle.Publish All - Modrinth + CurseForge" />

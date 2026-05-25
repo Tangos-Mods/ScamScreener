@@ -2,12 +2,30 @@
 
 All notable changes to this project are documented in this file.
 
+## 2.4.3 - 2026-05-25
+
+### Fixed
+- Added an early pipeline bypass for specific dungeon helper messages that are visible as normal player chat lines, including `[Skyblocker] 300 Score Reached!`, `[Skyblocker] 270 Score Reached!`, `Prince dead!`, and `Mimic dead!`.
+- Added a targeted bypass for `[Skyblocker] We only have n crypts out of 5, we need more!` when `n` is between `0` and `4`, so these reposted mod callouts no longer trigger scam analysis.
+
 ## 2.4.2 - 2026-05-24
 
 ### Fixed
 - `CHAT` callback messages that carried sender metadata from Fabric or companion mods no longer bypass visible-line system detection.
 - Mod-prefixed system lines such as `[Skyblocker] ...` are now kept out of the scam-detection pipeline even when the callback also exposes a sender name.
 - Training Hub review cases no longer accidentally include these misclassified mod/system lines as player-authored trigger messages.
+
+## 2.4.1 - 2026-05-19
+
+### Added
+- Periodic local Training Hub upload reminder that appears once more than 5 reviewed `SAFE`/`RISK` cases are saved and repeats every 30 minutes.
+- Clickable reminder actions for `[upload]` and `[don't show again]`.
+- Review-settings toggle for enabling or disabling the Training Hub upload reminder.
+
+### Changed
+- The in-game Training Hub screen now shows the full local client ID and lets the player copy it with one click.
+- Manual Training Hub uploads now postpone the next reminder window instead of allowing an immediate repeat reminder.
+- Client command help now includes the new `training upload` and `training reminder` actions.
 
 ## 2.4.0 - 2026-05-13
 
