@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented in this file.
 
+## 2.4.3 - 2026-05-25
+
+### Fixed
+- Added an early pipeline bypass for specific dungeon helper messages that are visible as normal player chat lines, including `[Skyblocker] 300 Score Reached!`, `[Skyblocker] 270 Score Reached!`, `Prince dead!`, and `Mimic dead!`.
+- Added a targeted bypass for `[Skyblocker] We only have n crypts out of 5, we need more!` when `n` is between `0` and `4`, so these reposted mod callouts no longer trigger scam analysis.
+
 ## 2.4.2 - 2026-05-24
 
 ### Fixed

@@ -75,6 +75,33 @@ public class ChatPipelineListenerTest {
     }
 
     @Test
+    void extractsDungeonModMessagesFromVisiblePlayerChatLines() {
+        ChatEvent scoreEvent = ChatPipelineListener.classifyGameMessage(
+            Text.literal("[130] [MVP+] Pankraz01: [Skyblocker] 300 Score Reached!"),
+            32767
+        );
+        assertEquals(ChatSourceType.PLAYER, scoreEvent.getSourceType());
+        assertEquals("Pankraz01", scoreEvent.getSenderName());
+        assertEquals("[Skyblocker] 300 Score Reached!", scoreEvent.getRawMessage());
+
+        ChatEvent cryptEvent = ChatPipelineListener.classifyGameMessage(
+            Text.literal("[130] [MVP+] Pankraz01: [Skyblocker] We only have 4 crypts out of 5, we need more!"),
+            32767
+        );
+        assertEquals(ChatSourceType.PLAYER, cryptEvent.getSourceType());
+        assertEquals("Pankraz01", cryptEvent.getSenderName());
+        assertEquals("[Skyblocker] We only have 4 crypts out of 5, we need more!", cryptEvent.getRawMessage());
+
+        ChatEvent mimicEvent = ChatPipelineListener.classifyGameMessage(
+            Text.literal("[130] [MVP+] Pankraz01: Mimic dead!"),
+            32767
+        );
+        assertEquals(ChatSourceType.PLAYER, mimicEvent.getSourceType());
+        assertEquals("Pankraz01", mimicEvent.getSenderName());
+        assertEquals("Mimic dead!", mimicEvent.getRawMessage());
+    }
+
+    @Test
     void onlyPlayerMessagesEnterPipeline() {
         assertEquals(true, ChatPipelineListener.shouldEnterPipeline(
             ChatEvent.messageOnly("hello", ChatSourceType.PLAYER)

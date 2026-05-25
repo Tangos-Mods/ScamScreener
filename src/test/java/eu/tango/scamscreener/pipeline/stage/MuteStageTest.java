@@ -12,6 +12,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MuteStageTest {
     @Test
@@ -58,6 +59,38 @@ class MuteStageTest {
         assertEquals(Stage.Decision.PASS, first.getDecision());
         assertEquals(Stage.Decision.ALLOW, second.getDecision());
         assertEquals("MUTE_DUPLICATE_BYPASS", second.getReason());
+    }
+
+    @Test
+    void knownDungeonModPlayerMessagesBypassRiskChecks() {
+        MuteStage stage = new MuteStage();
+
+        for (String message : java.util.List.of(
+            "[Skyblocker] 300 Score Reached!",
+            "[Skyblocker] 270 Score Reached!",
+            "Prince dead!",
+            "Mimic dead!",
+            "[Skyblocker] We only have 0 crypts out of 5, we need more!",
+            "[Skyblocker] We only have 1 crypts out of 5, we need more!",
+            "[Skyblocker] We only have 2 crypts out of 5, we need more!",
+            "[Skyblocker] We only have 3 crypts out of 5, we need more!",
+            "[Skyblocker] We only have 4 crypts out of 5, we need more!"
+        )) {
+            StageResult result = stage.apply(ChatEvent.messageOnly(message, ChatSourceType.PLAYER));
+
+            assertEquals(Stage.Decision.ALLOW, result.getDecision(), message);
+            assertEquals("MUTE_DUNGEON_MOD_BYPASS", result.getReason(), message);
+        }
+    }
+
+    @Test
+    void unrelatedSkyblockerPlayerMessagesStillContinueThroughPipeline() {
+        StageResult result = new MuteStage().apply(
+            ChatEvent.messageOnly("[Skyblocker] We only have 5 crypts out of 5, we need more!", ChatSourceType.PLAYER)
+        );
+
+        assertEquals(Stage.Decision.PASS, result.getDecision());
+        assertTrue(result.getReason().isEmpty());
     }
 
     private static final class TrackingStage extends Stage {
