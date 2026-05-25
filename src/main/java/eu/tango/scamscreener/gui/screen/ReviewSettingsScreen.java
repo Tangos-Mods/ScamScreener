@@ -3,6 +3,7 @@ package eu.tango.scamscreener.gui.screen;
 import eu.tango.scamscreener.ScamScreenerRuntime;
 import eu.tango.scamscreener.config.data.RuntimeConfig;
 import eu.tango.scamscreener.gui.base.BaseScreen;
+import eu.tango.scamscreener.training.TrainingUploadReminder;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
@@ -18,6 +19,7 @@ public final class ReviewSettingsScreen extends BaseScreen {
     private static final int SUMMARY_TO_CONTROLS_GAP = 56;
 
     private Button captureEnabledButton;
+    private Button trainingUploadReminderButton;
     private Button maxEntriesButton;
     private Button clearQueueButton;
     private Button resetDetectionStateButton;
@@ -43,6 +45,13 @@ public final class ReviewSettingsScreen extends BaseScreen {
 
         captureEnabledButton = addRenderableWidget(
             Button.builder(Component.empty(), button -> toggleCaptureEnabled())
+                .bounds(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
+                .build()
+        );
+        y += ROW_HEIGHT;
+
+        trainingUploadReminderButton = addRenderableWidget(
+            Button.builder(Component.empty(), button -> toggleTrainingUploadReminder())
                 .bounds(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
@@ -110,6 +119,8 @@ public final class ReviewSettingsScreen extends BaseScreen {
         y += 12;
         drawLine(context, left, y, "Exported JSONL files can be uploaded in the Training Hub.");
         y += 12;
+        drawLine(context, left, y, "Upload reminders appear every 30 minutes once more than 5 SAFE/RISK cases exist.");
+        y += 12;
         drawLine(context, left, y, "Current Entries: " + runtime.reviewStore().entries().size() + " / " + runtime.reviewStore().maxEntries());
     }
 
@@ -117,6 +128,14 @@ public final class ReviewSettingsScreen extends BaseScreen {
         RuntimeConfig.ReviewSettings review = ScamScreenerRuntime.getInstance().config().review();
         review.setCaptureEnabled(!review.isCaptureEnabled());
         ScamScreenerRuntime.getInstance().saveConfig();
+        refreshButtons();
+    }
+
+    private void toggleTrainingUploadReminder() {
+        RuntimeConfig.ReviewSettings review = ScamScreenerRuntime.getInstance().config().review();
+        review.setTrainingUploadReminderEnabled(!review.isTrainingUploadReminderEnabled());
+        ScamScreenerRuntime.getInstance().saveConfig();
+        TrainingUploadReminder.resetTimer();
         refreshButtons();
     }
 
@@ -148,6 +167,9 @@ public final class ReviewSettingsScreen extends BaseScreen {
 
         if (captureEnabledButton != null) {
             captureEnabledButton.setMessage(toggleText("Auto-Capture Cases: ", review.isCaptureEnabled()));
+        }
+        if (trainingUploadReminderButton != null) {
+            trainingUploadReminderButton.setMessage(toggleText("Training Upload Reminder: ", review.isTrainingUploadReminderEnabled()));
         }
         if (maxEntriesButton != null) {
             maxEntriesButton.setMessage(Component.literal("Review Queue Capacity: " + review.maxEntries()));

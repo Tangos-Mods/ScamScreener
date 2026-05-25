@@ -277,7 +277,7 @@ public final class ClientMessages {
 
     public static MutableComponent commandHelp() {
         return prefixed().append(Component.literal(
-            "Commands: enable, disable, whitelist, blacklist, review, review export, alertlevel, autoleave, mute, unmute, edu disable, debug, metrics, profiler, rules, runtime, messages, settings."
+            "Commands: enable, disable, whitelist, blacklist, review, review export, training upload, training reminder, alertlevel, autoleave, mute, unmute, edu disable, debug, metrics, profiler, rules, runtime, messages, settings."
         ).withStyle(ChatFormatting.GRAY));
     }
 
@@ -419,6 +419,42 @@ public final class ClientMessages {
             .append(Component.literal("Training upload started in the background for ").withStyle(ChatFormatting.GRAY))
             .append(Component.literal(String.valueOf(Math.max(0, caseCount))).withStyle(ChatFormatting.AQUA, ChatFormatting.BOLD))
             .append(Component.literal(" reviewed cases.").withStyle(ChatFormatting.GRAY));
+    }
+
+    public static MutableComponent trainingUploadAlreadyRunning() {
+        return prefixed().append(Component.literal("A training upload is already running.").withStyle(ChatFormatting.GRAY));
+    }
+
+    public static MutableComponent trainingUploadNoCasesAvailable() {
+        return error("No reviewed SAFE/RISK cases are available for upload.");
+    }
+
+    public static MutableComponent trainingUploadReminder(int caseCount) {
+        return prefixed()
+            .append(Component.literal("You have ").withStyle(ChatFormatting.GRAY))
+            .append(Component.literal(String.valueOf(Math.max(0, caseCount))).withStyle(ChatFormatting.AQUA, ChatFormatting.BOLD))
+            .append(Component.literal(" saved cases. Upload them anonymously to help making this mod better ").withStyle(ChatFormatting.GRAY))
+            .append(actionTag(
+                "upload",
+                ChatFormatting.GREEN,
+                "Start an anonymous Training Hub upload.",
+                "/ss training upload"
+            ))
+            .append(Component.literal(" ").withStyle(ChatFormatting.GRAY))
+            .append(actionTag(
+                "don't show again",
+                ChatFormatting.GRAY,
+                "Disable future training upload reminders.",
+                "/ss training reminder off"
+            ));
+    }
+
+    public static MutableComponent trainingUploadReminderEnabled() {
+        return prefixed().append(Component.literal("Training upload reminder enabled.").withStyle(ChatFormatting.GRAY));
+    }
+
+    public static MutableComponent trainingUploadReminderDisabled() {
+        return prefixed().append(Component.literal("Training upload reminder disabled.").withStyle(ChatFormatting.GRAY));
     }
 
     public static MutableComponent trainingUploadRetryScheduled(String message, int retriesRemaining, int retryDelaySeconds) {

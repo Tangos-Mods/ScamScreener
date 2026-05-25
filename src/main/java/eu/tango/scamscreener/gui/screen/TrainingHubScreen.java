@@ -5,6 +5,8 @@ import eu.tango.scamscreener.config.store.ConfigPaths;
 import eu.tango.scamscreener.gui.base.BaseScreen;
 import eu.tango.scamscreener.review.ReviewEntry;
 import eu.tango.scamscreener.review.ReviewVerdict;
+import eu.tango.scamscreener.training.TrainingCaseExportService;
+import eu.tango.scamscreener.training.TrainingUploadReminder;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.ConfirmLinkScreen;
@@ -137,6 +139,7 @@ public final class TrainingHubScreen extends BaseScreen {
             return;
         }
 
+        TrainingUploadReminder.postpone();
         setStatus("Anonymous upload started in the background. Retry updates appear in chat.", STATUS_SUCCESS_COLOR);
         refreshButtons();
     }
@@ -197,19 +200,7 @@ public final class TrainingHubScreen extends BaseScreen {
     }
 
     private int exportableReviewCount() {
-        int count = 0;
-        for (ReviewEntry entry : ScamScreenerRuntime.getInstance().reviewStore().entries()) {
-            if (entry == null) {
-                continue;
-            }
-
-            ReviewVerdict verdict = entry.getVerdict();
-            if (verdict == ReviewVerdict.RISK || verdict == ReviewVerdict.SAFE) {
-                count++;
-            }
-        }
-
-        return count;
+        return TrainingCaseExportService.countExportableReviewedCases(ScamScreenerRuntime.getInstance().reviewStore().entries());
     }
 
     private void setStatus(String text, int color) {

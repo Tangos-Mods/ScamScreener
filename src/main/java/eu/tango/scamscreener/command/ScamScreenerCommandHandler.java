@@ -32,6 +32,8 @@ import eu.tango.scamscreener.debug.DebugKeys;
 import eu.tango.scamscreener.profiler.ScamScreenerProfiler;
 import eu.tango.scamscreener.profiler.web.ProfilerWebOpenResult;
 import eu.tango.scamscreener.profiler.web.ProfilerWebService;
+import eu.tango.scamscreener.training.TrainingCaseExportService;
+import eu.tango.scamscreener.training.TrainingUploadReminder;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
@@ -84,6 +86,7 @@ public final class ScamScreenerCommandHandler {
             .then(buildWhitelistCommand())
             .then(buildBlacklistCommand())
             .then(buildReviewCommand())
+            .then(buildTrainingCommand())
             .then(buildAlertLevelCommand())
             .then(buildAutoLeaveCommand())
             .then(buildMuteCommand())
@@ -125,6 +128,14 @@ public final class ScamScreenerCommandHandler {
             .then(argument("level", StringArgumentType.word())
                 .suggests((context, builder) -> suggestAlertLevels(builder))
                 .executes(context -> setAlertLevel(context.getSource(), StringArgumentType.getString(context, "level"))));
+    }
+
+    private static LiteralArgumentBuilder<FabricClientCommandSource> buildTrainingCommand() {
+        return literal("training")
+            .then(literal("upload").executes(context -> startTrainingUpload(context.getSource())))
+            .then(literal("reminder")
+                .then(literal("on").executes(context -> setTrainingUploadReminder(context.getSource(), true)))
+                .then(literal("off").executes(context -> setTrainingUploadReminder(context.getSource(), false))));
     }
 
     private static LiteralArgumentBuilder<FabricClientCommandSource> buildAutoLeaveCommand() {
@@ -480,6 +491,34 @@ public final class ScamScreenerCommandHandler {
 
                 source.sendFeedback(ClientMessages.trainingCasesExported(result));
             }));
+        return 1;
+    }
+
+    private static int startTrainingUpload(FabricClientCommandSource source) {
+        ScamScreenerRuntime runtime = ScamScreenerRuntime.getInstance();
+        if (runtime.trainingHubUploadWorker().isRunning()) {
+            source.sendFeedback(ClientMessages.trainingUploadAlreadyRunning());
+            return 0;
+        }
+        if (TrainingCaseExportService.countExportableReviewedCases(runtime.reviewStore().entries()) <= 0) {
+            source.sendError(ClientMessages.trainingUploadNoCasesAvailable());
+            return 0;
+        }
+        if (!runtime.trainingHubUploadWorker().startUpload()) {
+            source.sendFeedback(ClientMessages.trainingUploadAlreadyRunning());
+            return 0;
+        }
+
+        TrainingUploadReminder.postpone();
+        return 1;
+    }
+
+    private static int setTrainingUploadReminder(FabricClientCommandSource source, boolean enabled) {
+        ScamScreenerRuntime runtime = ScamScreenerRuntime.getInstance();
+        runtime.config().review().setTrainingUploadReminderEnabled(enabled);
+        runtime.saveConfig();
+        TrainingUploadReminder.resetTimer();
+        source.sendFeedback(enabled ? ClientMessages.trainingUploadReminderEnabled() : ClientMessages.trainingUploadReminderDisabled());
         return 1;
     }
 

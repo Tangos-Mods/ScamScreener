@@ -251,6 +251,7 @@ public final class RuntimeConfig implements VersionedConfig {
     @NoArgsConstructor
     public static final class ReviewSettings {
         private boolean captureEnabled = true;
+        private boolean trainingUploadReminderEnabled = true;
         private int maxEntries = 200;
 
         /**

@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented in this file.
 
+## 2.4.2 - 2026-05-24
+
+### Fixed
+- `CHAT` callback messages that carried sender metadata from Fabric or companion mods no longer bypass visible-line system detection.
+- Mod-prefixed system lines such as `[Skyblocker] ...` are now kept out of the scam-detection pipeline even when the callback also exposes a sender name.
+- Training Hub review cases no longer accidentally include these misclassified mod/system lines as player-authored trigger messages.
+
 ## 2.4.0 - 2026-05-13
 
 ### Added
