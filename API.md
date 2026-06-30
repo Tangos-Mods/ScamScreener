@@ -34,6 +34,8 @@ Through `ScamScreenerApi`, you can access:
   - read/write access to the shared whitelist
 - `blacklist()`
   - read/write access to the shared blacklist
+- `skipNextIncomingMessage(String rawMessage)`
+  - skips one exact visible inbound line before it can enter the pipeline
 - `reload()`
   - reloads config files and persisted list state from disk
 
@@ -81,7 +83,26 @@ ScamScreenerCompat.findApi().ifPresent(api -> {
 - Do not call `FabricLoader.getEntrypoints(...)` repeatedly in hot paths.
 - Keep ScamScreener-specific code in a dedicated compat class when possible, so missing mods do not accidentally cause hard references during class loading.
 
-## 2. Reading And Writing Settings
+## 2. Skipping One Companion-Mod Chat Line
+
+If your mod emits a local client-visible line that can look like normal player chat, call `skipNextIncomingMessage(...)` right before you show it.
+
+```java
+ScamScreenerCompat.findApi().ifPresent(api -> {
+    String visibleLine = "[MyMod] Visitor reward ready";
+    api.skipNextIncomingMessage(visibleLine);
+    client.player.sendMessage(Text.literal(visibleLine), false);
+});
+```
+
+Important details:
+
+- Pass the exact visible line as it will appear in chat.
+- The skip is one-shot. If you emit the same line twice, call it twice.
+- This is for locally generated companion-mod lines, not for general filtering rules.
+- For broader rule-based integration, keep using `scamscreener-pipeline` stage contributions.
+
+## 3. Reading And Writing Settings
 
 Stable runtime settings are exposed through `api.settings()`. The currently public settings are:
 
@@ -143,7 +164,7 @@ public final class WelcomeWizardIntegration {
 - calling the setters every tick or every frame
 - bypassing the API with raw strings for alert levels
 
-## 3. Reading Config Schema Versions
+## 4. Reading Config Schema Versions
 
 Through `api.schemas()`, you can access the current versions of the config files written by ScamScreener:
 
@@ -188,7 +209,7 @@ Incorrect:
 
 - "if `runtimeConfigVersion() >= 3`, method X must exist"
 
-## 4. Using The Whitelist
+## 5. Using The Whitelist
 
 `api.whitelist()` returns a `WhitelistAccess`.
 
@@ -242,7 +263,7 @@ if (entry != null) {
 - If both are available, that is better for stable identification.
 - `allEntries()` returns immutable entry objects, not the internal list itself.
 
-## 5. Using The Blacklist
+## 6. Using The Blacklist
 
 `api.blacklist()` returns a `BlacklistAccess`.
 
@@ -308,7 +329,7 @@ When the lookup succeeds:
 - later API reads return the current entry with the resolved UUID
 - `BlacklistEvent` is fired again with `PlayerListChangeType.UPDATED`
 
-## 6. Reacting To Events
+## 7. Reacting To Events
 
 ScamScreener exposes three main events:
 
@@ -404,7 +425,7 @@ BlacklistEvent.EVENT.register((changeType, entry) -> {
 });
 ```
 
-## 7. Inspecting The Pipeline Structure
+## 8. Inspecting The Pipeline Structure
 
 `api.pipeline()` returns a `ScamScreenerPipelineApi`.
 
@@ -441,7 +462,7 @@ This is useful if your mod:
 - wants to visualize capabilities
 - wants to describe future contributions relative to stable slots
 
-## 8. When `reload()` Makes Sense
+## 9. When `reload()` Makes Sense
 
 `api.reload()` reloads runtime config and persisted list contents from disk.
 
@@ -464,7 +485,7 @@ ScamScreenerCompat.findApi().ifPresent(api -> {
 });
 ```
 
-## 9. Complete Integration Example
+## 10. Complete Integration Example
 
 The following example shows a small bridge for a generic companion mod. It:
 
@@ -540,7 +561,7 @@ public final class ExampleScamScreenerBridge {
 }
 ```
 
-## 10. Current Limits Of The API
+## 11. Current Limits Of The API
 
 Do not currently plan around these capabilities:
 
@@ -549,7 +570,7 @@ Do not currently plan around these capabilities:
 - executing custom stages through `scamscreener-api`
 - mutating the built-in core stage order directly; external stages are attached relative to the exposed slots
 
-## 11. Best Practices
+## 12. Best Practices
 
 - Treat ScamScreener as an optional dependency if your mod should also work without it.
 - Use the public getters and setters instead of parsing config files yourself.
@@ -558,7 +579,7 @@ Do not currently plan around these capabilities:
 - Use `reload()` only for actual disk synchronization, not as a general refresh button.
 - Use schema versions for config diagnostics, not for method detection.
 
-## 12. Quick Reference
+## 13. Quick Reference
 
 ### Getting The API
 

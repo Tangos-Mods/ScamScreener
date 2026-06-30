@@ -1,6 +1,7 @@
 package eu.tango.scamscreener.api;
 
 import eu.tango.scamscreener.ScamScreenerRuntime;
+import eu.tango.scamscreener.chat.InboundMessageBypassRegistry;
 import eu.tango.scamscreener.pipeline.core.ScamScreenerPipelineFactory;
 
 /**
@@ -65,6 +66,16 @@ public final class ScamScreenerApiEntrypoint implements ScamScreenerApi {
     @Override
     public BlacklistAccess blacklist() {
         return ScamScreenerRuntime.getInstance().blacklist();
+    }
+
+    /**
+     * Marks one visible inbound line so the listener skips it before pipeline entry.
+     *
+     * @param rawMessage the exact visible chat line
+     */
+    @Override
+    public void skipNextIncomingMessage(String rawMessage) {
+        InboundMessageBypassRegistry.remember(rawMessage);
     }
 
     /**

@@ -123,6 +123,7 @@ public final class PlayerUuidLookup {
     }
 
     private static String userAgent() {
-        return "ScamScreener/" + ScamScreenerMod.VERSION + "+" + ScamScreenerMod.MINECRAFT;
+        return "ScamScreener/" + ScamScreenerMod.VERSION + "+" + ScamScreenerMod.MINECRAFT
+            + " (+https://github.com/Tangos-Mods/ScamScreener)";
     }
 }

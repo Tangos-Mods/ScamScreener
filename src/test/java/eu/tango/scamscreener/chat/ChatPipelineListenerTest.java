@@ -83,6 +83,7 @@ public class ChatPipelineListenerTest {
         assertEquals(ChatSourceType.PLAYER, scoreEvent.getSourceType());
         assertEquals("Pankraz01", scoreEvent.getSenderName());
         assertEquals("[Skyblocker] 300 Score Reached!", scoreEvent.getRawMessage());
+        assertEquals(false, ChatPipelineListener.shouldEnterPipeline(scoreEvent));
 
         ChatEvent cryptEvent = ChatPipelineListener.classifyGameMessage(
             Text.literal("[130] [MVP+] Pankraz01: [Skyblocker] We only have 4 crypts out of 5, we need more!"),
@@ -91,6 +92,7 @@ public class ChatPipelineListenerTest {
         assertEquals(ChatSourceType.PLAYER, cryptEvent.getSourceType());
         assertEquals("Pankraz01", cryptEvent.getSenderName());
         assertEquals("[Skyblocker] We only have 4 crypts out of 5, we need more!", cryptEvent.getRawMessage());
+        assertEquals(false, ChatPipelineListener.shouldEnterPipeline(cryptEvent));
 
         ChatEvent mimicEvent = ChatPipelineListener.classifyGameMessage(
             Text.literal("[130] [MVP+] Pankraz01: Mimic dead!"),
@@ -99,6 +101,7 @@ public class ChatPipelineListenerTest {
         assertEquals(ChatSourceType.PLAYER, mimicEvent.getSourceType());
         assertEquals("Pankraz01", mimicEvent.getSenderName());
         assertEquals("Mimic dead!", mimicEvent.getRawMessage());
+        assertEquals(true, ChatPipelineListener.shouldEnterPipeline(mimicEvent));
     }
 
     @Test
@@ -108,6 +111,9 @@ public class ChatPipelineListenerTest {
         ));
         assertEquals(false, ChatPipelineListener.shouldEnterPipeline(
             ChatEvent.messageOnly("[NPC] hi", ChatSourceType.SYSTEM)
+        ));
+        assertEquals(false, ChatPipelineListener.shouldEnterPipeline(
+            ChatEvent.messageOnly("[Skyblocker] The livid color is PURPLE", ChatSourceType.PLAYER)
         ));
         assertEquals(false, ChatPipelineListener.shouldEnterPipeline(
             ChatEvent.messageOnly("You earned 10 SkyBlock XP.", ChatSourceType.UNKNOWN)

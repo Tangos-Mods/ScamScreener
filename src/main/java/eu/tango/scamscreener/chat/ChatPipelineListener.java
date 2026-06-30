@@ -18,6 +18,7 @@ import java.util.Optional;
  */
 public final class ChatPipelineListener {
     private static final int MAX_CHAT_LENGTH = 32767;
+    private static final String SKYBLOCKER_MESSAGE_TAG = "[skyblocker]";
 
     private static boolean initialized;
     private static ChatEvent lastChatEvent;
@@ -37,6 +38,10 @@ public final class ChatPipelineListener {
         initialized = true;
         ClientReceiveMessageEvents.CHAT.register((message, signedMessage, sender, params, receptionTimestamp) -> {
             try (ScamScreenerProfiler.Scope ignored = ScamScreenerProfiler.getInstance().scope("chat.player.total", "Chat Message")) {
+                String rawLine = extractRawLine(message, MAX_CHAT_LENGTH);
+                if (InboundMessageBypassRegistry.consume(rawLine)) {
+                    return;
+                }
                 ChatEvent classifiedEvent = classifyChatMessage(
                     message,
                     sender,
@@ -61,6 +66,10 @@ public final class ChatPipelineListener {
         ClientReceiveMessageEvents.GAME.register((message, overlay) -> {
             if (!overlay) {
                 try (ScamScreenerProfiler.Scope ignored = ScamScreenerProfiler.getInstance().scope("chat.game.total", "Game Message")) {
+                    String rawLine = extractRawLine(message, MAX_CHAT_LENGTH);
+                    if (InboundMessageBypassRegistry.consume(rawLine)) {
+                        return;
+                    }
                     ChatEvent classifiedEvent;
                     try (ScamScreenerProfiler.Scope nested = ScamScreenerProfiler.getInstance().scope("chat.game.classify", "  Game Message Classify")) {
                         classifiedEvent = classifyGameMessage(message, MAX_CHAT_LENGTH);
@@ -174,7 +183,7 @@ public final class ChatPipelineListener {
     }
 
     static ChatEvent classifyGameMessage(net.minecraft.text.Text message, int maxChatLength) {
-        String rawLine = message == null ? "" : message.asTruncatedString(maxChatLength);
+        String rawLine = extractRawLine(message, maxChatLength);
         return classifyVisibleLine(rawLine, System.currentTimeMillis());
     }
 
@@ -237,8 +246,14 @@ public final class ChatPipelineListener {
         return new ChatEvent(analysis.cleanedLine(), null, "", timestampMs, ChatSourceType.UNKNOWN);
     }
 
+    private static String extractRawLine(net.minecraft.text.Text message, int maxChatLength) {
+        return message == null ? "" : message.asTruncatedString(maxChatLength);
+    }
+
     static boolean shouldEnterPipeline(ChatEvent chatEvent) {
-        return chatEvent != null && chatEvent.isPlayerSource();
+        return chatEvent != null
+            && chatEvent.isPlayerSource()
+            && !containsDroppedPlayerMessageTag(chatEvent);
     }
 
     static boolean shouldProcessChatEvent(ChatEvent chatEvent) {
@@ -257,5 +272,10 @@ public final class ChatPipelineListener {
         try (ScamScreenerProfiler.Scope ignored = ScamScreenerProfiler.getInstance().scope("chat.local_echo", "  Local Echo Check")) {
             return MessageDispatcher.consumeLocalEcho(chatEvent.getRawMessage());
         }
+    }
+
+    private static boolean containsDroppedPlayerMessageTag(ChatEvent chatEvent) {
+        String normalizedMessage = chatEvent.getNormalizedMessage();
+        return normalizedMessage != null && normalizedMessage.contains(SKYBLOCKER_MESSAGE_TAG);
     }
 }

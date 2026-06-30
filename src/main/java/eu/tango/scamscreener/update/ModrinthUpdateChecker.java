@@ -95,7 +95,7 @@ public final class ModrinthUpdateChecker {
         String currentVersion = currentVersion();
         HttpRequest request = HttpRequest.newBuilder(buildVersionsUri())
             .header("Accept", "application/json")
-            .header("User-Agent", "ScamScreener/" + currentVersion)
+            .header("User-Agent", userAgent(currentVersion))
             .timeout(REQUEST_TIMEOUT)
             .GET()
             .build();
@@ -194,6 +194,10 @@ public final class ModrinthUpdateChecker {
             normalized = normalized.substring(1).trim();
         }
         return normalized;
+    }
+
+    private static String userAgent(String currentVersion) {
+        return "ScamScreener/" + currentVersion + " (+https://github.com/Tangos-Mods/ScamScreener)";
     }
 
     private static final class ModrinthVersion {

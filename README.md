@@ -222,6 +222,14 @@ api.settings().setAlertMinimumRiskLevel(ScamScreenerAlertLevel.HIGH);
 
 Settings updates are saved back to `runtime.json` by ScamScreener.
 
+If a companion mod prints its own local chat line that should never be screened as player chat, mark that exact visible line first:
+
+```java
+String visibleLine = "[MyMod] Visitor reward ready";
+api.skipNextIncomingMessage(visibleLine);
+client.player.sendMessage(Text.literal(visibleLine), false);
+```
+
 Pipeline contributors are also supported at runtime. Mods can register the Fabric entrypoint `scamscreener-pipeline` and return `StageContribution` instances relative to the stable slots `MUTE`, `PLAYER_LIST`, `RULE`, `LEVENSHTEIN`, `BEHAVIOR`, `TREND`, `FUNNEL`, and `MODEL`.
 
 ## Build And Release (Maintainers)

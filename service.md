@@ -12,7 +12,7 @@ Der Mod authentifiziert sich nur ueber seine lokale `clientId`.
   - `X-ScamScreener-Client-Id: <normalized clientId>`
   - `X-ScamScreener-Payload-Sha256: <sha256(raw ndjson body)>`
   - `X-ScamScreener-Handshake-Sha256: <sha256(normalized clientId + ":" + payload sha256)>`
-  - `User-Agent: ScamScreener/<version>+<mc>`
+  - `User-Agent: ScamScreener/<version>+<mc> (+https://github.com/Tangos-Mods/ScamScreener)`
 - Request-Body:
   - unveraenderte `training-cases-v2.jsonl` als NDJSON
 

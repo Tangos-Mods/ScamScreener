@@ -45,6 +45,16 @@ public interface ScamScreenerApi {
     BlacklistAccess blacklist();
 
     /**
+     * Marks one exact visible inbound chat line so ScamScreener skips it before pipeline entry.
+     *
+     * <p>This is intended for companion mods that emit their own client-visible chat lines
+     * which would otherwise look like normal player chat to ScamScreener.
+     *
+     * @param rawMessage the exact visible line as it will appear in chat
+     */
+    void skipNextIncomingMessage(String rawMessage);
+
+    /**
      * Reloads runtime config and persisted list state from disk.
      */
     void reload();
