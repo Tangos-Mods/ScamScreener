@@ -21,7 +21,7 @@ class RuleStageTest {
         StageResult result = new RuleStage().apply(event);
 
         assertEquals(Stage.Decision.PASS, result.getDecision());
-        assertEquals(115, result.getScoreDelta());
+        assertEquals(108, result.getScoreDelta());
         assertTrue(result.getReason().contains("External platform push"));
         assertTrue(result.getReason().contains("Upfront payment wording"));
         assertTrue(result.getReason().contains("Too-good-to-be-true wording"));
@@ -69,7 +69,7 @@ class RuleStageTest {
         StageResult result = new RuleStage().apply(event);
 
         assertEquals(Stage.Decision.PASS, result.getDecision());
-        assertEquals(25, result.getScoreDelta());
+        assertEquals(18, result.getScoreDelta());
         assertTrue(result.getReason().contains("External platform push"));
         assertTrue(result.getReason().contains("Urgency wording"));
     }
@@ -81,7 +81,7 @@ class RuleStageTest {
         StageResult result = new RuleStage().apply(event);
 
         assertEquals(Stage.Decision.PASS, result.getDecision());
-        assertEquals(10, result.getScoreDelta());
+        assertEquals(4, result.getScoreDelta());
         assertTrue(result.getReason().contains("Trust manipulation wording"));
     }
 
@@ -106,7 +106,7 @@ class RuleStageTest {
         StageResult result = new RuleStage().apply(event);
 
         assertEquals(Stage.Decision.PASS, result.getDecision());
-        assertEquals(45, result.getScoreDelta());
+        assertEquals(38, result.getScoreDelta());
         assertTrue(result.getReason().contains("Suspicious link"));
         assertTrue(result.getReason().contains("External platform push"));
         assertTrue(result.getReason().contains("Link plus off-platform redirect"));
@@ -119,7 +119,7 @@ class RuleStageTest {
         StageResult result = new RuleStage().apply(event);
 
         assertEquals(Stage.Decision.PASS, result.getDecision());
-        assertEquals(50, result.getScoreDelta());
+        assertEquals(44, result.getScoreDelta());
         assertTrue(result.getReason().contains("Trust manipulation wording"));
         assertTrue(result.getReason().contains("Upfront payment wording"));
         assertTrue(result.getReason().contains("Trust framing plus upfront payment"));

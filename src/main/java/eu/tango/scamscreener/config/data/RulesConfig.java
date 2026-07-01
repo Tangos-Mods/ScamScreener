@@ -24,7 +24,7 @@ public final class RulesConfig implements VersionedConfig {
     private boolean ruleStageEnabled = true;
     private boolean similarityStageEnabled = true;
     private boolean behaviorStageEnabled = true;
-    private boolean trendStageEnabled = true;
+    private boolean trendStageEnabled = false;
     private boolean funnelStageEnabled = true;
     private boolean contextStageEnabled = true;
     private MuteStageSettings muteStage = new MuteStageSettings();
@@ -164,7 +164,7 @@ public final class RulesConfig implements VersionedConfig {
         private boolean middlemanProofComboEnabled = true;
 
         private int suspiciousLinkScore = 20;
-        private int externalPlatformScore = 15;
+        private int externalPlatformScore = 8;
         private int upfrontPaymentScore = 25;
         private int accountDataScore = 35;
         private int tooGoodScore = 15;
@@ -172,7 +172,7 @@ public final class RulesConfig implements VersionedConfig {
         private int middlemanClaimScore = 15;
         private int proofBaitScore = 10;
         private int urgencyScore = 10;
-        private int trustScore = 10;
+        private int trustScore = 4;
         private int discordHandleScore = 50;
         private int linkRedirectComboScore = 10;
         private int trustPaymentComboScore = 15;
@@ -303,7 +303,7 @@ public final class RulesConfig implements VersionedConfig {
         private int minCompareLength = 6;
         private List<SimilarityPhrase> phrases = new ArrayList<>(List.of(
             new SimilarityPhrase("SIM_EXTERNAL_PLATFORM", "add me on discord", 10, 0.72),
-            new SimilarityPhrase("SIM_EXTERNAL_PLATFORM", "join my discord", 10, 0.72),
+            new SimilarityPhrase("SIM_EXTERNAL_PLATFORM", "join my discord", 6, 0.84),
             new SimilarityPhrase("SIM_EXTERNAL_PLATFORM", "add me on telegram", 10, 0.74),
             new SimilarityPhrase("SIM_EXTERNAL_PLATFORM", "dm me on discord", 10, 0.74),
             new SimilarityPhrase("SIM_EXTERNAL_PLATFORM", "join vc", 8, 0.76),
@@ -317,7 +317,7 @@ public final class RulesConfig implements VersionedConfig {
             new SimilarityPhrase("SIM_ACCOUNT_DATA", "microsoft account", 14, 0.78),
             new SimilarityPhrase("SIM_ACCOUNT_DATA", "auth code", 14, 0.80),
             new SimilarityPhrase("SIM_ACCOUNT_DATA", "email login", 14, 0.80),
-            new SimilarityPhrase("SIM_TRUST_MANIPULATION", "trust me", 8, 0.82),
+            new SimilarityPhrase("SIM_TRUST_MANIPULATION", "trust me", 4, 0.82),
             new SimilarityPhrase("SIM_TRUST_MANIPULATION", "trusted middleman", 10, 0.76),
             new SimilarityPhrase("SIM_TRUST_MANIPULATION", "legit middleman", 10, 0.76),
             new SimilarityPhrase("SIM_TRUST_MANIPULATION", "trusted seller", 8, 0.78),
@@ -381,14 +381,14 @@ public final class RulesConfig implements VersionedConfig {
     @NoArgsConstructor
     public static final class BehaviorStageSettings {
         private int minRepeatMessageLength = 8;
-        private int minBurstMessageLength = 4;
+        private int minBurstMessageLength = 8;
         private int repeatedMessageThreshold = 1;
         private int repeatedMessageScore = 1;
-        private int burstContactThreshold = 3;
+        private int burstContactThreshold = 5;
         private int burstContactScore = 1;
         private int comboBonusMinimum = 0;
         private int comboBonusDivisor = 2;
-        private long windowMs = 90_000L;
+        private long windowMs = 45_000L;
         private int maxHistory = 8;
     }
 
@@ -399,13 +399,13 @@ public final class RulesConfig implements VersionedConfig {
     @Setter
     @NoArgsConstructor
     public static final class TrendStageSettings {
-        private int minTrendMessageLength = 6;
-        private int singleSenderRepeatScore = 10;
-        private int multiSenderWaveScore = 20;
-        private int multiSenderWaveThreshold = 2;
+        private int minTrendMessageLength = 10;
+        private int singleSenderRepeatScore = 0;
+        private int multiSenderWaveScore = 6;
+        private int multiSenderWaveThreshold = 4;
         private int escalationBonusMinimum = 1;
-        private int escalationBonusDivisor = 2;
-        private long windowMs = 120_000L;
+        private int escalationBonusDivisor = 4;
+        private long windowMs = 45_000L;
         private int maxHistory = 200;
     }
 
@@ -416,7 +416,7 @@ public final class RulesConfig implements VersionedConfig {
     @Setter
     @NoArgsConstructor
     public static final class FunnelStageSettings {
-        private int externalAfterContactScore = 8;
+        private int externalAfterContactScore = 3;
         private int paymentAfterExternalScore = 18;
         private int paymentAfterTrustScore = 10;
         private int accountAfterExternalScore = 22;

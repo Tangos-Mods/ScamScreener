@@ -238,7 +238,9 @@ public final class ChatPipelineListener {
     }
 
     static boolean shouldEnterPipeline(ChatEvent chatEvent) {
-        return chatEvent != null && chatEvent.isPlayerSource();
+        return chatEvent != null
+            && chatEvent.isPlayerSource()
+            && !InboundScrubRuleMatcher.matches(chatEvent.getNormalizedMessage());
     }
 
     static boolean shouldProcessChatEvent(ChatEvent chatEvent) {

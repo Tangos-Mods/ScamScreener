@@ -173,7 +173,7 @@ public final class RuntimeConfig implements VersionedConfig {
     @Setter
     @NoArgsConstructor
     public static final class PipelineSettings {
-        private int reviewThreshold = 1;
+        private int reviewThreshold = 15;
 
         /**
          * Returns the normalized review threshold used by the engine.

@@ -50,18 +50,20 @@ class BehaviorStageTest {
         stage.apply(new ChatEvent("message one", senderUuid, "Alpha", 1_000L, ChatSourceType.PLAYER));
         stage.apply(new ChatEvent("message two", senderUuid, "Alpha", 2_000L, ChatSourceType.PLAYER));
         stage.apply(new ChatEvent("message three", senderUuid, "Alpha", 3_000L, ChatSourceType.PLAYER));
+        stage.apply(new ChatEvent("message four", senderUuid, "Alpha", 4_000L, ChatSourceType.PLAYER));
+        stage.apply(new ChatEvent("message five", senderUuid, "Alpha", 5_000L, ChatSourceType.PLAYER));
 
         StageResult result = stage.apply(new ChatEvent(
-            "message four",
+            "message six",
             senderUuid,
             "Alpha",
-            4_000L,
+            6_000L,
             ChatSourceType.PLAYER
         ));
 
         assertEquals(Stage.Decision.PASS, result.getDecision());
         assertEquals(1, result.getScoreDelta());
-        assertTrue(result.getReason().contains("Burst contact: 4 messages in short window"));
+        assertTrue(result.getReason().contains("Burst contact: 6 messages in short window"));
     }
 
     @Test
@@ -104,12 +106,14 @@ class BehaviorStageTest {
         stage.apply(new ChatEvent("same pitch now", senderUuid, "Alpha", 1_000L, ChatSourceType.PLAYER));
         stage.apply(new ChatEvent("same pitch now", senderUuid, "Alpha", 2_000L, ChatSourceType.PLAYER));
         stage.apply(new ChatEvent("same pitch now", senderUuid, "Alpha", 3_000L, ChatSourceType.PLAYER));
+        stage.apply(new ChatEvent("same pitch now", senderUuid, "Alpha", 4_000L, ChatSourceType.PLAYER));
+        stage.apply(new ChatEvent("same pitch now", senderUuid, "Alpha", 5_000L, ChatSourceType.PLAYER));
 
         StageResult result = stage.apply(new ChatEvent(
             "same pitch now",
             senderUuid,
             "Alpha",
-            4_000L,
+            6_000L,
             ChatSourceType.PLAYER
         ));
 

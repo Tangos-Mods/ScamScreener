@@ -38,7 +38,7 @@ class FunnelStageTest {
         assertEquals(Stage.Decision.PASS, first.getDecision());
         assertEquals(0, first.getScoreDelta());
         assertEquals(Stage.Decision.PASS, second.getDecision());
-        assertEquals(8, second.getScoreDelta());
+        assertEquals(3, second.getScoreDelta());
         assertTrue(second.getReason().contains("external platform after prior contact"));
     }
 
@@ -112,7 +112,7 @@ class FunnelStageTest {
         ));
 
         assertEquals(Stage.Decision.PASS, result.getDecision());
-        assertEquals(8, result.getScoreDelta());
+        assertEquals(3, result.getScoreDelta());
         assertTrue(result.getReason().contains("external platform after prior contact"));
     }
 
@@ -131,7 +131,7 @@ class FunnelStageTest {
         ));
 
         assertEquals(Stage.Decision.PASS, result.getDecision());
-        assertEquals(12, result.getScoreDelta());
+        assertEquals(4, result.getScoreDelta());
         assertTrue(result.getReason().contains("external platform after trust framing"));
     }
 }

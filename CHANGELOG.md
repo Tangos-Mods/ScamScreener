@@ -2,6 +2,16 @@
 
 All notable changes to this project are documented in this file.
 
+## 2.5.0 - 2026-06-30
+
+### Changed
+- Raised the default pipeline review threshold from `1` to `15` so tiny heuristic hits no longer open review alerts by themselves.
+- Disabled the `TrendStage` by default and tightened its fallback defaults for shorter history, longer minimum message length, and much lower repeat-wave scoring.
+- Tightened `BehaviorStage` burst defaults so only longer messages inside a shorter time window count toward burst-contact noise scoring.
+- Reduced the default `external platform`, `trust`, and `external after contact` scores to cut false reviews from generic Discord or trust wording.
+- Tightened the fuzzy `join my discord` phrase threshold and reduced its score so unrelated phrases such as `join my island` no longer match as easily.
+- Reduced the fuzzy `trust me` similarity score to keep casual trust wording from double-counting too aggressively.
+
 ## 2.4.3 - 2026-05-25
 
 ### Fixed

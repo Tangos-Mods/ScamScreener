@@ -4,8 +4,8 @@ package eu.tango.scamscreener.config.migration;
  * Central schema-version registry for all persisted ScamScreener configs.
  */
 public enum ConfigSchema {
-    RUNTIME(3),
-    RULES(1),
+    RUNTIME(4),
+    RULES(3),
     WHITELIST(1),
     BLACKLIST(1),
     REVIEW(1);

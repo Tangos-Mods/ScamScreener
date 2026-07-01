@@ -17,7 +17,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class TrendStageTest {
     @Test
     void scoresSingleCrossSenderRepeat() {
-        TrendStage stage = new TrendStage(new TrendStore());
+        RulesConfig rulesConfig = enabledTrendRules();
+        rulesConfig.trendStage().setSingleSenderRepeatScore(4);
+        TrendStage stage = new TrendStage(new TrendStore(), rulesConfig);
 
         StageResult first = stage.apply(new ChatEvent(
             "add me on discord",
@@ -37,13 +39,16 @@ class TrendStageTest {
         assertEquals(Stage.Decision.PASS, first.getDecision());
         assertEquals(0, first.getScoreDelta());
         assertEquals(Stage.Decision.PASS, second.getDecision());
-        assertEquals(10, second.getScoreDelta());
+        assertEquals(4, second.getScoreDelta());
         assertTrue(second.getReason().contains("Cross-sender repeat"));
     }
 
     @Test
     void scoresMultiSenderWaveMoreStrongly() {
-        TrendStage stage = new TrendStage(new TrendStore());
+        RulesConfig rulesConfig = enabledTrendRules();
+        rulesConfig.trendStage().setMultiSenderWaveThreshold(2);
+        rulesConfig.trendStage().setMultiSenderWaveScore(6);
+        TrendStage stage = new TrendStage(new TrendStore(), rulesConfig);
 
         stage.apply(new ChatEvent("same pitch", UUID.randomUUID(), "Alpha", 1_000L, ChatSourceType.PLAYER));
         stage.apply(new ChatEvent("same pitch", UUID.randomUUID(), "Beta", 2_000L, ChatSourceType.PLAYER));
@@ -57,7 +62,7 @@ class TrendStageTest {
         ));
 
         assertEquals(Stage.Decision.PASS, third.getDecision());
-        assertEquals(20, third.getScoreDelta());
+        assertEquals(6, third.getScoreDelta());
         assertTrue(third.getReason().contains("Trend wave"));
     }
 
@@ -72,7 +77,7 @@ class TrendStageTest {
 
     @Test
     void usesConfiguredTrendScores() {
-        RulesConfig rulesConfig = new RulesConfig();
+        RulesConfig rulesConfig = enabledTrendRules();
         rulesConfig.trendStage().setSingleSenderRepeatScore(4);
         TrendStage stage = new TrendStage(new TrendStore(), rulesConfig);
 
@@ -91,28 +96,33 @@ class TrendStageTest {
 
     @Test
     void addsEscalationBonusForLargerTrendWaves() {
-        TrendStage stage = new TrendStage(new TrendStore());
+        RulesConfig rulesConfig = enabledTrendRules();
+        TrendStage stage = new TrendStage(new TrendStore(), rulesConfig);
 
         stage.apply(new ChatEvent("same pitch", UUID.randomUUID(), "Alpha", 1_000L, ChatSourceType.PLAYER));
         stage.apply(new ChatEvent("same pitch", UUID.randomUUID(), "Beta", 2_000L, ChatSourceType.PLAYER));
         stage.apply(new ChatEvent("same pitch", UUID.randomUUID(), "Gamma", 3_000L, ChatSourceType.PLAYER));
+        stage.apply(new ChatEvent("same pitch", UUID.randomUUID(), "Delta", 4_000L, ChatSourceType.PLAYER));
+        stage.apply(new ChatEvent("same pitch", UUID.randomUUID(), "Epsilon", 5_000L, ChatSourceType.PLAYER));
 
-        StageResult fourth = stage.apply(new ChatEvent(
+        StageResult sixth = stage.apply(new ChatEvent(
             "same pitch",
             UUID.randomUUID(),
-            "Delta",
-            4_000L,
+            "Zeta",
+            6_000L,
             ChatSourceType.PLAYER
         ));
 
-        assertEquals(Stage.Decision.PASS, fourth.getDecision());
-        assertEquals(25, fourth.getScoreDelta());
-        assertTrue(fourth.getReason().contains("Trend escalation"));
+        assertEquals(Stage.Decision.PASS, sixth.getDecision());
+        assertEquals(7, sixth.getScoreDelta());
+        assertTrue(sixth.getReason().contains("Trend escalation"));
     }
 
     @Test
     void groupsNearIdenticalMessagesByFingerprint() {
-        TrendStage stage = new TrendStage(new TrendStore());
+        RulesConfig rulesConfig = enabledTrendRules();
+        rulesConfig.trendStage().setSingleSenderRepeatScore(4);
+        TrendStage stage = new TrendStage(new TrendStore(), rulesConfig);
 
         stage.apply(new ChatEvent("add me on disc0rd", UUID.randomUUID(), "Alpha", 1_000L, ChatSourceType.PLAYER));
         StageResult result = stage.apply(new ChatEvent(
@@ -124,7 +134,13 @@ class TrendStageTest {
         ));
 
         assertEquals(Stage.Decision.PASS, result.getDecision());
-        assertEquals(10, result.getScoreDelta());
+        assertEquals(4, result.getScoreDelta());
         assertTrue(result.getReason().contains("Cross-sender repeat"));
+    }
+
+    private static RulesConfig enabledTrendRules() {
+        RulesConfig rulesConfig = new RulesConfig();
+        rulesConfig.setTrendStageEnabled(true);
+        return rulesConfig;
     }
 }

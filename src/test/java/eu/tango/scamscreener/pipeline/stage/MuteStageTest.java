@@ -84,13 +84,13 @@ class MuteStageTest {
     }
 
     @Test
-    void unrelatedSkyblockerPlayerMessagesStillContinueThroughPipeline() {
+    void scrubbedSkyblockerPlayerMessagesBypassRiskChecks() {
         StageResult result = new MuteStage().apply(
             ChatEvent.messageOnly("[Skyblocker] We only have 5 crypts out of 5, we need more!", ChatSourceType.PLAYER)
         );
 
-        assertEquals(Stage.Decision.PASS, result.getDecision());
-        assertTrue(result.getReason().isEmpty());
+        assertEquals(Stage.Decision.ALLOW, result.getDecision());
+        assertEquals("MUTE_DUNGEON_MOD_BYPASS", result.getReason());
     }
 
     private static final class TrackingStage extends Stage {

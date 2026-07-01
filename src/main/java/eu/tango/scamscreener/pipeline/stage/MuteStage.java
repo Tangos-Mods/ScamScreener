@@ -1,6 +1,7 @@
 package eu.tango.scamscreener.pipeline.stage;
 
 import eu.tango.scamscreener.config.data.RulesConfig;
+import eu.tango.scamscreener.chat.InboundScrubRuleMatcher;
 import eu.tango.scamscreener.pipeline.core.Stage;
 import eu.tango.scamscreener.pipeline.data.ChatEvent;
 import eu.tango.scamscreener.pipeline.data.StageResult;
@@ -13,20 +14,15 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.regex.Pattern;
 
 /**
  * First pipeline stage reserved for mute and suppression logic.
  */
 public final class MuteStage extends Stage {
-    private static final Set<String> DROPPED_PLAYER_MESSAGES = Set.of(
-        "[skyblocker] 300 score reached!",
-        "[skyblocker] 270 score reached!",
+    private static final Set<String> EXTRA_DROPPED_PLAYER_MESSAGES = Set.of(
         "prince dead!",
         "mimic dead!"
     );
-    private static final Pattern SKYBLOCKER_CRYPTS_MESSAGE =
-        Pattern.compile("^\\[skyblocker\\] we only have [0-4] crypts out of 5, we need more!$");
 
     private final RuleCatalog rules;
     private final Map<String, Long> recentDuplicateKeys = new LinkedHashMap<>();
@@ -157,7 +153,7 @@ public final class MuteStage extends Stage {
             return false;
         }
 
-        return DROPPED_PLAYER_MESSAGES.contains(normalizedMessage)
-            || SKYBLOCKER_CRYPTS_MESSAGE.matcher(normalizedMessage).matches();
+        return InboundScrubRuleMatcher.matches(normalizedMessage)
+            || EXTRA_DROPPED_PLAYER_MESSAGES.contains(normalizedMessage);
     }
 }
