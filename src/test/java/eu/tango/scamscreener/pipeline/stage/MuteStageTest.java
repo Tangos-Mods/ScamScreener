@@ -68,8 +68,11 @@ class MuteStageTest {
         for (String message : java.util.List.of(
             "[Skyblocker] 300 Score Reached!",
             "[Skyblocker] 270 Score Reached!",
+            "300 Score Reached!",
             "Prince dead!",
             "Mimic dead!",
+            "The Livid color is RED",
+            "0 (0.00%)",
             "[Skyblocker] We only have 0 crypts out of 5, we need more!",
             "[Skyblocker] We only have 1 crypts out of 5, we need more!",
             "[Skyblocker] We only have 2 crypts out of 5, we need more!",

@@ -1,7 +1,7 @@
 package eu.tango.scamscreener.pipeline.stage;
 
+import eu.tango.scamscreener.chat.PrePipelinePlayerMessageFilter;
 import eu.tango.scamscreener.config.data.RulesConfig;
-import eu.tango.scamscreener.chat.InboundScrubRuleMatcher;
 import eu.tango.scamscreener.pipeline.core.Stage;
 import eu.tango.scamscreener.pipeline.data.ChatEvent;
 import eu.tango.scamscreener.pipeline.data.StageResult;
@@ -12,18 +12,12 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 /**
  * First pipeline stage reserved for mute and suppression logic.
  */
 public final class MuteStage extends Stage {
-    private static final Set<String> EXTRA_DROPPED_PLAYER_MESSAGES = Set.of(
-        "prince dead!",
-        "mimic dead!"
-    );
-
     private final RuleCatalog rules;
     private final Map<String, Long> recentDuplicateKeys = new LinkedHashMap<>();
 
@@ -153,7 +147,6 @@ public final class MuteStage extends Stage {
             return false;
         }
 
-        return InboundScrubRuleMatcher.matches(normalizedMessage)
-            || EXTRA_DROPPED_PLAYER_MESSAGES.contains(normalizedMessage);
+        return PrePipelinePlayerMessageFilter.matches(normalizedMessage);
     }
 }

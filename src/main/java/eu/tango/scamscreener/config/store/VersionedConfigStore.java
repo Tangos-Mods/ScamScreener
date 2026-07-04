@@ -52,8 +52,9 @@ public abstract class VersionedConfigStore<T extends VersionedConfig> extends Ba
     private T normalizeLoaded(T loadedValue) {
         if (loadedValue == null || loadedValue.version() < currentVersion) {
             T defaultValue = createDefault();
-            super.save(defaultValue);
-            return defaultValue;
+            T migratedValue = preserveOutdatedValue(loadedValue, defaultValue);
+            super.save(migratedValue);
+            return migratedValue;
         }
 
         if (loadedValue.version() == currentVersion) {
@@ -63,6 +64,17 @@ public abstract class VersionedConfigStore<T extends VersionedConfig> extends Ba
         T preparedValue = stampVersion(loadedValue);
         super.save(preparedValue);
         return preparedValue;
+    }
+
+    /**
+     * Preserves selected fields from an outdated config before defaults replace the rest.
+     *
+     * @param outdatedValue the parsed outdated value, when readable
+     * @param defaultValue the freshly created current-version default value
+     * @return the value to persist as the migrated current-version config
+     */
+    protected T preserveOutdatedValue(T outdatedValue, T defaultValue) {
+        return defaultValue;
     }
 
     private T stampVersion(T value) {

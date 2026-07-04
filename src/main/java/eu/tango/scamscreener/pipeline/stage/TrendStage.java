@@ -15,6 +15,18 @@ import java.util.List;
  * Cross-message trend heuristics based on short global history.
  */
 public final class TrendStage extends Stage {
+    private static final String[] DIRECTED_EXTERNAL_REDIRECT_PHRASES = {
+        "add me",
+        "dm me",
+        "message me",
+        "contact me",
+        "join my",
+        "join vc",
+        "join call",
+        "voice chat",
+        "voice channel"
+    };
+
     private final TrendStore trendStore;
     private final RuleCatalog rules;
 
@@ -84,6 +96,10 @@ public final class TrendStage extends Stage {
             trendStore.record(chatEvent);
             return pass();
         }
+        if (!isTrendEligible(chatEvent)) {
+            trendStore.record(chatEvent);
+            return pass();
+        }
 
         int totalScore = 0;
         List<String> reasonParts = new ArrayList<>();
@@ -115,5 +131,37 @@ public final class TrendStage extends Stage {
         }
 
         return score(totalScore, reasonIds, String.join("; ", reasonParts));
+    }
+
+    private boolean isTrendEligible(ChatEvent chatEvent) {
+        if (chatEvent == null) {
+            return false;
+        }
+
+        if (rules.suspiciousLink().patternMatches(chatEvent)
+            || rules.upfrontPayment().patternMatches(chatEvent)
+            || rules.coercionThreat().patternMatches(chatEvent)
+            || rules.middlemanClaim().patternMatches(chatEvent)
+            || rules.proofBait().patternMatches(chatEvent)
+            || rules.trustSignal().patternMatches(chatEvent)) {
+            return true;
+        }
+
+        if (!rules.externalPlatform().patternMatches(chatEvent)) {
+            return false;
+        }
+
+        if (rules.discordHandle().patternMatches(chatEvent)) {
+            return true;
+        }
+
+        String normalizedMessage = chatEvent.getNormalizedMessage();
+        for (String phrase : DIRECTED_EXTERNAL_REDIRECT_PHRASES) {
+            if (normalizedMessage.contains(phrase)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

@@ -24,4 +24,21 @@ public final class RuntimeConfigStore extends VersionedConfigStore<RuntimeConfig
     protected RuntimeConfig createDefaultValue() {
         return new RuntimeConfig();
     }
+
+    @Override
+    protected RuntimeConfig preserveOutdatedValue(RuntimeConfig outdatedValue, RuntimeConfig defaultValue) {
+        if (defaultValue == null) {
+            return createDefaultValue();
+        }
+        if (outdatedValue == null) {
+            return defaultValue;
+        }
+
+        String preservedTrainingClientId = outdatedValue.trainingClientId();
+        if (!preservedTrainingClientId.isBlank()) {
+            defaultValue.setTrainingClientId(preservedTrainingClientId);
+        }
+
+        return defaultValue;
+    }
 }

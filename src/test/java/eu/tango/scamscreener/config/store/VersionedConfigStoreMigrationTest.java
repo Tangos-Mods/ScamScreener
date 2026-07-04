@@ -45,6 +45,25 @@ class VersionedConfigStoreMigrationTest {
     }
 
     @Test
+    void loadOrCreatePreservesTrainingClientIdFromOlderRuntimeConfig() throws IOException {
+        Path runtimeFile = tempDir.resolve("runtime-with-client-id.json");
+        Files.writeString(runtimeFile, """
+            {
+              "version": 1,
+              "enabled": false,
+              "trainingClientId": "Client-Fixed-123"
+            }
+            """, StandardCharsets.UTF_8);
+
+        RuntimeConfig config = new RuntimeConfigStore(runtimeFile).loadOrCreate();
+
+        assertEquals(ConfigSchema.RUNTIME.currentVersion(), config.version());
+        assertEquals("client-fixed-123", config.trainingClientId());
+        String storedJson = Files.readString(runtimeFile, StandardCharsets.UTF_8);
+        assertTrue(storedJson.contains("\"trainingClientId\": \"client-fixed-123\""));
+    }
+
+    @Test
     void loadOrCreateKeepsCurrentVersionRuntimeConfigUntouched() throws IOException {
         Path runtimeFile = tempDir.resolve("runtime-current.json");
         Files.writeString(
@@ -72,6 +91,24 @@ class VersionedConfigStoreMigrationTest {
         assertTrue(storedJson.contains("\"version\": " + ConfigSchema.RUNTIME.currentVersion()));
         assertTrue(storedJson.contains("\"minimumRiskLevel\": \"HIGH\""));
         assertTrue(storedJson.contains("\"autoCaptureLevel\": \"LOW\""));
+    }
+
+    @Test
+    void loadOrCreatePreservesTrainingClientIdFromUnversionedRuntimeConfig() throws IOException {
+        Path runtimeFile = tempDir.resolve("runtime-unversioned.json");
+        Files.writeString(runtimeFile, """
+            {
+              "enabled": false,
+              "trainingClientId": "Legacy-Install-Id"
+            }
+            """, StandardCharsets.UTF_8);
+
+        RuntimeConfig config = new RuntimeConfigStore(runtimeFile).loadOrCreate();
+
+        assertEquals(ConfigSchema.RUNTIME.currentVersion(), config.version());
+        assertEquals("legacy-install-id", config.trainingClientId());
+        String storedJson = Files.readString(runtimeFile, StandardCharsets.UTF_8);
+        assertTrue(storedJson.contains("\"trainingClientId\": \"legacy-install-id\""));
     }
 
     @Test

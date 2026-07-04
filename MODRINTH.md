@@ -1,10 +1,7 @@
-## ScamScreener 2.5.0
+## ScamScreener 2.5.1
 
-This release retunes the default v2 pipeline to reduce noisy review alerts from common SkyBlock chat traffic.
+This patch tightens repeat-wave handling and fixes a config regression around the local Training Hub client ID.
 
-- raised the default review threshold from `1` to `15`
-- disabled `TrendStage` by default and reduced its repeat-wave fallback tuning
-- tightened `BehaviorStage` burst defaults
-- reduced default scores for generic Discord/trust hits and the `external after contact` funnel step
-- tightened the fuzzy `join my discord` match and reduced the fuzzy `trust me` score
-- bumped the `RULES` schema version, so existing `rules.json` files are reset to the new defaults on load
+- tightened `TrendStage` so only repeated scam-like pitches score, instead of generic repeated public chat
+- moved reposted dungeon/mod helper callouts into one central pre-pipeline player-message filter and added more known lines
+- preserved the installation-local `trainingClientId` when old or unversioned `runtime.json` files are recreated during schema updates

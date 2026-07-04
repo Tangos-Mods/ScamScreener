@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented in this file.
 
+## 2.5.1 - 2026-07-04
+
+### Changed
+- Tightened `TrendStage` so cross-sender repeat scoring now only applies to messages that already look like directed scam pitches instead of generic repeated public chat.
+
+### Fixed
+- Added a central pre-pipeline player-message filter for repeated mod helper callouts that are reposted through normal player chat, including Livid-color lines and `0 (0.00%)`.
+- Preserved the installation-local `trainingClientId` when outdated or unversioned `runtime.json` files are replaced during schema-version normalization.
+
 ## 2.5.0 - 2026-06-30
 
 ### Changed

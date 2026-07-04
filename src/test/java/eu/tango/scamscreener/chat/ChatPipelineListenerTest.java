@@ -101,7 +101,25 @@ public class ChatPipelineListenerTest {
         assertEquals(ChatSourceType.PLAYER, mimicEvent.getSourceType());
         assertEquals("Pankraz01", mimicEvent.getSenderName());
         assertEquals("Mimic dead!", mimicEvent.getRawMessage());
-        assertEquals(true, ChatPipelineListener.shouldEnterPipeline(mimicEvent));
+        assertEquals(false, ChatPipelineListener.shouldEnterPipeline(mimicEvent));
+
+        ChatEvent lividEvent = ChatPipelineListener.classifyGameMessage(
+            Component.literal("[130] [MVP+] Pankraz01: The Livid color is RED"),
+            32767
+        );
+        assertEquals(ChatSourceType.PLAYER, lividEvent.getSourceType());
+        assertEquals("Pankraz01", lividEvent.getSenderName());
+        assertEquals("The Livid color is RED", lividEvent.getRawMessage());
+        assertEquals(false, ChatPipelineListener.shouldEnterPipeline(lividEvent));
+
+        ChatEvent percentageEvent = ChatPipelineListener.classifyGameMessage(
+            Component.literal("[130] [MVP+] Pankraz01: 0 (0.00%)"),
+            32767
+        );
+        assertEquals(ChatSourceType.PLAYER, percentageEvent.getSourceType());
+        assertEquals("Pankraz01", percentageEvent.getSenderName());
+        assertEquals("0 (0.00%)", percentageEvent.getRawMessage());
+        assertEquals(false, ChatPipelineListener.shouldEnterPipeline(percentageEvent));
     }
 
     @Test
@@ -123,6 +141,9 @@ public class ChatPipelineListenerTest {
         ));
         assertEquals(false, ChatPipelineListener.shouldEnterPipeline(
             ChatEvent.messageOnly("We only have 4 crypts out of 5, we need more!", ChatSourceType.PLAYER)
+        ));
+        assertEquals(false, ChatPipelineListener.shouldEnterPipeline(
+            ChatEvent.messageOnly("0 (0.00%)", ChatSourceType.PLAYER)
         ));
         assertEquals(false, ChatPipelineListener.shouldEnterPipeline(
             ChatEvent.messageOnly("You earned 10 SkyBlock XP.", ChatSourceType.UNKNOWN)

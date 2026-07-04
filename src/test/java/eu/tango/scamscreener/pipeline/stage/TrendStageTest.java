@@ -50,11 +50,11 @@ class TrendStageTest {
         rulesConfig.trendStage().setMultiSenderWaveScore(6);
         TrendStage stage = new TrendStage(new TrendStore(), rulesConfig);
 
-        stage.apply(new ChatEvent("same pitch", UUID.randomUUID(), "Alpha", 1_000L, ChatSourceType.PLAYER));
-        stage.apply(new ChatEvent("same pitch", UUID.randomUUID(), "Beta", 2_000L, ChatSourceType.PLAYER));
+        stage.apply(new ChatEvent("join my discord", UUID.randomUUID(), "Alpha", 1_000L, ChatSourceType.PLAYER));
+        stage.apply(new ChatEvent("join my discord", UUID.randomUUID(), "Beta", 2_000L, ChatSourceType.PLAYER));
 
         StageResult third = stage.apply(new ChatEvent(
-            "same pitch",
+            "join my discord",
             UUID.randomUUID(),
             "Gamma",
             3_000L,
@@ -81,9 +81,9 @@ class TrendStageTest {
         rulesConfig.trendStage().setSingleSenderRepeatScore(4);
         TrendStage stage = new TrendStage(new TrendStore(), rulesConfig);
 
-        stage.apply(new ChatEvent("same pitch", UUID.randomUUID(), "Alpha", 1_000L, ChatSourceType.PLAYER));
+        stage.apply(new ChatEvent("dm me on discord", UUID.randomUUID(), "Alpha", 1_000L, ChatSourceType.PLAYER));
         StageResult result = stage.apply(new ChatEvent(
-            "same pitch",
+            "dm me on discord",
             UUID.randomUUID(),
             "Beta",
             2_000L,
@@ -99,14 +99,14 @@ class TrendStageTest {
         RulesConfig rulesConfig = enabledTrendRules();
         TrendStage stage = new TrendStage(new TrendStore(), rulesConfig);
 
-        stage.apply(new ChatEvent("same pitch", UUID.randomUUID(), "Alpha", 1_000L, ChatSourceType.PLAYER));
-        stage.apply(new ChatEvent("same pitch", UUID.randomUUID(), "Beta", 2_000L, ChatSourceType.PLAYER));
-        stage.apply(new ChatEvent("same pitch", UUID.randomUUID(), "Gamma", 3_000L, ChatSourceType.PLAYER));
-        stage.apply(new ChatEvent("same pitch", UUID.randomUUID(), "Delta", 4_000L, ChatSourceType.PLAYER));
-        stage.apply(new ChatEvent("same pitch", UUID.randomUUID(), "Epsilon", 5_000L, ChatSourceType.PLAYER));
+        stage.apply(new ChatEvent("pay first for the carry", UUID.randomUUID(), "Alpha", 1_000L, ChatSourceType.PLAYER));
+        stage.apply(new ChatEvent("pay first for the carry", UUID.randomUUID(), "Beta", 2_000L, ChatSourceType.PLAYER));
+        stage.apply(new ChatEvent("pay first for the carry", UUID.randomUUID(), "Gamma", 3_000L, ChatSourceType.PLAYER));
+        stage.apply(new ChatEvent("pay first for the carry", UUID.randomUUID(), "Delta", 4_000L, ChatSourceType.PLAYER));
+        stage.apply(new ChatEvent("pay first for the carry", UUID.randomUUID(), "Epsilon", 5_000L, ChatSourceType.PLAYER));
 
         StageResult sixth = stage.apply(new ChatEvent(
-            "same pitch",
+            "pay first for the carry",
             UUID.randomUUID(),
             "Zeta",
             6_000L,
@@ -136,6 +136,27 @@ class TrendStageTest {
         assertEquals(Stage.Decision.PASS, result.getDecision());
         assertEquals(4, result.getScoreDelta());
         assertTrue(result.getReason().contains("Cross-sender repeat"));
+    }
+
+    @Test
+    void ignoresBenignTrendWavesWithoutRiskSignals() {
+        RulesConfig rulesConfig = enabledTrendRules();
+        rulesConfig.trendStage().setMultiSenderWaveThreshold(2);
+        TrendStage stage = new TrendStage(new TrendStore(), rulesConfig);
+
+        stage.apply(new ChatEvent("entered a opal mineshaft!", UUID.randomUUID(), "Alpha", 1_000L, ChatSourceType.PLAYER));
+        stage.apply(new ChatEvent("entered a opal mineshaft!", UUID.randomUUID(), "Beta", 2_000L, ChatSourceType.PLAYER));
+        StageResult result = stage.apply(new ChatEvent(
+            "entered a opal mineshaft!",
+            UUID.randomUUID(),
+            "Gamma",
+            3_000L,
+            ChatSourceType.PLAYER
+        ));
+
+        assertEquals(Stage.Decision.PASS, result.getDecision());
+        assertEquals(0, result.getScoreDelta());
+        assertFalse(result.hasReason());
     }
 
     private static RulesConfig enabledTrendRules() {
