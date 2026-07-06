@@ -1,7 +1,6 @@
-## ScamScreener 2.5.1
+## ScamScreener 2.5.2
 
-This patch tightens repeat-wave handling and fixes a config regression around the local Training Hub client ID.
+This patch fixes false scam-review cases from reposted mod/helper chat lines by classifying them as `SYSTEM_PLAYER` instead of normal player chat.
 
-- tightened `TrendStage` so only repeated scam-like pitches score, instead of generic repeated public chat
-- moved reposted dungeon/mod helper callouts into one central pre-pipeline player-message filter and added more known lines
-- preserved the installation-local `trainingClientId` when old or unversioned `runtime.json` files are recreated during schema updates
+- reclassified reposted helper callouts from visible player lines as `SYSTEM_PLAYER`, so they keep separate source semantics without entering the normal player-chat scam pipeline
+- fixed false case creation for wrapped lines such as `[Skyblocker] The livid color is LIME`, `[Skyblocker] 300 Score Reached!`, and `[Skyblocker] We only have 4 crypts out of 5, we need more!`

@@ -144,6 +144,7 @@ public final class RecentChatCache {
 
         return switch (sourceType == null ? ChatSourceType.UNKNOWN : sourceType) {
             case SYSTEM -> "System";
+            case SYSTEM_PLAYER -> "System Player";
             case PLAYER -> "Unknown Player";
             case UNKNOWN -> "Unknown";
         };
@@ -230,6 +231,7 @@ public final class RecentChatCache {
         public String sourceLabel() {
             return switch (sourceType) {
                 case PLAYER -> "Player";
+                case SYSTEM_PLAYER -> "System Player";
                 case SYSTEM -> "System";
                 case UNKNOWN -> "Unknown";
             };
@@ -238,6 +240,7 @@ public final class RecentChatCache {
         public String speakerRoleId() {
             return switch (sourceType) {
                 case PLAYER -> "other";
+                case SYSTEM_PLAYER -> "other";
                 case SYSTEM -> "system";
                 case UNKNOWN -> "unknown";
             };
@@ -246,6 +249,7 @@ public final class RecentChatCache {
         public String messageSourceTypeId() {
             return switch (sourceType) {
                 case PLAYER -> "player";
+                case SYSTEM_PLAYER -> "system_player";
                 case SYSTEM -> "system";
                 case UNKNOWN -> "unknown";
             };

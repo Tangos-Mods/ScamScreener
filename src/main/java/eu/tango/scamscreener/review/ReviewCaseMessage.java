@@ -146,6 +146,7 @@ public final class ReviewCaseMessage {
     private static String defaultSpeakerRole(ChatSourceType sourceType) {
         return switch (sourceType == null ? ChatSourceType.UNKNOWN : sourceType) {
             case SYSTEM -> "system";
+            case SYSTEM_PLAYER -> "other";
             case UNKNOWN -> "unknown";
             default -> "other";
         };
@@ -154,6 +155,7 @@ public final class ReviewCaseMessage {
     private static String defaultMessageSourceType(ChatSourceType sourceType) {
         return switch (sourceType == null ? ChatSourceType.UNKNOWN : sourceType) {
             case SYSTEM -> "system";
+            case SYSTEM_PLAYER -> "system_player";
             case UNKNOWN -> "unknown";
             default -> "player";
         };

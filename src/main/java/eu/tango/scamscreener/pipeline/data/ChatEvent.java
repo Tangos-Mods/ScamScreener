@@ -234,12 +234,21 @@ public final class ChatEvent {
     }
 
     /**
+     * Indicates whether this event is a system-like message that originated from a player line.
+     *
+     * @return {@code true} when the event source is a player-forwarded system message
+     */
+    public boolean isSystemPlayerSource() {
+        return sourceType == ChatSourceType.SYSTEM_PLAYER;
+    }
+
+    /**
      * Indicates whether this event is classified as system-authored.
      *
      * @return {@code true} when the event source is a system source
      */
     public boolean isSystemSource() {
-        return sourceType == ChatSourceType.SYSTEM;
+        return sourceType == ChatSourceType.SYSTEM || sourceType == ChatSourceType.SYSTEM_PLAYER;
     }
 
     /**
@@ -268,7 +277,7 @@ public final class ChatEvent {
     }
 
     private static String buildSenderKey(UUID senderUuid, String senderName, ChatSourceType sourceType) {
-        if (sourceType == ChatSourceType.SYSTEM) {
+        if (sourceType == ChatSourceType.SYSTEM || sourceType == ChatSourceType.SYSTEM_PLAYER) {
             return "";
         }
         if (senderUuid != null) {

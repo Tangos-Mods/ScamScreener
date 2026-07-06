@@ -9,6 +9,10 @@ public enum ChatSourceType {
      */
     PLAYER,
     /**
+     * A system-like message that was visibly sent through a player chat line.
+     */
+    SYSTEM_PLAYER,
+    /**
      * A message authored by the server, an NPC, or another system source.
      */
     SYSTEM,

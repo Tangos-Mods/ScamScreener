@@ -196,7 +196,13 @@ public final class ChatPipelineListener {
         );
         ChatLineClassifier.Analysis analysis = ChatLineClassifier.analyze(inboundEvent.getRawMessage());
         if (analysis.type() == ChatLineClassifier.ChatLineType.SYSTEM) {
-            return new ChatEvent(analysis.cleanedLine(), null, "", inboundEvent.getTimestampMs(), ChatSourceType.SYSTEM);
+            return new ChatEvent(
+                analysis.cleanedLine(),
+                inboundEvent.hasSender() ? inboundEvent.getSenderUuid() : null,
+                inboundEvent.hasSender() ? inboundEvent.getSenderName() : "",
+                inboundEvent.getTimestampMs(),
+                inboundEvent.hasSender() ? ChatSourceType.SYSTEM_PLAYER : ChatSourceType.SYSTEM
+            );
         }
         if (analysis.type() == ChatLineClassifier.ChatLineType.IGNORED) {
             return null;
@@ -218,6 +224,17 @@ public final class ChatPipelineListener {
         ChatLineClassifier.Analysis analysis = ChatLineClassifier.analyze(rawLine);
         if (analysis.type() == ChatLineClassifier.ChatLineType.PLAYER) {
             ChatLineClassifier.ParsedPlayerLine parsedPlayerLine = analysis.parsedPlayerLine();
+            if (parsedPlayerLine != null && PrePipelinePlayerMessageFilter.matches(
+                ChatEvent.normalizeMessage(parsedPlayerLine.message())
+            )) {
+                return new ChatEvent(
+                    parsedPlayerLine.message(),
+                    null,
+                    parsedPlayerLine.senderName(),
+                    timestampMs,
+                    ChatSourceType.SYSTEM_PLAYER
+                );
+            }
             return new ChatEvent(
                 parsedPlayerLine.message(),
                 null,

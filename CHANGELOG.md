@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented in this file.
 
+## 2.5.2 - 2026-07-05
+
+### Changed
+- Reposted mod/helper callouts that arrive through visible player chat lines are now classified as `SYSTEM_PLAYER` instead of plain `PLAYER`, so they stay out of the scam pipeline while still preserving that they were forwarded by a player line.
+
+### Fixed
+- Wrapped helper lines such as `[Skyblocker] The livid color is LIME`, `[Skyblocker] 300 Score Reached!`, and `[Skyblocker] We only have 4 crypts out of 5, we need more!` no longer open scam-review cases because they are reclassified before player-chat pipeline entry.
+
 ## 2.5.1 - 2026-07-04
 
 ### Changed

@@ -25,4 +25,18 @@ class RecentChatCacheTest {
         assertEquals("second", entries.get(2).cleanText());
         assertEquals("System", entries.get(1).displaySender());
     }
+
+    @Test
+    void keepsSystemPlayerMessagesOutOfPlayerIndexButPreservesTheirType() {
+        RecentChatCache cache = new RecentChatCache(3);
+
+        cache.record(new ChatEvent("[Skyblocker] 300 Score Reached!", null, "Pankraz01", 1L, ChatSourceType.SYSTEM_PLAYER));
+
+        List<RecentChatCache.CachedChatMessage> entries = cache.entries();
+        assertEquals(1, entries.size());
+        assertEquals("Pankraz01", entries.get(0).displaySender());
+        assertEquals(ChatSourceType.SYSTEM_PLAYER, entries.get(0).sourceType());
+        assertEquals("System Player", entries.get(0).sourceLabel());
+        assertEquals(List.of(), cache.entriesForSender("Pankraz01", 10));
+    }
 }

@@ -75,12 +75,12 @@ public class ChatPipelineListenerTest {
     }
 
     @Test
-    void extractsDungeonModMessagesFromVisiblePlayerChatLines() {
+    void reclassifiesWrappedDungeonModMessagesAsSystemMessages() {
         ChatEvent scoreEvent = ChatPipelineListener.classifyGameMessage(
             Component.literal("[130] [MVP+] Pankraz01: [Skyblocker] 300 Score Reached!"),
             32767
         );
-        assertEquals(ChatSourceType.PLAYER, scoreEvent.getSourceType());
+        assertEquals(ChatSourceType.SYSTEM_PLAYER, scoreEvent.getSourceType());
         assertEquals("Pankraz01", scoreEvent.getSenderName());
         assertEquals("[Skyblocker] 300 Score Reached!", scoreEvent.getRawMessage());
         assertEquals(false, ChatPipelineListener.shouldEnterPipeline(scoreEvent));
@@ -89,35 +89,35 @@ public class ChatPipelineListenerTest {
             Component.literal("[130] [MVP+] Pankraz01: [Skyblocker] We only have 4 crypts out of 5, we need more!"),
             32767
         );
-        assertEquals(ChatSourceType.PLAYER, cryptEvent.getSourceType());
+        assertEquals(ChatSourceType.SYSTEM_PLAYER, cryptEvent.getSourceType());
         assertEquals("Pankraz01", cryptEvent.getSenderName());
         assertEquals("[Skyblocker] We only have 4 crypts out of 5, we need more!", cryptEvent.getRawMessage());
         assertEquals(false, ChatPipelineListener.shouldEnterPipeline(cryptEvent));
 
-        ChatEvent mimicEvent = ChatPipelineListener.classifyGameMessage(
-            Component.literal("[130] [MVP+] Pankraz01: Mimic dead!"),
+        ChatEvent prefixedLividEvent = ChatPipelineListener.classifyGameMessage(
+            Component.literal("[130] [MVP+] Pankraz01: [Skyblocker] The livid color is LIME"),
             32767
         );
-        assertEquals(ChatSourceType.PLAYER, mimicEvent.getSourceType());
-        assertEquals("Pankraz01", mimicEvent.getSenderName());
+        assertEquals(ChatSourceType.SYSTEM_PLAYER, prefixedLividEvent.getSourceType());
+        assertEquals("Pankraz01", prefixedLividEvent.getSenderName());
+        assertEquals("[Skyblocker] The livid color is LIME", prefixedLividEvent.getRawMessage());
+        assertEquals(false, ChatPipelineListener.shouldEnterPipeline(prefixedLividEvent));
+    }
+
+    @Test
+    void fallbackFilterStillCatchesForcedPlayerDungeonModMessages() {
+        ChatEvent scoreEvent = ChatEvent.messageOnly("[Skyblocker] 300 Score Reached!", ChatSourceType.PLAYER);
+        assertEquals(false, ChatPipelineListener.shouldEnterPipeline(scoreEvent));
+
+        ChatEvent mimicEvent = ChatEvent.messageOnly("Mimic dead!", ChatSourceType.PLAYER);
         assertEquals("Mimic dead!", mimicEvent.getRawMessage());
         assertEquals(false, ChatPipelineListener.shouldEnterPipeline(mimicEvent));
 
-        ChatEvent lividEvent = ChatPipelineListener.classifyGameMessage(
-            Component.literal("[130] [MVP+] Pankraz01: The Livid color is RED"),
-            32767
-        );
-        assertEquals(ChatSourceType.PLAYER, lividEvent.getSourceType());
-        assertEquals("Pankraz01", lividEvent.getSenderName());
+        ChatEvent lividEvent = ChatEvent.messageOnly("The Livid color is RED", ChatSourceType.PLAYER);
         assertEquals("The Livid color is RED", lividEvent.getRawMessage());
         assertEquals(false, ChatPipelineListener.shouldEnterPipeline(lividEvent));
 
-        ChatEvent percentageEvent = ChatPipelineListener.classifyGameMessage(
-            Component.literal("[130] [MVP+] Pankraz01: 0 (0.00%)"),
-            32767
-        );
-        assertEquals(ChatSourceType.PLAYER, percentageEvent.getSourceType());
-        assertEquals("Pankraz01", percentageEvent.getSenderName());
+        ChatEvent percentageEvent = ChatEvent.messageOnly("0 (0.00%)", ChatSourceType.PLAYER);
         assertEquals("0 (0.00%)", percentageEvent.getRawMessage());
         assertEquals(false, ChatPipelineListener.shouldEnterPipeline(percentageEvent));
     }
@@ -208,8 +208,8 @@ public class ChatPipelineListenerTest {
             32767
         );
 
-        assertEquals(ChatSourceType.SYSTEM, systemEvent.getSourceType());
-        assertEquals("", systemEvent.getSenderName());
+        assertEquals(ChatSourceType.SYSTEM_PLAYER, systemEvent.getSourceType());
+        assertEquals("Skyblocker", systemEvent.getSenderName());
         assertEquals("[Skyblocker] BetterMap ready", systemEvent.getRawMessage());
         assertEquals(false, ChatPipelineListener.shouldEnterPipeline(systemEvent));
     }
@@ -239,8 +239,8 @@ public class ChatPipelineListenerTest {
             32767
         );
 
-        assertEquals(ChatSourceType.SYSTEM, systemEvent.getSourceType());
-        assertEquals("", systemEvent.getSenderName());
+        assertEquals(ChatSourceType.SYSTEM_PLAYER, systemEvent.getSourceType());
+        assertEquals("Pankraz01", systemEvent.getSenderName());
         assertEquals("[Skyblocker] BetterMap ready", systemEvent.getRawMessage());
         assertEquals(false, ChatPipelineListener.shouldEnterPipeline(systemEvent));
     }
