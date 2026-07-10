@@ -151,7 +151,7 @@ public final class TrainingHubScreen extends BaseScreen {
             return;
         }
 
-        this.minecraft.setScreen(new ConfirmLinkScreen(open -> {
+        this.minecraft.gui.setScreen(new ConfirmLinkScreen(open -> {
             if (open) {
                 try {
                     Util.getPlatform().openUri(TRAINING_HUB_URL);
@@ -161,7 +161,7 @@ public final class TrainingHubScreen extends BaseScreen {
             }
 
             if (this.minecraft != null) {
-                this.minecraft.setScreen(this);
+                this.minecraft.gui.setScreen(this);
             }
         }, TRAINING_HUB_URL, true));
     }

@@ -16,7 +16,7 @@ public final class ScamScreenerScreens {
      */
     public static void openRoot() {
         Minecraft client = Minecraft.getInstance();
-        openRoot(client.screen);
+        openRoot(client.gui.screen());
     }
 
     /**
@@ -26,6 +26,6 @@ public final class ScamScreenerScreens {
      */
     public static void openRoot(Screen parent) {
         Minecraft client = Minecraft.getInstance();
-        client.setScreen(new ScamScreenerMainScreen(parent));
+        client.gui.setScreen(new ScamScreenerMainScreen(parent));
     }
 }

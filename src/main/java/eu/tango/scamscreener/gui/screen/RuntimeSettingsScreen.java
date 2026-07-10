@@ -49,21 +49,21 @@ public final class RuntimeSettingsScreen extends BaseScreen {
         y += ROW_HEIGHT;
 
         addRenderableWidget(
-            Button.builder(Component.literal("Message Settings"), button -> this.minecraft.setScreen(new MessageSettingsScreen(this)))
+            Button.builder(Component.literal("Message Settings"), button -> this.minecraft.gui.setScreen(new MessageSettingsScreen(this)))
                 .bounds(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
         y += ROW_HEIGHT;
 
         addRenderableWidget(
-            Button.builder(Component.literal("Rules Settings"), button -> this.minecraft.setScreen(new RulesSettingsScreen(this)))
+            Button.builder(Component.literal("Rules Settings"), button -> this.minecraft.gui.setScreen(new RulesSettingsScreen(this)))
                 .bounds(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
         y += ROW_HEIGHT;
 
         addRenderableWidget(
-            Button.builder(Component.literal("Review Settings"), button -> this.minecraft.setScreen(new ReviewSettingsScreen(this)))
+            Button.builder(Component.literal("Review Settings"), button -> this.minecraft.gui.setScreen(new ReviewSettingsScreen(this)))
                 .bounds(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );

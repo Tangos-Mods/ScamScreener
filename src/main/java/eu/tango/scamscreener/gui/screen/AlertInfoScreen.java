@@ -166,7 +166,7 @@ public final class AlertInfoScreen extends BaseScreen {
             return;
         }
 
-        this.minecraft.setScreen(new AlertManageScreen(this, context));
+        this.minecraft.gui.setScreen(new AlertManageScreen(this, context));
     }
 
     private void rebuildWrappedLines() {

@@ -261,7 +261,7 @@ public final class AlertManageScreen extends BaseScreen {
             return;
         }
 
-        this.minecraft.setScreen(new CaseMessagePickerScreen(this, defaultPickerFilter()));
+        this.minecraft.gui.setScreen(new CaseMessagePickerScreen(this, defaultPickerFilter()));
     }
 
     private void submit(ReviewVerdict verdict) {

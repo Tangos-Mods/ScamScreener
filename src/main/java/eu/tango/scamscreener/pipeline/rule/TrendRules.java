@@ -4,7 +4,7 @@ package eu.tango.scamscreener.pipeline.rule;
  * Normalized cross-sender trend rule settings.
  *
  * @param minMessageLength minimum message length for trend checks
- * @param singleSenderRepeatScore score for exactly one prior sender
+ * @param singleSenderRepeatScore baseline used for wave escalation scaling
  * @param multiSenderWaveScore score for wave detection
  * @param multiSenderWaveThreshold sender count threshold for wave detection
  * @param escalationBonusMinimum minimum escalation amount per extra sender
@@ -63,7 +63,9 @@ public record TrendRules(
      *
      * @return the formatted reason text
      */
-    public String singleRepeatReason() {
-        return "Cross-sender repeat: 1 other sender repeated the same message";
+    public String singleRepeatReason(int distinctSenderCount) {
+        return "Cross-sender repeat: " + distinctSenderCount
+            + " other sender" + (distinctSenderCount == 1 ? "" : "s")
+            + " repeated the same message";
     }
 }

@@ -113,6 +113,17 @@ class RuleStageTest {
     }
 
     @Test
+    void ignoresDiscordLinkScoresInSecurityWarnings() {
+        StageResult result = new RuleStage().apply(ChatEvent.messageOnly(
+            "Please be mindful of Discord links as they may pose a security risk: https://discord.gg/example",
+            ChatSourceType.PLAYER
+        ));
+
+        assertEquals(0, result.getScoreDelta());
+        assertFalse(result.hasReason());
+    }
+
+    @Test
     void scoresTrustPaymentCombo() {
         ChatEvent event = ChatEvent.messageOnly("trust me and pay first", ChatSourceType.PLAYER);
 
@@ -139,6 +150,28 @@ class RuleStageTest {
         assertTrue(result.getReason().contains("Urgency wording"));
         assertTrue(result.getReason().contains("Sensitive account wording"));
         assertTrue(result.getReason().contains("Urgency paired with sensitive account request"));
+    }
+
+    @Test
+    void scoresConcreteAccountRequestsStrongly() {
+        StageResult result = new RuleStage().apply(ChatEvent.messageOnly(
+            "send me your verification code",
+            ChatSourceType.PLAYER
+        ));
+
+        assertEquals(35, result.getScoreDelta());
+        assertTrue(result.getReason().contains("Sensitive account wording"));
+    }
+
+    @Test
+    void scoresAccountMentionsLow() {
+        StageResult result = new RuleStage().apply(ChatEvent.messageOnly(
+            "what is otp?",
+            ChatSourceType.PLAYER
+        ));
+
+        assertEquals(3, result.getScoreDelta());
+        assertTrue(result.getReason().contains("Sensitive account mention"));
     }
 
     @Test

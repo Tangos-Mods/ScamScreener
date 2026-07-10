@@ -1,6 +1,9 @@
-## ScamScreener 2.5.2
+## ScamScreener 2.6.0
 
-This patch fixes false scam-review cases from reposted mod/helper chat lines by classifying them as `SYSTEM_PLAYER` instead of normal player chat.
+This release adds Minecraft `26.2.x` support and updates the in-game GUI wiring to match the new client API.
 
-- reclassified reposted helper callouts from visible player lines as `SYSTEM_PLAYER`, so they keep separate source semantics without entering the normal player-chat scam pipeline
-- fixed false case creation for wrapped lines such as `[Skyblocker] The livid color is LIME`, `[Skyblocker] 300 Score Reached!`, and `[Skyblocker] We only have 4 crypts out of 5, we need more!`
+- added support for Minecraft `26.2.x`
+- updated ScamScreener screen opening and profiler HUD handling for the `26.2` client API
+- refined account-data detection so harmless mentions score low while direct credential requests remain high-risk
+- adjusted cross-sender trend scoring to add one point per other sender, with a fixed `+6` wave score from six participating players
+- ignored known Discord security-warning messages for link and external-platform scoring while keeping normal Discord invitations active

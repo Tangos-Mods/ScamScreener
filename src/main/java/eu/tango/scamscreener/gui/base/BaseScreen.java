@@ -59,7 +59,7 @@ public abstract class BaseScreen extends Screen {
             return;
         }
 
-        this.minecraft.setScreen(parent);
+        this.minecraft.gui.setScreen(parent);
     }
 
     /**

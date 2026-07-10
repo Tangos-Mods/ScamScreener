@@ -167,6 +167,7 @@ public final class RulesConfig implements VersionedConfig {
         private int externalPlatformScore = 8;
         private int upfrontPaymentScore = 25;
         private int accountDataScore = 35;
+        private int accountDataMentionScore = 3;
         private int tooGoodScore = 15;
         private int coercionThreatScore = 20;
         private int middlemanClaimScore = 15;
@@ -183,11 +184,15 @@ public final class RulesConfig implements VersionedConfig {
 
         private String suspiciousLinkPattern =
             "\\b(?:https?://\\S+|(?:discord\\.gg|dsc\\.gg|discord(?:app)?\\.com/invite|t\\.me|bit\\.ly|tinyurl\\.com|cutt\\.ly|lnk\\.bio|bio\\.link|grabify\\.link)/\\S+)";
+        private String discordSecurityWarningPattern =
+            "\\bplease\\s+be\\s+mindful\\s+of\\s+discord\\s+links\\b.*\\bsecurity\\s+risk\\b";
         private String externalPlatformPattern = DEFAULT_EXTERNAL_PLATFORM_PATTERN;
         private String upfrontPaymentPattern =
             "\\b(?:pay first|send first|payment first|upfront payment|pay upfront|vorkasse|send coins first|coins first|before i trade|before we trade)\\b";
         private String accountDataPattern =
             "\\b(?:password|passwort|2fa|verification code|auth code|login details|email login|microsoft account|backup code|security code|otp|one time code|account email)\\b";
+        private String accountDataRequestPattern =
+            "\\b(?:tell|send|give|share|provide|enter|type|submit|post|drop|dm|message)(?:\\s+me)?\\s+(?:your\\s+)?(?:password|passwort|2fa|verification code|auth code|login details|email login|microsoft account|backup code|security code|otp|one time code|account email)\\b";
         private String tooGoodPattern =
             "\\b(?:free rank|free coins|100% safe|100 percent safe|guaranteed|garantiert|dupe|duped items?|risk free|free skyblock coins|cheap coins)\\b";
         private String coercionThreatPattern =
@@ -402,7 +407,7 @@ public final class RulesConfig implements VersionedConfig {
         private int minTrendMessageLength = 10;
         private int singleSenderRepeatScore = 0;
         private int multiSenderWaveScore = 6;
-        private int multiSenderWaveThreshold = 4;
+        private int multiSenderWaveThreshold = 5;
         private int escalationBonusMinimum = 1;
         private int escalationBonusDivisor = 4;
         private long windowMs = 45_000L;

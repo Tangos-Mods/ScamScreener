@@ -127,7 +127,7 @@ public final class ReviewScreen extends BaseScreen {
         );
 
         int footerButtonWidth = splitWidth(contentWidth, 3, DEFAULT_SPLIT_GAP);
-        addFooterButton(contentX, footerButtonWidth, Component.literal("Review Settings"), button -> this.minecraft.setScreen(new ReviewSettingsScreen(this)));
+        addFooterButton(contentX, footerButtonWidth, Component.literal("Review Settings"), button -> this.minecraft.gui.setScreen(new ReviewSettingsScreen(this)));
         contributeTrainingButton = addFooterButton(
             columnX(contentX, footerButtonWidth, DEFAULT_SPLIT_GAP, 1),
             footerButtonWidth,
@@ -251,7 +251,7 @@ public final class ReviewScreen extends BaseScreen {
             return;
         }
 
-        this.minecraft.setScreen(new AlertManageScreen(this, context));
+        this.minecraft.gui.setScreen(new AlertManageScreen(this, context));
     }
 
     private void openInfo() {
@@ -265,7 +265,7 @@ public final class ReviewScreen extends BaseScreen {
             return;
         }
 
-        this.minecraft.setScreen(new AlertInfoScreen(this, context));
+        this.minecraft.gui.setScreen(new AlertInfoScreen(this, context));
     }
 
     private void openNewCase() {
@@ -273,7 +273,7 @@ public final class ReviewScreen extends BaseScreen {
             return;
         }
 
-        this.minecraft.setScreen(new AlertManageScreen(this, null));
+        this.minecraft.gui.setScreen(new AlertManageScreen(this, null));
     }
 
     private void contributeTrainingData() {
@@ -282,7 +282,7 @@ public final class ReviewScreen extends BaseScreen {
 
     private void openTrainingHub() {
         if (this.minecraft != null) {
-            this.minecraft.setScreen(new TrainingHubScreen(this));
+            this.minecraft.gui.setScreen(new TrainingHubScreen(this));
         }
     }
 

@@ -244,15 +244,15 @@ public final class ScamScreenerCommandHandler {
     }
 
     private static int openWhitelist(FabricClientCommandSource source) {
-        return queueScreen(source, () -> source.getClient().setScreen(new WhitelistScreen(null)));
+        return queueScreen(source, () -> source.getClient().gui.setScreen(new WhitelistScreen(null)));
     }
 
     private static int openBlacklist(FabricClientCommandSource source) {
-        return queueScreen(source, () -> source.getClient().setScreen(new BlacklistScreen(null)));
+        return queueScreen(source, () -> source.getClient().gui.setScreen(new BlacklistScreen(null)));
     }
 
     private static int openReview(FabricClientCommandSource source) {
-        return queueScreen(source, () -> source.getClient().setScreen(new ReviewScreen(null)));
+        return queueScreen(source, () -> source.getClient().gui.setScreen(new ReviewScreen(null)));
     }
 
     private static int openReviewManage(FabricClientCommandSource source, String alertId) {
@@ -262,7 +262,7 @@ public final class ScamScreenerCommandHandler {
             return 0;
         }
 
-        return queueScreen(source, () -> source.getClient().setScreen(new AlertManageScreen(null, context)));
+        return queueScreen(source, () -> source.getClient().gui.setScreen(new AlertManageScreen(null, context)));
     }
 
     private static int openReviewInfo(FabricClientCommandSource source, String alertId) {
@@ -272,7 +272,7 @@ public final class ScamScreenerCommandHandler {
             return 0;
         }
 
-        return queueScreen(source, () -> source.getClient().setScreen(new AlertInfoScreen(null, context)));
+        return queueScreen(source, () -> source.getClient().gui.setScreen(new AlertInfoScreen(null, context)));
     }
 
     private static int openReviewPlayer(FabricClientCommandSource source, String playerName) {
@@ -282,15 +282,15 @@ public final class ScamScreenerCommandHandler {
             return 0;
         }
 
-        return queueScreen(source, () -> source.getClient().setScreen(new AlertManageScreen(null, context)));
+        return queueScreen(source, () -> source.getClient().gui.setScreen(new AlertManageScreen(null, context)));
     }
 
     private static int openRules(FabricClientCommandSource source) {
-        return queueScreen(source, () -> source.getClient().setScreen(new RulesSettingsScreen(null)));
+        return queueScreen(source, () -> source.getClient().gui.setScreen(new RulesSettingsScreen(null)));
     }
 
     private static int openRuntime(FabricClientCommandSource source) {
-        return queueScreen(source, () -> source.getClient().setScreen(new RuntimeSettingsScreen(null)));
+        return queueScreen(source, () -> source.getClient().gui.setScreen(new RuntimeSettingsScreen(null)));
     }
 
     private static int openSettings(FabricClientCommandSource source) {
@@ -298,11 +298,11 @@ public final class ScamScreenerCommandHandler {
     }
 
     private static int openMessages(FabricClientCommandSource source) {
-        return queueScreen(source, () -> source.getClient().setScreen(new MessageSettingsScreen(null)));
+        return queueScreen(source, () -> source.getClient().gui.setScreen(new MessageSettingsScreen(null)));
     }
 
     private static int openMetrics(FabricClientCommandSource source) {
-        return queueScreen(source, () -> source.getClient().setScreen(new MetricsSettingsScreen(null)));
+        return queueScreen(source, () -> source.getClient().gui.setScreen(new MetricsSettingsScreen(null)));
     }
 
     private static int showHelp(FabricClientCommandSource source) {

@@ -120,6 +120,22 @@ public class ChatPipelineListenerTest {
         ChatEvent percentageEvent = ChatEvent.messageOnly("0 (0.00%)", ChatSourceType.PLAYER);
         assertEquals("0 (0.00%)", percentageEvent.getRawMessage());
         assertEquals(false, ChatPipelineListener.shouldEnterPipeline(percentageEvent));
+
+        ChatEvent donExpressoEvent = ChatEvent.messageOnly("./tptodonexpresso", ChatSourceType.PLAYER);
+        assertEquals(false, ChatPipelineListener.shouldEnterPipeline(donExpressoEvent));
+
+        ChatEvent discordWarningEvent = ChatEvent.messageOnly(
+            "Need help with skyblock? Join our discord at discord.gg/skykings. "
+                + "Please be mindful of Discord links in chat as they may pose a security risk",
+            ChatSourceType.PLAYER
+        );
+        assertEquals(false, ChatPipelineListener.shouldEnterPipeline(discordWarningEvent));
+
+        ChatEvent discordInviteEvent = ChatEvent.messageOnly(
+            "Need help with skyblock? Join our discord at discord.gg/skykings",
+            ChatSourceType.PLAYER
+        );
+        assertEquals(true, ChatPipelineListener.shouldEnterPipeline(discordInviteEvent));
     }
 
     @Test

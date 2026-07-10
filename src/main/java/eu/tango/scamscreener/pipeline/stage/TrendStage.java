@@ -109,17 +109,9 @@ public final class TrendStage extends Stage {
             totalScore += trend.multiSenderWaveScore();
             reasonParts.add(trend.waveReason(snapshot.distinctSenderCount()));
             reasonIds.add("trend.multi_sender_wave");
-
-            int extraWaveSenders = snapshot.distinctSenderCount() - trend.multiSenderWaveThreshold();
-            if (extraWaveSenders > 0) {
-                int intensityBonus = trend.escalationBonus(extraWaveSenders);
-                totalScore += intensityBonus;
-                reasonParts.add(trend.escalationReason(intensityBonus));
-                reasonIds.add("trend.wave_escalation");
-            }
-        } else if (snapshot.distinctSenderCount() == 1) {
-            totalScore += trend.singleSenderRepeatScore();
-            reasonParts.add(trend.singleRepeatReason());
+        } else if (snapshot.distinctSenderCount() > 0) {
+            totalScore += snapshot.distinctSenderCount();
+            reasonParts.add(trend.singleRepeatReason(snapshot.distinctSenderCount()));
             reasonIds.add("trend.single_cross_sender_repeat");
         }
 

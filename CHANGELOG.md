@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented in this file.
 
+## 2.6.0 - 2026-07-09
+
+### Added
+- Support for Minecraft `26.2.x`.
+
+### Changed
+- Updated the client GUI and HUD integration to the `26.2` Minecraft client API so ScamScreener screens, command-opened screens, and the profiler HUD keep working on the new version.
+- Refined account-data detection so plain mentions such as `otp` or `password` receive only a low score, while direct credential requests retain the strong account-data score.
+- Adjusted cross-sender trend scoring to add one point per other sender up to five other senders, then use a fixed `+6` wave score from six participating players.
+- Known Discord security-warning messages no longer receive suspicious-link or external-platform points, while normal Discord invitations remain unchanged.
+
 ## 2.5.2 - 2026-07-05
 
 ### Changed

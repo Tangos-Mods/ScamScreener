@@ -26,7 +26,7 @@ public final class AdvancedRulesWarningScreen extends BaseScreen {
                 Component.literal("I KNOW WHAT I AM DOING"),
                 button -> {
                     if (this.minecraft != null) {
-                        this.minecraft.setScreen(new AdvancedRulesSettingsScreen(navigationParent));
+                        this.minecraft.gui.setScreen(new AdvancedRulesSettingsScreen(navigationParent));
                     }
                 })
             .bounds(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)

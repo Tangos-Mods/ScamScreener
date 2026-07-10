@@ -67,7 +67,7 @@ public final class RulesSettingsScreen extends BaseScreen {
             Component.literal("Advanced..."),
             button -> {
                 if (this.minecraft != null) {
-                    this.minecraft.setScreen(new AdvancedRulesWarningScreen(this));
+                    this.minecraft.gui.setScreen(new AdvancedRulesWarningScreen(this));
                 }
             }
         );
@@ -180,7 +180,7 @@ public final class RulesSettingsScreen extends BaseScreen {
 
     private void openSection(Section nextSection) {
         if (this.minecraft != null) {
-            this.minecraft.setScreen(new RulesSettingsScreen(navigationParent, nextSection));
+            this.minecraft.gui.setScreen(new RulesSettingsScreen(navigationParent, nextSection));
         }
     }
 

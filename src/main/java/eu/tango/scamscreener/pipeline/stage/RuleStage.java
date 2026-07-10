@@ -66,14 +66,15 @@ public final class RuleStage extends Stage {
         List<String> reasonParts = new ArrayList<>();
         List<String> reasonIds = new ArrayList<>();
 
-        String linkMatch = rules.suspiciousLink().firstPatternMatch(chatEvent);
+        boolean discordSecurityWarning = rules.discordSecurityWarning().patternMatches(chatEvent);
+        String linkMatch = discordSecurityWarning ? null : rules.suspiciousLink().firstPatternMatch(chatEvent);
         if (linkMatch != null) {
             totalScore += rules.suspiciousLink().score();
             reasonParts.add(rules.suspiciousLink().reason(linkMatch));
             reasonIds.add("rule.suspicious_link");
         }
 
-        String externalPlatformMatch = rules.externalPlatform().firstPatternMatch(chatEvent);
+        String externalPlatformMatch = discordSecurityWarning ? null : rules.externalPlatform().firstPatternMatch(chatEvent);
         if (externalPlatformMatch != null) {
             totalScore += rules.externalPlatform().score();
             reasonParts.add(rules.externalPlatform().reason(externalPlatformMatch));
@@ -88,10 +89,15 @@ public final class RuleStage extends Stage {
         }
 
         String accountMatch = rules.accountData().firstPatternMatch(chatEvent);
+        String accountMentionMatch = rules.accountDataMention().firstPatternMatch(chatEvent);
         if (accountMatch != null) {
             totalScore += rules.accountData().score();
             reasonParts.add(rules.accountData().reason(accountMatch));
             reasonIds.add("rule.account_data");
+        } else if (accountMentionMatch != null) {
+            totalScore += rules.accountDataMention().score();
+            reasonParts.add(rules.accountDataMention().reason(accountMentionMatch));
+            reasonIds.add("rule.account_data_mention");
         }
 
         String tooGoodMatch = rules.tooGood().firstPatternMatch(chatEvent);

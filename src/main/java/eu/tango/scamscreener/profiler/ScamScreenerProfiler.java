@@ -215,7 +215,7 @@ public final class ScamScreenerProfiler {
         }
 
         Minecraft client = Minecraft.getInstance();
-        if (client == null || client.player == null || client.level == null || client.options.hideGui) {
+        if (client == null || client.player == null || client.level == null || client.gui.hud.isHidden()) {
             return;
         }
 

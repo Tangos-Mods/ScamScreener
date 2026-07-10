@@ -15,8 +15,8 @@ class ClientMessagesTest {
     @Test
     void updateAvailableMatchesExpectedText() {
         MutableComponent message = ClientMessages.updateAvailable(
-            "2.0.1+26.1",
-            "2.0.2+26.1",
+            "2.0.1+26.2",
+            "2.0.2+26.2",
             "https://modrinth.com/project/XTB0bgAW",
             "line 1"
         );

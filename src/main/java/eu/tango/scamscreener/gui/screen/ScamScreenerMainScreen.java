@@ -76,41 +76,41 @@ public final class ScamScreenerMainScreen extends BaseScreen {
         int menuButtonWidth = splitWidth(menuWidth, 3, DEFAULT_SPLIT_GAP);
 
         addRenderableWidget(
-            Button.builder(Component.literal("Rule Settings"), button -> this.minecraft.setScreen(new RulesSettingsScreen(this)))
+            Button.builder(Component.literal("Rule Settings"), button -> this.minecraft.gui.setScreen(new RulesSettingsScreen(this)))
                 .bounds(menuX, y, menuButtonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
         addRenderableWidget(
-            Button.builder(Component.literal("Debug Settings"), button -> this.minecraft.setScreen(new DebugSettingsScreen(this)))
+            Button.builder(Component.literal("Debug Settings"), button -> this.minecraft.gui.setScreen(new DebugSettingsScreen(this)))
                 .bounds(columnX(menuX, menuButtonWidth, DEFAULT_SPLIT_GAP, 1), y, menuButtonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
         addRenderableWidget(
-            Button.builder(Component.literal("Blacklist"), button -> this.minecraft.setScreen(new BlacklistScreen(this)))
+            Button.builder(Component.literal("Blacklist"), button -> this.minecraft.gui.setScreen(new BlacklistScreen(this)))
                 .bounds(columnX(menuX, menuButtonWidth, DEFAULT_SPLIT_GAP, 2), y, menuButtonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
         y += ROW_HEIGHT;
 
         addRenderableWidget(
-            Button.builder(Component.literal("Message Settings"), button -> this.minecraft.setScreen(new MessageSettingsScreen(this)))
+            Button.builder(Component.literal("Message Settings"), button -> this.minecraft.gui.setScreen(new MessageSettingsScreen(this)))
                 .bounds(menuX, y, menuButtonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
         addRenderableWidget(
-            Button.builder(Component.literal("Observability"), button -> this.minecraft.setScreen(new MetricsSettingsScreen(this)))
+            Button.builder(Component.literal("Observability"), button -> this.minecraft.gui.setScreen(new MetricsSettingsScreen(this)))
                 .bounds(columnX(menuX, menuButtonWidth, DEFAULT_SPLIT_GAP, 1), y, menuButtonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
         addRenderableWidget(
-            Button.builder(Component.literal("Runtime"), button -> this.minecraft.setScreen(new RuntimeSettingsScreen(this)))
+            Button.builder(Component.literal("Runtime"), button -> this.minecraft.gui.setScreen(new RuntimeSettingsScreen(this)))
                 .bounds(columnX(menuX, menuButtonWidth, DEFAULT_SPLIT_GAP, 2), y, menuButtonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
         y += ROW_HEIGHT;
 
         addRenderableWidget(
-            Button.builder(Component.literal("Whitelist"), button -> this.minecraft.setScreen(new WhitelistScreen(this)))
+            Button.builder(Component.literal("Whitelist"), button -> this.minecraft.gui.setScreen(new WhitelistScreen(this)))
                 .bounds(x, y, buttonWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
@@ -118,7 +118,7 @@ public final class ScamScreenerMainScreen extends BaseScreen {
 
         int halfWidth = splitWidth(buttonWidth, 2, DEFAULT_SPLIT_GAP);
         addRenderableWidget(
-            Button.builder(Component.literal("Case Review"), button -> this.minecraft.setScreen(new ReviewScreen(this)))
+            Button.builder(Component.literal("Case Review"), button -> this.minecraft.gui.setScreen(new ReviewScreen(this)))
                 .bounds(x, y, halfWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
@@ -193,7 +193,7 @@ public final class ScamScreenerMainScreen extends BaseScreen {
 
     private void openTrainingHub() {
         if (this.minecraft != null) {
-            this.minecraft.setScreen(new TrainingHubScreen(this));
+            this.minecraft.gui.setScreen(new TrainingHubScreen(this));
         }
     }
 

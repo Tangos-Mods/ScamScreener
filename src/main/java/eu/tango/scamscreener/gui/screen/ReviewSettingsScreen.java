@@ -79,14 +79,14 @@ public final class ReviewSettingsScreen extends BaseScreen {
         y += ROW_HEIGHT;
 
         addRenderableWidget(
-            Button.builder(Component.literal("Open Review Queue"), button -> this.minecraft.setScreen(new ReviewScreen(this)))
+            Button.builder(Component.literal("Open Review Queue"), button -> this.minecraft.gui.setScreen(new ReviewScreen(this)))
                 .bounds(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );
         y += ROW_HEIGHT;
 
         addRenderableWidget(
-            Button.builder(Component.literal("Runtime Settings"), button -> this.minecraft.setScreen(new RuntimeSettingsScreen(this)))
+            Button.builder(Component.literal("Runtime Settings"), button -> this.minecraft.gui.setScreen(new RuntimeSettingsScreen(this)))
                 .bounds(x, y, contentWidth, DEFAULT_BUTTON_HEIGHT)
                 .build()
         );

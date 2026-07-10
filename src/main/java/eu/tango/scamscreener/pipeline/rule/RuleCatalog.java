@@ -27,9 +27,11 @@ public final class RuleCatalog {
     private final boolean contextStageEnabled;
     private final MuteRules mute;
     private final Rule suspiciousLink;
+    private final Rule discordSecurityWarning;
     private final Rule externalPlatform;
     private final Rule upfrontPayment;
     private final Rule accountData;
+    private final Rule accountDataMention;
     private final Rule tooGood;
     private final Rule coercionThreat;
     private final Rule urgencyAllowlist;
@@ -85,6 +87,12 @@ public final class RuleCatalog {
             settings.getSuspiciousLinkScore(),
             "Suspicious link: \"%s\""
         );
+        discordSecurityWarning = patternRule(
+            true,
+            "DISCORD_SECURITY_WARNING",
+            settings.getDiscordSecurityWarningPattern(),
+            0
+        );
         externalPlatform = patternRule(
             settings.isExternalPlatformEnabled(),
             "EXTERNAL_PLATFORM",
@@ -102,9 +110,16 @@ public final class RuleCatalog {
         accountData = patternRule(
             settings.isAccountDataEnabled(),
             "ACCOUNT_DATA",
-            settings.getAccountDataPattern(),
+            settings.getAccountDataRequestPattern(),
             settings.getAccountDataScore(),
             "Sensitive account wording: \"%s\""
+        );
+        accountDataMention = patternRule(
+            settings.isAccountDataEnabled(),
+            "ACCOUNT_DATA_MENTION",
+            settings.getAccountDataPattern(),
+            settings.getAccountDataMentionScore(),
+            "Sensitive account mention: \"%s\""
         );
         tooGood = patternRule(
             settings.isTooGoodEnabled(),

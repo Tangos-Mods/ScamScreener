@@ -20,7 +20,7 @@ public class ScamScreenerMod implements ClientModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger("scamscreener");
     private static final String MOD_ID = "scamscreener";
     private static final String DEFAULT_MOD_VERSION = "2.2.1";
-    private static final String DEFAULT_MINECRAFT_VERSION = "26.1";
+    private static final String DEFAULT_MINECRAFT_VERSION = "26.2";
     public static final String VERSION = resolveModVersion();
     public static final String MINECRAFT = resolveMinecraftVersion();
 
