@@ -21,7 +21,7 @@ class RuleStageTest {
         StageResult result = new RuleStage().apply(event);
 
         assertEquals(Stage.Decision.PASS, result.getDecision());
-        assertEquals(108, result.getScoreDelta());
+        assertEquals(105, result.getScoreDelta());
         assertTrue(result.getReason().contains("External platform push"));
         assertTrue(result.getReason().contains("Upfront payment wording"));
         assertTrue(result.getReason().contains("Too-good-to-be-true wording"));
@@ -49,6 +49,28 @@ class RuleStageTest {
         assertEquals(Stage.Decision.PASS, result.getDecision());
         assertEquals(0, result.getScoreDelta());
         assertFalse(result.hasReason());
+    }
+
+    @Test
+    void ignoresCasualStandaloneVcMentions() {
+        StageResult result = new RuleStage().apply(ChatEvent.messageOnly(
+            "its scarily quiet bc my gf left call and my friend got off vc",
+            ChatSourceType.PLAYER
+        ));
+
+        assertEquals(0, result.getScoreDelta());
+        assertFalse(result.hasReason());
+    }
+
+    @Test
+    void keepsDirectedVcRedirects() {
+        StageResult result = new RuleStage().apply(ChatEvent.messageOnly(
+            "join vc",
+            ChatSourceType.PLAYER
+        ));
+
+        assertEquals(8, result.getScoreDelta());
+        assertTrue(result.getReason().contains("External platform push"));
     }
 
     @Test
@@ -196,5 +218,15 @@ class RuleStageTest {
         assertEquals(Stage.Decision.PASS, result.getDecision());
         assertEquals(0, result.getScoreDelta());
         assertFalse(result.hasReason());
+    }
+
+    @Test
+    void keepsStandaloneTooGoodWordingBelowReviewThreshold() {
+        StageResult guaranteed = new RuleStage().apply(ChatEvent.messageOnly("310 until guaranteed diamond slug", ChatSourceType.PLAYER));
+        StageResult dupe = new RuleStage().apply(ChatEvent.messageOnly("= no dupe", ChatSourceType.PLAYER));
+
+        assertEquals(12, guaranteed.getScoreDelta());
+        assertTrue(guaranteed.getReason().contains("Too-good-to-be-true wording"));
+        assertEquals(12, dupe.getScoreDelta());
     }
 }

@@ -37,4 +37,19 @@ class TrainingCaseMappingsTest {
         assertTrue(options.stream().anyMatch(option -> option.id().equals("stage.trend::trend.multi_sender_wave")
             && option.label().startsWith("Trend Stage - ")));
     }
+
+    @Test
+    void dropsRemovedTrendEscalationMapping() {
+        StageResult legacyResult = StageResult.of(
+            "TrendStage",
+            "stage.trend",
+            Stage.Decision.PASS,
+            5,
+            "Trend escalation: +5 for wider repeat spread",
+            List.of("trend.wave_escalation")
+        );
+
+        assertTrue(TrainingCaseMappings.optionsForStageResults(List.of(legacyResult)).isEmpty());
+        assertEquals("", TrainingCaseMappings.normalizeSelectionId("stage.trend::trend.wave_escalation"));
+    }
 }

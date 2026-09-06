@@ -43,6 +43,24 @@ class FunnelStageTest {
     }
 
     @Test
+    void ignoresCasualStandaloneVcAfterPriorContact() {
+        UUID senderUuid = UUID.randomUUID();
+        FunnelStage stage = new FunnelStage(new FunnelStore());
+
+        stage.apply(new ChatEvent("hello there", senderUuid, "Alpha", 1_000L, ChatSourceType.PLAYER));
+        StageResult result = stage.apply(new ChatEvent(
+            "its scarily quiet bc my gf left call and my friend got off vc",
+            senderUuid,
+            "Alpha",
+            2_000L,
+            ChatSourceType.PLAYER
+        ));
+
+        assertEquals(0, result.getScoreDelta());
+        assertFalse(result.hasReason());
+    }
+
+    @Test
     void scoresTrustToExternalToPaymentChain() {
         UUID senderUuid = UUID.randomUUID();
         FunnelStage stage = new FunnelStage(new FunnelStore());

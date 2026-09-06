@@ -2,6 +2,23 @@
 
 All notable changes to this project are documented in this file.
 
+## 2.6.1 - 2026-09-06
+
+### Added
+- Restored Minecraft `26.1.x` support next to `26.2.x` through a Stonecutter multi-version build (`26.1.2` and `26.2` targets).
+
+### Changed
+- Reduced the default too-good-to-be-true score from `15` to `12` so a lone `guaranteed` or `dupe` mention no longer opens a review alert by itself, while combined scam signals still cross the review threshold.
+- Standalone `vc` mentions no longer count as external-platform pushes. Existing `rules.json` files are migrated to schema version `4`, upgrading the old default pattern in place while keeping other customizations.
+- Updated the build toolchain and dependencies: Gradle `9.7`, Stonecutter `0.9.7`, Lombok `1.18.46`, JUnit `6.1.3`, Fabric API `0.156.0+26.2`, and Mod Menu `20.0.1`.
+- CurseForge uploads are now marked client-only.
+
+### Removed
+- Removed the unused legacy trend escalation bonus settings, their advanced-settings entries, and the `trend.wave_escalation` training mapping.
+
+### Notes
+- The September training bundle again contained reposted Skyblocker helper lines flagged by the trend wave. Those captures come from pre-2.5 clients that still used the old wave scoring. Replaying them against the current pipeline confirms they are filtered before the pipeline or score `0`, even with the trend stage enabled, and a regression test now covers prefix-stripped variants such as `300 Score Reached!`.
+
 ## 2.6.0 - 2026-07-09
 
 ### Added

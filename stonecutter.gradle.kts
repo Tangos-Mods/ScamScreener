@@ -1,12 +1,16 @@
 plugins {
     id("dev.kikugie.stonecutter")
-    id("net.fabricmc.fabric-loom") version "1.15.5" apply false
-    id("me.modmuss50.mod-publish-plugin") version "1.0.+" apply false
+    id("net.fabricmc.fabric-loom") version "1.17.19" apply false
+    id("me.modmuss50.mod-publish-plugin") version "2.2.0" apply false
 }
 
-val publishedVersions = listOf("26.2")
+val minecraftVersions = providers.gradleProperty("minecraft.versions")
+    .get()
+    .split(',')
+    .map(String::trim)
+    .filter(String::isNotEmpty)
 
-stonecutter active "26.2"
+stonecutter active minecraftVersions.last()
 
 stonecutter tasks {
     order("publishMods")
@@ -14,11 +18,21 @@ stonecutter tasks {
     order("publishCurseforge")
 }
 
+stonecutter parameters {
+    replacements {
+        string(current.parsed < "26.2") {
+            replace(".gui.setScreen(", ".setScreen(")
+            replace(".gui.screen()", ".screen")
+            replace(".gui.hud.isHidden()", ".options.hideGui")
+        }
+    }
+}
+
 fun registerAllVersionsPublishTask(taskName: String, description: String) {
     tasks.register(taskName) {
         group = "publishing"
         this.description = description
-        dependsOn(publishedVersions.map { ":$it:$taskName" })
+        dependsOn(subprojects.map { "${it.path}:$taskName" })
     }
 }
 

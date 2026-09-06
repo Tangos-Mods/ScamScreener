@@ -180,6 +180,33 @@ class TrendStageTest {
         assertFalse(result.hasReason());
     }
 
+    @Test
+    void ignoresRepostedSkyblockerHelperLinesAcrossSenders() {
+        RulesConfig rulesConfig = enabledTrendRules();
+        rulesConfig.trendStage().setMultiSenderWaveThreshold(2);
+        TrendStage stage = new TrendStage(new TrendStore(), rulesConfig);
+
+        String[] helperLines = {
+            "[Skyblocker] 300 Score Reached!",
+            "300 Score Reached!",
+            "[Skyblocker] The livid color is GRAY",
+            "We only have 0 crypts out of 5, we need more!",
+            "We need 30 more score to achieve S+ DO IT!"
+        };
+        long timestamp = 1_000L;
+        for (String helperLine : helperLines) {
+            StageResult result = null;
+            for (int sender = 0; sender < 6; sender++) {
+                timestamp += 500L;
+                result = stage.apply(new ChatEvent(helperLine, UUID.randomUUID(), "Player" + sender, timestamp, ChatSourceType.PLAYER));
+            }
+
+            assertEquals(Stage.Decision.PASS, result.getDecision());
+            assertEquals(0, result.getScoreDelta(), helperLine);
+            assertFalse(result.hasReason(), helperLine);
+        }
+    }
+
     private static RulesConfig enabledTrendRules() {
         RulesConfig rulesConfig = new RulesConfig();
         rulesConfig.setTrendStageEnabled(true);

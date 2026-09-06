@@ -209,10 +209,6 @@ public final class AdvancedRulesSettingsScreen extends BaseScreen {
             () -> trendStage.setMultiSenderWaveScore(nextScore(trendStage.getMultiSenderWaveScore())));
         addAction(actions, "Wave Hits: " + trendStage.getMultiSenderWaveThreshold(),
             () -> trendStage.setMultiSenderWaveThreshold(nextCounter(trendStage.getMultiSenderWaveThreshold(), 1, MAX_THRESHOLD)));
-        addAction(actions, "Escalation Min: " + trendStage.getEscalationBonusMinimum(),
-            () -> trendStage.setEscalationBonusMinimum(nextCounter(trendStage.getEscalationBonusMinimum(), 1, MAX_THRESHOLD)));
-        addAction(actions, "Escalation Div: " + trendStage.getEscalationBonusDivisor(),
-            () -> trendStage.setEscalationBonusDivisor(nextCounter(trendStage.getEscalationBonusDivisor(), 1, MAX_THRESHOLD)));
         addAction(actions, "Window: " + formatWindow(trendStage.getWindowMs()),
             () -> trendStage.setWindowMs(nextWindowMs(trendStage.getWindowMs())));
         addAction(actions, "History: " + trendStage.getMaxHistory(),

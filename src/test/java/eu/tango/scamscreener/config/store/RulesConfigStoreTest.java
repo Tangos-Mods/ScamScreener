@@ -62,4 +62,28 @@ class RulesConfigStoreTest {
         assertEquals(ConfigSchema.RULES.currentVersion(), config.version());
         assertEquals("\\b(?:discord|telegram|teamspeak)\\b", config.ruleStage().getExternalPlatformPattern());
     }
+
+    @Test
+    void loadOrCreateRemovesBareVcFromVersionThreeDefaultWithoutResettingOtherRules() throws IOException {
+        Path rulesFile = tempDir.resolve("rules.json");
+        Files.writeString(
+            rulesFile,
+            """
+            {
+              "version": 3,
+              "ruleStage": {
+                "externalPlatformPattern": "%s",
+                "externalPlatformScore": 12
+              }
+            }
+            """.formatted(RulesConfig.RuleStageSettings.V3_EXTERNAL_PLATFORM_PATTERN.replace("\\", "\\\\")),
+            StandardCharsets.UTF_8
+        );
+
+        RulesConfig config = new RulesConfigStore(rulesFile).loadOrCreate();
+
+        assertEquals(ConfigSchema.RULES.currentVersion(), config.version());
+        assertEquals(RulesConfig.RuleStageSettings.DEFAULT_EXTERNAL_PLATFORM_PATTERN, config.ruleStage().getExternalPlatformPattern());
+        assertEquals(12, config.ruleStage().getExternalPlatformScore());
+    }
 }

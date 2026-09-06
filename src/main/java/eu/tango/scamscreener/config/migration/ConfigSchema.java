@@ -5,7 +5,7 @@ package eu.tango.scamscreener.config.migration;
  */
 public enum ConfigSchema {
     RUNTIME(4),
-    RULES(3),
+    RULES(4),
     WHITELIST(1),
     BLACKLIST(1),
     REVIEW(1);

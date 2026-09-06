@@ -144,8 +144,10 @@ public final class RulesConfig implements VersionedConfig {
     public static final class RuleStageSettings {
         public static final String LEGACY_EXTERNAL_PLATFORM_PATTERN =
             "\\b(?:discord|telegram|whatsapp|instagram|snap(?:chat)?|t\\.me|dm me|dm me on discord|direct message me|add me on discord|join my discord|message me on discord|contact me on discord|discord server|server invite|join vc|vc|voice chat|voice channel|call)\\b";
-        public static final String DEFAULT_EXTERNAL_PLATFORM_PATTERN =
+        public static final String V3_EXTERNAL_PLATFORM_PATTERN =
             "\\b(?:discord|telegram|whatsapp|instagram|snap(?:chat)?|t\\.me|dm me|dm me on discord|direct message me|add me on discord|join my discord|message me on discord|contact me on discord|discord server|server invite|join vc|vc|voice chat|voice channel|join call|discord call|voice call)\\b";
+        public static final String DEFAULT_EXTERNAL_PLATFORM_PATTERN =
+            "\\b(?:discord|telegram|whatsapp|instagram|snap(?:chat)?|t\\.me|dm me|dm me on discord|direct message me|add me on discord|join my discord|message me on discord|contact me on discord|discord server|server invite|join vc|voice chat|voice channel|join call|discord call|voice call)\\b";
 
         private boolean suspiciousLinkEnabled = true;
         private boolean externalPlatformEnabled = true;
@@ -168,7 +170,7 @@ public final class RulesConfig implements VersionedConfig {
         private int upfrontPaymentScore = 25;
         private int accountDataScore = 35;
         private int accountDataMentionScore = 3;
-        private int tooGoodScore = 15;
+        private int tooGoodScore = 12;
         private int coercionThreatScore = 20;
         private int middlemanClaimScore = 15;
         private int proofBaitScore = 10;
@@ -408,8 +410,6 @@ public final class RulesConfig implements VersionedConfig {
         private int singleSenderRepeatScore = 0;
         private int multiSenderWaveScore = 6;
         private int multiSenderWaveThreshold = 5;
-        private int escalationBonusMinimum = 1;
-        private int escalationBonusDivisor = 4;
         private long windowMs = 45_000L;
         private int maxHistory = 200;
     }

@@ -9,14 +9,20 @@ pluginManagement {
 }
 
 plugins {
-    id("dev.kikugie.stonecutter") version "0.8.3"
+    id("dev.kikugie.stonecutter") version "0.9.7"
     id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
 }
 
+val minecraftVersions = providers.gradleProperty("minecraft.versions")
+    .get()
+    .split(',')
+    .map(String::trim)
+    .filter(String::isNotEmpty)
+
 stonecutter {
     create(rootProject) {
-        versions("26.2")
-        vcsVersion = "26.2"
+        versions(*minecraftVersions.toTypedArray())
+        vcsVersion = minecraftVersions.last()
     }
 }
 

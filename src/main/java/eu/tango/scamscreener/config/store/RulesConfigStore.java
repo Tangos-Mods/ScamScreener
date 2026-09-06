@@ -24,4 +24,18 @@ public final class RulesConfigStore extends VersionedConfigStore<RulesConfig> {
     protected RulesConfig createDefaultValue() {
         return new RulesConfig();
     }
+
+    @Override
+    protected RulesConfig preserveOutdatedValue(RulesConfig outdatedValue, RulesConfig defaultValue) {
+        if (outdatedValue == null || outdatedValue.version() != 3) {
+            return defaultValue;
+        }
+
+        RulesConfig.RuleStageSettings settings = outdatedValue.ruleStage();
+        if (RulesConfig.RuleStageSettings.V3_EXTERNAL_PLATFORM_PATTERN.equals(settings.getExternalPlatformPattern())) {
+            settings.setExternalPlatformPattern(RulesConfig.RuleStageSettings.DEFAULT_EXTERNAL_PLATFORM_PATTERN);
+        }
+        outdatedValue.setVersion(ConfigSchema.RULES.currentVersion());
+        return outdatedValue;
+    }
 }

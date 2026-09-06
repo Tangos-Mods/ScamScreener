@@ -15,6 +15,7 @@ import java.util.regex.Pattern;
  */
 public final class TrainingCaseMappings {
     private static final String STAGE_UNKNOWN = "stage.unknown";
+    private static final String REMOVED_TREND_ESCALATION_REASON_ID = "trend.wave_escalation";
     private static final Pattern SIMILARITY_REASON_PATTERN = Pattern.compile("^(.+?) matched \".*\" at \\d+\\.\\d{2}$");
     private static final Pattern SPLIT_PATTERN = Pattern.compile(";\\s*");
 
@@ -184,6 +185,9 @@ public final class TrainingCaseMappings {
         if (separatorIndex > 0 && separatorIndex < normalized.length() - 2) {
             String left = stageId(normalized.substring(0, separatorIndex));
             String right = normalizeReasonId(normalized.substring(separatorIndex + 2));
+            if (REMOVED_TREND_ESCALATION_REASON_ID.equals(right)) {
+                return ParsedSelection.empty();
+            }
             String label = stageLabel(left) + " - " + reasonLabelFor(left, right, "");
             return new ParsedSelection(composeSelectionId(left, right), left, right, label);
         }
@@ -229,7 +233,7 @@ public final class TrainingCaseMappings {
     private static MappingOption optionForReasonId(String stageNameOrId, String reasonId, String fallbackReasonText) {
         String normalizedStageId = stageId(stageNameOrId);
         String normalizedReasonId = normalizeReasonId(reasonId);
-        if (normalizedReasonId.isBlank()) {
+        if (normalizedReasonId.isBlank() || REMOVED_TREND_ESCALATION_REASON_ID.equals(normalizedReasonId)) {
             return null;
         }
 
@@ -295,7 +299,6 @@ public final class TrainingCaseMappings {
             case "behavior.burst_contact" -> "Burst contact";
             case "behavior.combo_repeated_burst" -> "Behavior combo: repeated burst contact";
             case "trend.multi_sender_wave" -> "Trend wave";
-            case "trend.wave_escalation" -> "Trend escalation";
             case "trend.single_cross_sender_repeat" -> "Cross-sender repeat";
             case "funnel.external_after_contact" -> "Funnel step: external platform after prior contact";
             case "funnel.external_after_trust" -> "Funnel step: external platform after trust framing";
@@ -445,9 +448,6 @@ public final class TrainingCaseMappings {
     private static MappedReason mapTrendReason(String reasonText) {
         if (reasonText.startsWith("Trend wave:")) {
             return new MappedReason("stage.trend", "trend.multi_sender_wave", reasonText);
-        }
-        if (reasonText.startsWith("Trend escalation:")) {
-            return new MappedReason("stage.trend", "trend.wave_escalation", reasonText);
         }
         if (reasonText.startsWith("Cross-sender repeat:")) {
             return new MappedReason("stage.trend", "trend.single_cross_sender_repeat", reasonText);

@@ -228,8 +228,6 @@ public final class RuleCatalog {
             Math.max(0, trendSettings.getSingleSenderRepeatScore()),
             Math.max(0, trendSettings.getMultiSenderWaveScore()),
             Math.max(1, trendSettings.getMultiSenderWaveThreshold()),
-            Math.max(1, trendSettings.getEscalationBonusMinimum()),
-            Math.max(1, trendSettings.getEscalationBonusDivisor()),
             Math.max(1L, trendSettings.getWindowMs()),
             Math.max(1, trendSettings.getMaxHistory())
         );

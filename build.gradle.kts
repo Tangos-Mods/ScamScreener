@@ -96,11 +96,11 @@ dependencies {
 
     minecraft("com.mojang:minecraft:${sc.current.version}")
     implementation("net.fabricmc:fabric-loader:${property("deps.fabric_loader")}")
-    compileOnly("org.projectlombok:lombok:1.18.44")
-    annotationProcessor("org.projectlombok:lombok:1.18.44")
-    testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.11.4")
-    compileOnly("com.terraformersmc:modmenu:${property("deps.modmenu_version")}")
+    compileOnly("org.projectlombok:lombok:1.18.46")
+    annotationProcessor("org.projectlombok:lombok:1.18.46")
+    testImplementation("org.junit.jupiter:junit-jupiter:6.1.3")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher:6.1.3")
+    compileOnly("maven.modrinth:mOgUt4GM:${property("deps.modmenu_version")}")
     compileOnly("maven.modrinth:tango-webapi:NU0SuChL")
 
     fapi(
@@ -216,6 +216,8 @@ publishMods {
         projectId = property("publish.curseforge") as String
         accessToken = providers.provider { curseforgeToken.orEmpty() }
         minecraftVersions.addAll(property("mod.mc_targets").toString().split(' '))
+        client = true
+        server = false
         requires {
             slug = "fabric-api"
         }

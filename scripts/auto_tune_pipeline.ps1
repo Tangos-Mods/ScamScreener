@@ -502,10 +502,6 @@ foreach ($mappingEntry in ($statsByMapping.GetEnumerator() | Sort-Object Name)) 
             $handled = Apply-IntAdjustment -Rules $rules -SectionName "trendStage" -FieldName "multiSenderWaveScore" -Step $step -Scale 1 -MinValue 0 -MaxValue 100 -DefaultValue 20 -MappingId $mappingId -Changes $changes
             break
         }
-        "stage.trend::trend.wave_escalation" {
-            $handled = Apply-IntAdjustment -Rules $rules -SectionName "trendStage" -FieldName "escalationBonusMinimum" -Step $step -Scale 1 -MinValue 1 -MaxValue 20 -DefaultValue 1 -MappingId $mappingId -Changes $changes
-            break
-        }
         "stage.funnel::funnel.external_after_contact" {
             $handled = Apply-IntAdjustment -Rules $rules -SectionName "funnelStage" -FieldName "externalAfterContactScore" -Step $step -Scale 1 -MinValue 0 -MaxValue 100 -DefaultValue 8 -MappingId $mappingId -Changes $changes
             break
