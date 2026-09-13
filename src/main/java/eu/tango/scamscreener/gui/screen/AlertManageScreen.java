@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
@@ -139,7 +140,7 @@ public final class AlertManageScreen extends BaseScreen {
 
     @Override
     public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
-        if (event != null && event.button() == 0 && handleMouseClick(event.x(), event.y())) {
+        if (event != null && event.button() == InputConstants.MOUSE_BUTTON_LEFT && handleMouseClick(event.x(), event.y())) {
             return true;
         }
         return super.mouseClicked(event, doubleClick);

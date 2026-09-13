@@ -215,7 +215,7 @@ publishMods {
     curseforge {
         projectId = property("publish.curseforge") as String
         accessToken = providers.provider { curseforgeToken.orEmpty() }
-        minecraftVersions.addAll(property("mod.mc_targets").toString().split(' '))
+        minecraftVersions.addAll(property("mod.cf_targets").toString().split(' '))
         client = true
         server = false
         requires {

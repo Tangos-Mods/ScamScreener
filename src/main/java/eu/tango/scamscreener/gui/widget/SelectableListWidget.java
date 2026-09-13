@@ -3,6 +3,7 @@ package eu.tango.scamscreener.gui.widget;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 
@@ -195,7 +196,7 @@ public final class SelectableListWidget<T> {
      * @return {@code true} when the list consumed the click
      */
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (button != 0 || !isInside(mouseX, mouseY) || rows.isEmpty()) {
+        if (button != InputConstants.MOUSE_BUTTON_LEFT || !isInside(mouseX, mouseY) || rows.isEmpty()) {
             return false;
         }
 

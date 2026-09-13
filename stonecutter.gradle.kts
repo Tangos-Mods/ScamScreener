@@ -1,6 +1,6 @@
 plugins {
     id("dev.kikugie.stonecutter")
-    id("net.fabricmc.fabric-loom") version "1.17.19" apply false
+    id("net.fabricmc.fabric-loom") version "1.17.20" apply false
     id("me.modmuss50.mod-publish-plugin") version "2.2.0" apply false
 }
 
@@ -20,9 +20,12 @@ stonecutter tasks {
 
 stonecutter parameters {
     replacements {
+        // Replacements run in reverse for versions where the condition is false,
+        // so the right-hand side must not match anything else in the source
+        // (a bare ".screen" would also hit the gui.screen package).
         string(current.parsed < "26.2") {
             replace(".gui.setScreen(", ".setScreen(")
-            replace(".gui.screen()", ".screen")
+            replace("client.gui.screen()", "client.screen")
             replace(".gui.hud.isHidden()", ".options.hideGui")
         }
     }

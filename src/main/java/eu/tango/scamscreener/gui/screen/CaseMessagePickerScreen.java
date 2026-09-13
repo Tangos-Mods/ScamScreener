@@ -7,6 +7,7 @@ import eu.tango.scamscreener.gui.widget.SelectableListWidget;
 import eu.tango.scamscreener.pipeline.data.ChatSourceType;
 import java.util.ArrayList;
 import java.util.List;
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
@@ -109,7 +110,7 @@ public final class CaseMessagePickerScreen extends BaseScreen {
 
     @Override
     public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
-        if (event != null && event.button() == 0 && listWidget != null && listWidget.mouseClicked(event.x(), event.y(), event.button())) {
+        if (event != null && event.button() == InputConstants.MOUSE_BUTTON_LEFT && listWidget != null && listWidget.mouseClicked(event.x(), event.y(), event.button())) {
             updateActionState();
             return true;
         }

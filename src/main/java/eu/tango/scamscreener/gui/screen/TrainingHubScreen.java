@@ -7,18 +7,20 @@ import eu.tango.scamscreener.review.ReviewEntry;
 import eu.tango.scamscreener.review.ReviewVerdict;
 import eu.tango.scamscreener.training.TrainingCaseExportService;
 import eu.tango.scamscreener.training.TrainingUploadReminder;
+import com.mojang.blaze3d.platform.InputConstants;
+
+import java.net.URI;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.ConfirmLinkScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.Util;
 
 /**
  * Minimal in-game Training Hub upload screen.
  */
 public final class TrainingHubScreen extends BaseScreen {
-    private static final String TRAINING_HUB_URL = "https://scamscreener.creepans.net/";
+    private static final URI TRAINING_HUB_URL = URI.create("https://scamscreener.creepans.net/");
     private static final int STATUS_INFO_COLOR = 0xB8B8B8;
     private static final int STATUS_SUCCESS_COLOR = 0x99FF99;
     private static final int STATUS_WARNING_COLOR = 0xFFD27F;
@@ -113,7 +115,7 @@ public final class TrainingHubScreen extends BaseScreen {
 
     @Override
     public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
-        if (event != null && event.button() == 0 && isHoveringClientId(event.x(), event.y())) {
+        if (event != null && event.button() == InputConstants.MOUSE_BUTTON_LEFT && isHoveringClientId(event.x(), event.y())) {
             copyClientId();
             return true;
         }
@@ -145,25 +147,7 @@ public final class TrainingHubScreen extends BaseScreen {
     }
 
     private void openWebsite() {
-        if (this.minecraft == null) {
-            setStatus("Client unavailable.", STATUS_ERROR_COLOR);
-            refreshButtons();
-            return;
-        }
-
-        this.minecraft.gui.setScreen(new ConfirmLinkScreen(open -> {
-            if (open) {
-                try {
-                    Util.getPlatform().openUri(TRAINING_HUB_URL);
-                } catch (Exception exception) {
-                    setStatus(rootCauseMessage(exception), STATUS_ERROR_COLOR);
-                }
-            }
-
-            if (this.minecraft != null) {
-                this.minecraft.gui.setScreen(this);
-            }
-        }, TRAINING_HUB_URL, true));
+        ConfirmLinkScreen.confirmLinkNow(this, TRAINING_HUB_URL, true);
     }
 
     private void refreshButtons() {
@@ -206,21 +190,6 @@ public final class TrainingHubScreen extends BaseScreen {
     private void setStatus(String text, int color) {
         statusText = text == null || text.isBlank() ? "" : text.trim();
         statusColor = color;
-    }
-
-    private static Throwable rootCause(Throwable throwable) {
-        Throwable rootCause = throwable;
-        while (rootCause.getCause() != null) {
-            rootCause = rootCause.getCause();
-        }
-
-        return rootCause;
-    }
-
-    private static String rootCauseMessage(Throwable throwable) {
-        Throwable rootCause = rootCause(throwable);
-        String message = rootCause == null ? null : rootCause.getMessage();
-        return message == null || message.isBlank() ? "unknown error" : message;
     }
 
     private static String compact(String value, int maxLength) {

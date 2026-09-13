@@ -39,7 +39,6 @@ import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallba
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.Minecraft;
-import net.minecraft.util.Util;
 
 import java.util.Locale;
 import java.util.UUID;
@@ -430,7 +429,11 @@ public final class ScamScreenerCommandHandler {
         }
 
         try {
-            Util.getPlatform().openUri(result.uri().toString());
+            //? if >26.2 {
+            com.mojang.blaze3d.Blaze3D.openUri(result.uri());
+            //?} else {
+            /*net.minecraft.util.Util.getPlatform().openUri(result.uri());*/
+            //?}
             source.sendFeedback(ClientMessages.profilerWebOpened(result.uri().toString()));
             return 1;
         } catch (Exception exception) {

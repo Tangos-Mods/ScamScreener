@@ -5,7 +5,7 @@ import eu.tango.scamscreener.gui.base.BaseScreen;
 import eu.tango.scamscreener.message.AlertContextRegistry;
 import eu.tango.scamscreener.pipeline.data.PipelineDecision;
 import eu.tango.scamscreener.review.ReviewCaseMessage;
-import org.lwjgl.glfw.GLFW;
+import com.mojang.blaze3d.platform.InputConstants;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -92,27 +92,27 @@ public final class AlertInfoScreen extends BaseScreen {
         }
 
         int keyCode = event.key();
-        if (keyCode == GLFW.GLFW_KEY_UP) {
+        if (keyCode == InputConstants.KEY_UP) {
             scrollBy(-1);
             return true;
         }
-        if (keyCode == GLFW.GLFW_KEY_DOWN) {
+        if (keyCode == InputConstants.KEY_DOWN) {
             scrollBy(1);
             return true;
         }
-        if (keyCode == GLFW.GLFW_KEY_PAGE_UP) {
+        if (keyCode == InputConstants.KEY_PAGEUP) {
             scrollBy(-visibleLineCount());
             return true;
         }
-        if (keyCode == GLFW.GLFW_KEY_PAGE_DOWN) {
+        if (keyCode == InputConstants.KEY_PAGEDOWN) {
             scrollBy(visibleLineCount());
             return true;
         }
-        if (keyCode == GLFW.GLFW_KEY_HOME) {
+        if (keyCode == InputConstants.KEY_HOME) {
             setScrollOffset(0);
             return true;
         }
-        if (keyCode == GLFW.GLFW_KEY_END) {
+        if (keyCode == InputConstants.KEY_END) {
             setScrollOffset(maxScroll);
             return true;
         }
