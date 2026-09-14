@@ -4,13 +4,9 @@ plugins {
     id("me.modmuss50.mod-publish-plugin") version "2.2.0" apply false
 }
 
-val minecraftVersions = providers.gradleProperty("minecraft.versions")
-    .get()
-    .split(',')
-    .map(String::trim)
-    .filter(String::isNotEmpty)
-
-stonecutter active minecraftVersions.last()
+// Keep this on the last entry of minecraft.versions. It has to be a literal so the
+// "Set active project to X" / "Reset active project" tasks can rewrite it.
+stonecutter active "26.3-rc-2"
 
 stonecutter tasks {
     order("publishMods")

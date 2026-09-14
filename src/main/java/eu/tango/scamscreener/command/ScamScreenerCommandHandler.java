@@ -432,8 +432,8 @@ public final class ScamScreenerCommandHandler {
             //? if >26.2 {
             com.mojang.blaze3d.Blaze3D.openUri(result.uri());
             //?} else {
-            /*net.minecraft.util.Util.getPlatform().openUri(result.uri());*/
-            //?}
+            /*net.minecraft.util.Util.getPlatform().openUri(result.uri());
+            *///?}
             source.sendFeedback(ClientMessages.profilerWebOpened(result.uri().toString()));
             return 1;
         } catch (Exception exception) {
