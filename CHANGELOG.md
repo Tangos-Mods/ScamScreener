@@ -2,6 +2,19 @@
 
 All notable changes to this project are documented in this file.
 
+## 2.7.0 - 2026-09-15
+
+### Added
+- Added support for Minecraft `26.3`.
+
+### Changed
+- Migrated keyboard and mouse input handling from GLFW constants to Minecraft's SDL-backed `InputConstants` values for Minecraft 26.3.
+- Updated link opening for Minecraft 26.3 to use `ConfirmLinkScreen` and `Blaze3D.openUri`.
+- Added separate CurseForge target metadata through `mod.cf_targets`.
+
+### Fixed
+- Fixed the Stonecutter screen replacement to use `client.gui.screen()` on Minecraft 26.3.
+
 ## 2.6.1 - 2026-09-06
 
 ### Added
