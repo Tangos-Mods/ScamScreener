@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented in this file.
 
+## 2.7.0 - 2026-11-01
+
+### Added
+- Support for Minecraft `26.3.x`.
+
+### Changed
+- Ported the client integration to the `26.3` input and link APIs. Minecraft replaced GLFW with SDL, so key and mouse handling now uses `InputConstants` constants, which also changes the left mouse button value on `26.3`. The Training Hub link and `/ss profiler open` go through `ConfirmLinkScreen.confirmLinkNow` and `Blaze3D.openUri`.
+- Raised the required Fabric Loader to `>= 0.19.3`.
+- Updated the build toolchain and dependencies: Gradle `9.8.2`, Stonecutter `0.9.8`, Fabric Loom `1.19.3`, Mod Publish Plugin `2.2.1`, Lombok `1.18.48`, Fabric API `0.165.0+26.3`, `0.161.0+26.2` and `0.155.3+26.1.2`, and Mod Menu `21.0.0`, `20.0.3` and `18.0.2`.
+- The Gradle daemon now runs on Java `25`, which Fabric Loom requires from version `1.18.1` on. Gradle provisions that JDK on first use.
+
 ## 2.6.1 - 2026-09-06
 
 ### Added
